@@ -1,0 +1,115 @@
+//  Copyright [2022] fy0748@gmail.com
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
+package dicescript
+
+type DiceScriptParser Peg {
+    RollContext
+}
+
+// 出口
+stmtRoot <- exprBitwise { p.AddOperator(TypeHalt) }
+
+exprRoot <- exprBitwise
+
+// 位运算
+exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.AddLeftValueMark() } exprCompare { p.AddOperator(TypeBitwiseOr) }
+                 / (logicAnd / bitwiseAnd) { p.AddLeftValueMark() } exprCompare { p.AddOperator(TypeBitwiseAnd) } )*
+
+
+// 比较
+exprCompare <- exprAdditive (
+                 lt { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompLT) }
+               / le { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompLE) }
+               / eq { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompEQ) }
+               / ne { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompNE) }
+               / ge { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompGE) }
+               / gt { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompGT) }
+             )*
+
+// 加减
+exprAdditive <- exprMultiplicative (
+                  multiply exprMultiplicative
+                / divide exprMultiplicative
+                / modulus exprMultiplicative
+              )*
+
+// 乘除余
+exprMultiplicative <- exprExp (
+                        multiply exprExp
+                      / divide exprExp
+                      / modulus exprExp
+                    )*
+
+// 平方
+exprExp <- exprUnaryNeg (
+             exponentiation exprUnaryNeg
+         )*
+
+
+// 正数 负数
+exprUnaryNeg <- minus exprUnaryPos
+              / exprUnaryPos
+
+exprUnaryPos <- add exprDice
+              / exprDice
+
+// 骰子算符，注: 越靠下的优先级越高
+exprDice <- ((number / sub) [dD] (number / sub))  // 3d20
+          / [dD] (number / sub)   // d100
+          / value
+
+// 右值
+value <- number
+       / identifier
+       / sub
+
+// 数字
+number <- < [0-9]+ > sp { p.AddValue(string(text)) }
+
+// 变量名
+identifier <- < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
+
+// 括号
+sub <- parenOpen exprRoot parenClose
+parenOpen <- '(' sp
+parenClose <- ')' sp
+
+// 加减乘除余 乘方
+add <- ('+'/'＋') sp
+minus <- ('-' / '－') sp
+multiply <- ('*' / '＊') sp
+divide <- ('/' / '／') sp
+modulus <- '%' sp
+exponentiation <- '^' sp / '**' sp
+
+// 按位算符
+bitwiseOr <- '|' sp
+bitwiseAnd <- '&' sp
+
+// 逻辑算符
+logicOr <- '||' sp
+logicAnd <- '&&' sp
+
+// 比较算符
+lt <- ('<' / '＜') sp
+gt <- ('>' / '＞') sp
+le <- ('<=' / '＜＝') sp
+ge <- ('>=' / '＞＝') sp
+eq <- ('==' / '＝＝') sp
+ne <- ('!=' / '！＝') sp
+
+// 其他
+sp <- ( ' ' / '\t' / '\n' / '\r' / ('//' [^\n]*) )*
+escape <- '\\' ([btnfr"'\\])  //  / OctalEscape / UnicodeEscape

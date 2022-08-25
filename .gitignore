@@ -13,3 +13,14 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+info.db
+roll.peg.go
+record.log
+go.sum
+.idea
+configs/
+data/
+temp/
+
+dist/
