@@ -1,5 +1,5 @@
 /*
-  Copyright [2022] fy0748@gmail.com
+  Copyright 2022 fy <fy0748@gmail.com>
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,20 +16,26 @@
 
 package dicescript
 
+import (
+	"strconv"
+)
+
 type VMValueType int
 
 const (
-	VMTypeNumber        VMValueType = 0 // float
-	VMTypeString        VMValueType = 1
-	VMTypeNone          VMValueType = 2
-	VMTypeComputedValue VMValueType = 4
-	VMTypeArray         VMValueType = 5
+	VMTypeInt64         VMValueType = 0
+	VMTypeFloat64       VMValueType = 1
+	VMTypeString        VMValueType = 2
+	VMTypeNone          VMValueType = 4 // 这里错开是为了和旧版兼容
+	VMTypeComputedValue VMValueType = 5
+	VMTypeArray         VMValueType = 6
 )
 
 type CodeType uint8
 
 const (
-	TypePushNumber CodeType = iota
+	TypePushIntNumber CodeType = iota
+	TypePushFloatNumber
 	TypePushString
 	TypeNegation
 	TypeAdd
@@ -39,7 +45,13 @@ const (
 	TypeModulus
 	TypeExponentiation
 	TypeDiceUnary
+
+	TypeDiceInit
+	TypeDiceSetTimes
+	TypeDiceSetPickLowNum
+	TypeDiceSetPickHighNum
 	TypeDice
+
 	TypeDicePenalty
 	TypeDiceBonus
 	TypeDiceFate
@@ -88,15 +100,19 @@ type ByteCode struct {
 }
 
 type RollExtraFlags struct {
-	BigFailDiceOn      bool
+	MinDiceMode        bool  // 骰子以最小值结算，用于获取下界
+	MaxDiceMode        bool  // 以最大值结算 获取上界
 	DisableLoadVarname bool  // 不允许加载变量，这是为了防止遇到 .r XXX 被当做属性读取，而不是“由于XXX，骰出了”
 	IgnoreDiv0         bool  // 当div0时暂不报错
 	DefaultDiceSideNum int64 // 默认骰子面数
 }
 
 type RollContext struct {
-	Code []ByteCode
-	Top  int
+	Code      []ByteCode
+	CodeIndex int
+
+	Stack []VMValue
+	Top   int
 
 	NumOpCount       int64  // 算力计数
 	CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
@@ -112,4 +128,62 @@ func (e *RollContext) Init(stackLength int) {
 	e.Code = make([]ByteCode, stackLength)
 	e.JmpStack = []int{}
 	e.CounterStack = []int64{}
+}
+
+type VMValue struct {
+	TypeId      VMValueType `json:"typeId"`
+	Value       interface{} `json:"value"`
+	ExpiredTime int64       `json:"expiredTime"`
+}
+
+func (v *VMValue) AsBool() bool {
+	switch v.TypeId {
+	case VMTypeInt64:
+		return v.Value != int64(0)
+	case VMTypeString:
+		return v.Value != ""
+	case VMTypeNone:
+		return false
+	//case VMTypeComputedValue:
+	//	vd := v.Value.(*VMComputedValueData)
+	//	return vd.BaseValue.AsBool()
+	default:
+		return false
+	}
+}
+
+func (v *VMValue) ToString() string {
+	switch v.TypeId {
+	case VMTypeInt64:
+		return strconv.FormatInt(v.Value.(int64), 10)
+	case VMTypeString:
+		return v.Value.(string)
+	case VMTypeNone:
+		return v.Value.(string)
+	//case VMTypeComputedValue:
+	//vd := v.Value.(*VMComputedValueData)
+	//return vd.BaseValue.ToString() + "=> (" + vd.Expr + ")"
+	default:
+		return "a value"
+	}
+}
+
+func (v *VMValue) ReadInt64() (int64, bool) {
+	if v.TypeId == VMTypeInt64 {
+		return v.Value.(int64), true
+	}
+	return 0, false
+}
+
+func (v *VMValue) ReadString() (string, bool) {
+	if v.TypeId == VMTypeString {
+		return v.Value.(string), true
+	}
+	return "", false
+}
+
+func (v *VMValue) Add(v2 *VMValue) *VMValue {
+	// TODO: 先粗暴假设都是int，以后再改
+	val := v.Value.(int64) + v2.Value.(int64)
+	return &VMValue{VMTypeInt64, val, 0}
 }

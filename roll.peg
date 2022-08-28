@@ -1,4 +1,4 @@
-//  Copyright [2022] fy0748@gmail.com
+//  Copyright 2022 fy <fy0748@gmail.com>
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 package dicescript
 
-type DiceScriptParser Peg {
+type Parser Peg {
     RollContext
 }
 
@@ -24,25 +24,24 @@ stmtRoot <- exprBitwise { p.AddOperator(TypeHalt) }
 exprRoot <- exprBitwise
 
 // 位运算
-exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.AddLeftValueMark() } exprCompare { p.AddOperator(TypeBitwiseOr) }
-                 / (logicAnd / bitwiseAnd) { p.AddLeftValueMark() } exprCompare { p.AddOperator(TypeBitwiseAnd) } )*
+exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOperator(TypeBitwiseOr) }
+                 / (logicAnd / bitwiseAnd) { p.LMark() } exprCompare { p.AddOperator(TypeBitwiseAnd) } )*
 
 
 // 比较
 exprCompare <- exprAdditive (
-                 lt { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompLT) }
-               / le { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompLE) }
-               / eq { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompEQ) }
-               / ne { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompNE) }
-               / ge { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompGE) }
-               / gt { p.AddLeftValueMark() } exprAdditive { p.AddOperator(TypeCompGT) }
+                 lt { p.LMark() } exprAdditive { p.AddOperator(TypeCompLT) }
+               / le { p.LMark() } exprAdditive { p.AddOperator(TypeCompLE) }
+               / eq { p.LMark() } exprAdditive { p.AddOperator(TypeCompEQ) }
+               / ne { p.LMark() } exprAdditive { p.AddOperator(TypeCompNE) }
+               / ge { p.LMark() } exprAdditive { p.AddOperator(TypeCompGE) }
+               / gt { p.LMark() } exprAdditive { p.AddOperator(TypeCompGT) }
              )*
 
 // 加减
 exprAdditive <- exprMultiplicative (
-                  multiply exprMultiplicative
-                / divide exprMultiplicative
-                / modulus exprMultiplicative
+                  add { p.LMark() } exprMultiplicative { p.AddOperator(TypeAdd) }
+                / minus { p.LMark() } exprMultiplicative { p.AddOperator(TypeSubtract) }
               )*
 
 // 乘除余
@@ -76,7 +75,7 @@ value <- number
        / sub
 
 // 数字
-number <- < [0-9]+ > sp { p.AddValue(string(text)) }
+number <- < [0-9]+ > sp { p.PushIntNumber(string(text)) }
 
 // 变量名
 identifier <- < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)

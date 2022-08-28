@@ -3,6 +3,7 @@ module github.com/sealdice/dicescript
 go 1.16
 
 require (
+	github.com/abiosoft/ishell/v2 v2.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
