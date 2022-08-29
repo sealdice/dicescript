@@ -78,7 +78,7 @@ func (e *Parser) PushFloatNumber(value string) {
 
 type Runtime struct {
 	parser    *Parser
-	Flags     RollExtraFlags
+	Flags     RollExtraFlags // 注: flag 之类还是不要写这，这样无法复用
 	RestInput string
 	Matched   string
 	Ret       *VMValue
@@ -173,6 +173,11 @@ func (e *Parser) Evaluate() {
 		return v
 	}
 
+	stackPop2 := func() (*VMValue, *VMValue) {
+		v2, v1 := stackPop(), stackPop()
+		return v1, v2
+	}
+
 	stackPush := func(v *VMValue) {
 		e.Stack[e.Top] = *v
 		e.Top += 1
@@ -206,11 +211,12 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			diceStates[len(diceStates)-1].isPickLH = 2
 			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
-		case TypeAdd:
-			v1 := stackPop()
-			v2 := stackPop()
-			// TODO: 类型检查
-			stackPush(v1.Add(v2))
+		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus,
+			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
+			// 所有二元运算符
+			v1, v2 := stackPop2()
+			opFunc := binOperator[code.T-TypeAdd]
+			stackPush(opFunc(v1, v2))
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
 			var nums []int64

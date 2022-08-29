@@ -38,13 +38,27 @@ const (
 	TypePushFloatNumber
 	TypePushString
 	TypeNegation
-	TypeAdd
+
+	TypeExponentiation
+	TypeDiceUnary
+
+	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
 	TypeSubtract
 	TypeMultiply
 	TypeDivide
 	TypeModulus
-	TypeExponentiation
-	TypeDiceUnary
+
+	TypeCompLT
+	TypeCompLE
+	TypeCompEQ
+	TypeCompNE
+	TypeCompGE
+	TypeCompGT
+
+	TypeBitwiseAnd
+	TypeBitwiseOr
+	TypeLogicAnd
+	TypeLogicOr
 
 	TypeDiceInit
 	TypeDiceSetTimes
@@ -77,22 +91,25 @@ const (
 
 	TypePop
 
-	TypeCompLT
-	TypeCompLE
-	TypeCompEQ
-	TypeCompNE
-	TypeCompGE
-	TypeCompGT
-
 	TypeJmp
 	TypeJe
 	TypeJne
-
-	TypeBitwiseAnd
-	TypeBitwiseOr
-	TypeLogicAnd
-	TypeLogicOr
 )
+
+var binOperator = []func(*VMValue, *VMValue) *VMValue{
+	(*VMValue).Add,
+	(*VMValue).Sub,
+	(*VMValue).Multiply,
+	(*VMValue).Divide,
+	(*VMValue).Modulus,
+
+	(*VMValue).CompLT,
+	(*VMValue).CompLE,
+	(*VMValue).CompEQ,
+	(*VMValue).CompNE,
+	(*VMValue).CompGE,
+	(*VMValue).CompGT,
+}
 
 type ByteCode struct {
 	T     CodeType
@@ -185,5 +202,79 @@ func (v *VMValue) ReadString() (string, bool) {
 func (v *VMValue) Add(v2 *VMValue) *VMValue {
 	// TODO: 先粗暴假设都是int，以后再改
 	val := v.Value.(int64) + v2.Value.(int64)
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) Sub(v2 *VMValue) *VMValue {
+	val := v.Value.(int64) - v2.Value.(int64)
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) Multiply(v2 *VMValue) *VMValue {
+	val := v.Value.(int64) * v2.Value.(int64)
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) Divide(v2 *VMValue) *VMValue {
+	val := v.Value.(int64) / v2.Value.(int64)
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) Modulus(v2 *VMValue) *VMValue {
+	val := v.Value.(int64) % v2.Value.(int64)
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) CompLT(v2 *VMValue) *VMValue {
+	var val int64
+	ok := v.Value.(int64) < v2.Value.(int64)
+	if ok {
+		val = 1
+	}
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) CompLE(v2 *VMValue) *VMValue {
+	var val int64
+	ok := v.Value.(int64) <= v2.Value.(int64)
+	if ok {
+		val = 1
+	}
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) CompEQ(v2 *VMValue) *VMValue {
+	var val int64
+	ok := v.Value.(int64) == v2.Value.(int64)
+	if ok {
+		val = 1
+	}
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) CompNE(v2 *VMValue) *VMValue {
+	var val int64
+	ok := v.Value.(int64) != v2.Value.(int64)
+	if ok {
+		val = 1
+	}
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) CompGE(v2 *VMValue) *VMValue {
+	var val int64
+	ok := v.Value.(int64) >= v2.Value.(int64)
+	if ok {
+		val = 1
+	}
+	return &VMValue{VMTypeInt64, val, 0}
+}
+
+func (v *VMValue) CompGT(v2 *VMValue) *VMValue {
+	var val int64
+	ok := v.Value.(int64) > v2.Value.(int64)
+	if ok {
+		val = 1
+	}
 	return &VMValue{VMTypeInt64, val, 0}
 }

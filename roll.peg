@@ -46,9 +46,9 @@ exprAdditive <- exprMultiplicative (
 
 // 乘除余
 exprMultiplicative <- exprExp (
-                        multiply exprExp
-                      / divide exprExp
-                      / modulus exprExp
+                        multiply { p.LMark() } exprExp { p.AddOperator(TypeMultiply) }
+                      / divide { p.LMark() } exprExp { p.AddOperator(TypeDivide) }
+                      / modulus { p.LMark() } exprExp { p.AddOperator(TypeModulus) }
                     )*
 
 // 平方
