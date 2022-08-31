@@ -237,7 +237,7 @@ func (code *ByteCode) CodeString() string {
 	case TypePushIntNumber:
 		return "push " + strconv.FormatInt(code.Value.(int64), 10)
 	case TypePushFloatNumber:
-		return "push " + strconv.FormatFloat(code.Value.(float64), 'e', 2, 64)
+		return "push " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
 	case TypePushString:
 		return "push.str " + code.Value.(string)
 	case TypeAdd:

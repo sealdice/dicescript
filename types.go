@@ -170,9 +170,14 @@ func (v *VMValue) AsBool() bool {
 }
 
 func (v *VMValue) ToString() string {
+	if v == nil {
+		return "NIL"
+	}
 	switch v.TypeId {
 	case VMTypeInt64:
 		return strconv.FormatInt(v.Value.(int64), 10)
+	case VMTypeFloat64:
+		return strconv.FormatFloat(v.Value.(float64), 'f', 2, 64)
 	case VMTypeString:
 		return v.Value.(string)
 	case VMTypeNone:
@@ -200,81 +205,260 @@ func (v *VMValue) ReadString() (string, bool) {
 }
 
 func (v *VMValue) Add(v2 *VMValue) *VMValue {
-	// TODO: 先粗暴假设都是int，以后再改
-	val := v.Value.(int64) + v2.Value.(int64)
-	return &VMValue{VMTypeInt64, val, 0}
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(int64) + v2.Value.(int64)
+			return VMValueNewInt64(val)
+		case VMTypeFloat64:
+			val := float64(v.Value.(int64)) + v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(float64) + float64(v2.Value.(int64))
+			return VMValueNewFloat64(val)
+		case VMTypeFloat64:
+			val := v.Value.(float64) + v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	case VMTypeString:
+		switch v2.TypeId {
+		case VMTypeString:
+			val := v.Value.(string) + v2.Value.(string)
+			return VMValueNewStr(val)
+		}
+	case VMTypeComputedValue:
+		// TODO:
+	case VMTypeArray:
+		// TODO:
+	}
+
+	return nil
 }
 
 func (v *VMValue) Sub(v2 *VMValue) *VMValue {
-	val := v.Value.(int64) - v2.Value.(int64)
-	return &VMValue{VMTypeInt64, val, 0}
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(int64) - v2.Value.(int64)
+			return VMValueNewInt64(val)
+		case VMTypeFloat64:
+			val := float64(v.Value.(int64)) - v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(float64) - float64(v2.Value.(int64))
+			return VMValueNewFloat64(val)
+		case VMTypeFloat64:
+			val := v.Value.(float64) - v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	}
+
+	return nil
 }
 
 func (v *VMValue) Multiply(v2 *VMValue) *VMValue {
-	val := v.Value.(int64) * v2.Value.(int64)
-	return &VMValue{VMTypeInt64, val, 0}
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			// TODO: 溢出，均未考虑溢出
+			val := v.Value.(int64) * v2.Value.(int64)
+			return VMValueNewInt64(val)
+		case VMTypeFloat64:
+			val := float64(v.Value.(int64)) * v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(float64) * float64(v2.Value.(int64))
+			return VMValueNewFloat64(val)
+		case VMTypeFloat64:
+			val := v.Value.(float64) * v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	}
+
+	return nil
 }
 
 func (v *VMValue) Divide(v2 *VMValue) *VMValue {
-	val := v.Value.(int64) / v2.Value.(int64)
-	return &VMValue{VMTypeInt64, val, 0}
+	// TODO: 被除数为0
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(int64) / v2.Value.(int64)
+			return VMValueNewInt64(val)
+		case VMTypeFloat64:
+			val := float64(v.Value.(int64)) / v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(float64) / float64(v2.Value.(int64))
+			return VMValueNewFloat64(val)
+		case VMTypeFloat64:
+			val := v.Value.(float64) / v2.Value.(float64)
+			return VMValueNewFloat64(val)
+		}
+	}
+
+	return nil
 }
 
 func (v *VMValue) Modulus(v2 *VMValue) *VMValue {
-	val := v.Value.(int64) % v2.Value.(int64)
-	return &VMValue{VMTypeInt64, val, 0}
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := v.Value.(int64) % v2.Value.(int64)
+			return VMValueNewInt64(val)
+		}
+	}
+
+	return nil
+}
+
+func boolToVMValue(v bool) *VMValue {
+	var val int64
+	if v {
+		val = 1
+	}
+	return VMValueNewInt64(val)
 }
 
 func (v *VMValue) CompLT(v2 *VMValue) *VMValue {
-	var val int64
-	ok := v.Value.(int64) < v2.Value.(int64)
-	if ok {
-		val = 1
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(int64) < v2.Value.(int64))
+		case VMTypeFloat64:
+			return boolToVMValue(float64(v.Value.(int64)) < v2.Value.(float64))
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(float64) < float64(v2.Value.(int64)))
+		case VMTypeFloat64:
+			return boolToVMValue(v.Value.(float64) < v2.Value.(float64))
+		}
 	}
-	return &VMValue{VMTypeInt64, val, 0}
+
+	return nil
 }
 
 func (v *VMValue) CompLE(v2 *VMValue) *VMValue {
-	var val int64
-	ok := v.Value.(int64) <= v2.Value.(int64)
-	if ok {
-		val = 1
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(int64) <= v2.Value.(int64))
+		case VMTypeFloat64:
+			return boolToVMValue(float64(v.Value.(int64)) <= v2.Value.(float64))
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(float64) <= float64(v2.Value.(int64)))
+		case VMTypeFloat64:
+			return boolToVMValue(v.Value.(float64) <= v2.Value.(float64))
+		}
 	}
-	return &VMValue{VMTypeInt64, val, 0}
+
+	return nil
 }
 
 func (v *VMValue) CompEQ(v2 *VMValue) *VMValue {
-	var val int64
-	ok := v.Value.(int64) == v2.Value.(int64)
-	if ok {
-		val = 1
+	if v == v2 {
+		return VMValueNewInt64(1)
 	}
-	return &VMValue{VMTypeInt64, val, 0}
+	if v.TypeId == v2.TypeId {
+		return boolToVMValue(v.Value == v2.Value)
+	}
+
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeFloat64:
+			return boolToVMValue(float64(v.Value.(int64)) == v2.Value.(float64))
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(float64) == float64(v2.Value.(int64)))
+		}
+	}
+
+	return VMValueNewInt64(0)
 }
 
 func (v *VMValue) CompNE(v2 *VMValue) *VMValue {
-	var val int64
-	ok := v.Value.(int64) != v2.Value.(int64)
-	if ok {
-		val = 1
-	}
-	return &VMValue{VMTypeInt64, val, 0}
+	ret := v.CompEQ(v2)
+	return boolToVMValue(!ret.AsBool())
 }
 
 func (v *VMValue) CompGE(v2 *VMValue) *VMValue {
-	var val int64
-	ok := v.Value.(int64) >= v2.Value.(int64)
-	if ok {
-		val = 1
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(int64) >= v2.Value.(int64))
+		case VMTypeFloat64:
+			return boolToVMValue(float64(v.Value.(int64)) >= v2.Value.(float64))
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(float64) >= float64(v2.Value.(int64)))
+		case VMTypeFloat64:
+			return boolToVMValue(v.Value.(float64) >= v2.Value.(float64))
+		}
 	}
-	return &VMValue{VMTypeInt64, val, 0}
+
+	return nil
 }
 
 func (v *VMValue) CompGT(v2 *VMValue) *VMValue {
-	var val int64
-	ok := v.Value.(int64) > v2.Value.(int64)
-	if ok {
-		val = 1
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(int64) > v2.Value.(int64))
+		case VMTypeFloat64:
+			return boolToVMValue(float64(v.Value.(int64)) > v2.Value.(float64))
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			return boolToVMValue(v.Value.(float64) > float64(v2.Value.(int64)))
+		case VMTypeFloat64:
+			return boolToVMValue(v.Value.(float64) > v2.Value.(float64))
+		}
 	}
-	return &VMValue{VMTypeInt64, val, 0}
+
+	return nil
+}
+
+func VMValueNewInt64(i int64) *VMValue {
+	// TODO: 小整数可以处理为不可变对象，且一直停留在内存中，就像python那样。这可以避免很多内存申请
+	return &VMValue{TypeId: VMTypeInt64, Value: i}
+}
+
+func VMValueNewFloat64(i float64) *VMValue {
+	return &VMValue{TypeId: VMTypeFloat64, Value: i}
+}
+
+func VMValueNewStr(s string) *VMValue {
+	return &VMValue{TypeId: VMTypeString, Value: s}
 }
