@@ -42,6 +42,8 @@ var nf = VMValueNewFloat64
 var ns = VMValueNewStr
 
 func TestCompare(t *testing.T) {
+	ctx := NewVM()
+
 	// lt 小于
 	var compLTTest = compareTestData{
 		// int, int
@@ -69,7 +71,7 @@ func TestCompare(t *testing.T) {
 	}
 
 	for _, i := range compLTTest {
-		r := (*VMValue).CompLT(i.v1, i.v2)
+		r := (*VMValue).OpCompLT(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("CompareLE(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
@@ -102,7 +104,7 @@ func TestCompare(t *testing.T) {
 	}
 
 	for _, i := range compLETest {
-		r := (*VMValue).CompLE(i.v1, i.v2)
+		r := (*VMValue).OpCompLE(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("CompareLE(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
@@ -135,7 +137,7 @@ func TestCompare(t *testing.T) {
 	}
 
 	for _, i := range compGETest {
-		r := (*VMValue).CompGE(i.v1, i.v2)
+		r := (*VMValue).OpCompGE(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("CompareGE(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
@@ -168,7 +170,7 @@ func TestCompare(t *testing.T) {
 	}
 
 	for _, i := range compGTTest {
-		r := (*VMValue).CompGT(i.v1, i.v2)
+		r := (*VMValue).OpCompGT(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("CompareGT(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
@@ -190,7 +192,7 @@ func TestCompare(t *testing.T) {
 		{ni(0), ns(""), ni(0)}, // 0 == '', false
 	}
 	for _, i := range compEQTest {
-		r := (*VMValue).CompEQ(i.v1, i.v2)
+		r := (*VMValue).OpCompEQ(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("CompareEQ(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
@@ -199,6 +201,7 @@ func TestCompare(t *testing.T) {
 }
 
 func TestAdditive(t *testing.T) {
+	ctx := NewVM()
 	// + add
 	var addTest = compareTestData{
 		// int, int
@@ -214,9 +217,9 @@ func TestAdditive(t *testing.T) {
 	}
 
 	for _, i := range addTest {
-		r := (*VMValue).Add(i.v1, i.v2)
+		r := (*VMValue).OpAdd(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
-			t.Errorf("Add(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
+			t.Errorf("OpAdd(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
 	}
 
@@ -233,9 +236,9 @@ func TestAdditive(t *testing.T) {
 	}
 
 	for _, i := range subTest {
-		r := (*VMValue).Sub(i.v1, i.v2)
+		r := (*VMValue).OpSub(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
-			t.Errorf("Sub(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
+			t.Errorf("OpSub(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
 	}
 
@@ -252,14 +255,14 @@ func TestAdditive(t *testing.T) {
 	}
 
 	for _, i := range subMul {
-		r := (*VMValue).Multiply(i.v1, i.v2)
+		r := (*VMValue).OpMultiply(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("Mul(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
 	}
 
 	// * div
-	var subDiv = compareTestData{
+	var divTest = compareTestData{
 		// int, int
 		{ni(3), ni(2), ni(1)}, // 3/2=1
 		// int, float
@@ -271,15 +274,15 @@ func TestAdditive(t *testing.T) {
 		// TODO: 被除数为0
 	}
 
-	for _, i := range subDiv {
-		r := (*VMValue).Divide(i.v1, i.v2)
+	for _, i := range divTest {
+		r := (*VMValue).OpDivide(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("Div(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
 	}
 
 	// * mod
-	var subMod = compareTestData{
+	var modTest = compareTestData{
 		// int, int
 		{ni(2), ni(3), ni(2)}, // 2%3=2
 		// int, float
@@ -287,10 +290,29 @@ func TestAdditive(t *testing.T) {
 		// TODO: 被除数为0
 	}
 
-	for _, i := range subMod {
-		r := (*VMValue).Modulus(i.v1, i.v2)
+	for _, i := range modTest {
+		r := (*VMValue).OpModulus(i.v1, ctx, i.v2)
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("Mod(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
+		}
+	}
+
+	// ** power
+	var powerTest = compareTestData{
+		// int, int
+		{ni(2), ni(3), ni(8)}, // 2^3=8
+		// int, float
+		{ni(3), nf(4), nf(81)},
+		// float, float
+		{nf(3), nf(4), nf(81)},
+		// float, int
+		{nf(3), ni(4), nf(81)},
+	}
+
+	for _, i := range powerTest {
+		r := (*VMValue).OpPower(i.v1, ctx, i.v2)
+		if !valueEqual(r, i.excepted) {
+			t.Errorf("Power(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
 	}
 }

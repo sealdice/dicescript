@@ -17,6 +17,7 @@
 package dicescript
 
 import (
+	"math"
 	"strconv"
 )
 
@@ -39,7 +40,6 @@ const (
 	TypePushString
 	TypeNegation
 
-	TypeExponentiation
 	TypeDiceUnary
 
 	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
@@ -47,6 +47,7 @@ const (
 	TypeMultiply
 	TypeDivide
 	TypeModulus
+	TypeExponentiation
 
 	TypeCompLT
 	TypeCompLE
@@ -96,19 +97,20 @@ const (
 	TypeJne
 )
 
-var binOperator = []func(*VMValue, *VMValue) *VMValue{
-	(*VMValue).Add,
-	(*VMValue).Sub,
-	(*VMValue).Multiply,
-	(*VMValue).Divide,
-	(*VMValue).Modulus,
+var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
+	(*VMValue).OpAdd,
+	(*VMValue).OpSub,
+	(*VMValue).OpMultiply,
+	(*VMValue).OpDivide,
+	(*VMValue).OpModulus,
+	(*VMValue).OpPower,
 
-	(*VMValue).CompLT,
-	(*VMValue).CompLE,
-	(*VMValue).CompEQ,
-	(*VMValue).CompNE,
-	(*VMValue).CompGE,
-	(*VMValue).CompGT,
+	(*VMValue).OpCompLT,
+	(*VMValue).OpCompLE,
+	(*VMValue).OpCompEQ,
+	(*VMValue).OpCompNE,
+	(*VMValue).OpCompGE,
+	(*VMValue).OpCompGT,
 }
 
 type ByteCode struct {
@@ -124,27 +126,33 @@ type RollExtraFlags struct {
 	DefaultDiceSideNum int64 // 默认骰子面数
 }
 
-type RollContext struct {
-	Code      []ByteCode
-	CodeIndex int
+type Context struct {
+	parser *Parser
 
-	Stack []VMValue
-	Top   int
+	Code      []ByteCode
+	codeIndex int
+
+	stack []VMValue
+	top   int
 
 	NumOpCount       int64  // 算力计数
 	CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
-	JmpStack     []int   // 跳转栈
-	CounterStack []int64 // f-string 嵌套计数，我记这个做什么？
+	jmpStack     []int   // 跳转栈
+	counterStack []int64 // f-string 嵌套计数，我记这个做什么？
 
-	flags RollExtraFlags // 标记
+	Flags RollExtraFlags // 标记
 	Error error          // 报错信息
+
+	Ret       *VMValue // 返回值
+	RestInput string   // 剩余字符串
+	Matched   string   // 匹配的字符串
 }
 
-func (e *RollContext) Init(stackLength int) {
+func (e *Context) Init(stackLength int) {
 	e.Code = make([]ByteCode, stackLength)
-	e.JmpStack = []int{}
-	e.CounterStack = []int64{}
+	e.jmpStack = []int{}
+	e.counterStack = []int64{}
 }
 
 type VMValue struct {
@@ -204,7 +212,7 @@ func (v *VMValue) ReadString() (string, bool) {
 	return "", false
 }
 
-func (v *VMValue) Add(v2 *VMValue) *VMValue {
+func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -239,7 +247,7 @@ func (v *VMValue) Add(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) Sub(v2 *VMValue) *VMValue {
+func (v *VMValue) OpSub(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -264,7 +272,7 @@ func (v *VMValue) Sub(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) Multiply(v2 *VMValue) *VMValue {
+func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -290,7 +298,7 @@ func (v *VMValue) Multiply(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) Divide(v2 *VMValue) *VMValue {
+func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
 	// TODO: 被除数为0
 	switch v.TypeId {
 	case VMTypeInt64:
@@ -316,13 +324,38 @@ func (v *VMValue) Divide(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) Modulus(v2 *VMValue) *VMValue {
+func (v *VMValue) OpModulus(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
 		case VMTypeInt64:
 			val := v.Value.(int64) % v2.Value.(int64)
 			return VMValueNewInt64(val)
+		}
+	}
+
+	return nil
+}
+
+func (v *VMValue) OpPower(ctx *Context, v2 *VMValue) *VMValue {
+	switch v.TypeId {
+	case VMTypeInt64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := int64(math.Pow(float64(v.Value.(int64)), float64(v2.Value.(int64))))
+			return VMValueNewInt64(val)
+		case VMTypeFloat64:
+			val := math.Pow(float64(v.Value.(int64)), v2.Value.(float64))
+			return VMValueNewFloat64(val)
+		}
+	case VMTypeFloat64:
+		switch v2.TypeId {
+		case VMTypeInt64:
+			val := math.Pow(v.Value.(float64), float64(v2.Value.(int64)))
+			return VMValueNewFloat64(val)
+		case VMTypeFloat64:
+			val := math.Pow(v.Value.(float64), v2.Value.(float64))
+			return VMValueNewFloat64(val)
 		}
 	}
 
@@ -337,7 +370,7 @@ func boolToVMValue(v bool) *VMValue {
 	return VMValueNewInt64(val)
 }
 
-func (v *VMValue) CompLT(v2 *VMValue) *VMValue {
+func (v *VMValue) OpCompLT(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -358,7 +391,7 @@ func (v *VMValue) CompLT(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) CompLE(v2 *VMValue) *VMValue {
+func (v *VMValue) OpCompLE(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -379,7 +412,7 @@ func (v *VMValue) CompLE(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) CompEQ(v2 *VMValue) *VMValue {
+func (v *VMValue) OpCompEQ(ctx *Context, v2 *VMValue) *VMValue {
 	if v == v2 {
 		return VMValueNewInt64(1)
 	}
@@ -403,12 +436,12 @@ func (v *VMValue) CompEQ(v2 *VMValue) *VMValue {
 	return VMValueNewInt64(0)
 }
 
-func (v *VMValue) CompNE(v2 *VMValue) *VMValue {
-	ret := v.CompEQ(v2)
+func (v *VMValue) OpCompNE(ctx *Context, v2 *VMValue) *VMValue {
+	ret := v.OpCompEQ(ctx, v2)
 	return boolToVMValue(!ret.AsBool())
 }
 
-func (v *VMValue) CompGE(v2 *VMValue) *VMValue {
+func (v *VMValue) OpCompGE(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -429,7 +462,7 @@ func (v *VMValue) CompGE(v2 *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) CompGT(v2 *VMValue) *VMValue {
+func (v *VMValue) OpCompGT(ctx *Context, v2 *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
@@ -448,6 +481,24 @@ func (v *VMValue) CompGT(v2 *VMValue) *VMValue {
 	}
 
 	return nil
+}
+
+func (v *VMValue) GetTypeName() string {
+	switch v.TypeId {
+	case VMTypeInt64:
+		return "int64"
+	case VMTypeFloat64:
+		return "float64"
+	case VMTypeString:
+		return "str"
+	case VMTypeNone:
+		return "none"
+	case VMTypeComputedValue:
+		return "computed"
+	case VMTypeArray:
+		return "array"
+	}
+	return "unknown"
 }
 
 func VMValueNewInt64(i int64) *VMValue {

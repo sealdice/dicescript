@@ -11,17 +11,14 @@ func main() {
 	shell := ishell.New()
 	shell.Println("DiceScript Shell")
 
-	var vm dicescript.Runtime
-
-	//parser.
-	//vm := dicescript.RollContext{}
-
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "run",
 		Aliases: []string{"r", "eval"},
 		Help:    "执行脚本",
 		Func: func(c *ishell.Context) {
+			vm := dicescript.NewVM()
 			err := vm.Run(strings.Join(c.Args, " "))
+
 			if err != nil {
 				c.Err(err)
 			} else {

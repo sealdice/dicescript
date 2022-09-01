@@ -29,7 +29,7 @@ func (e *Parser) checkStackOverflow() bool {
 	if e.Error != nil {
 		return true
 	}
-	if e.CodeIndex >= len(e.Code) {
+	if e.codeIndex >= len(e.Code) {
 		need := len(e.Code) * 2
 		if need <= 8192 {
 			newCode := make([]ByteCode, need)
@@ -48,10 +48,10 @@ func (e *Parser) WriteCode(T CodeType, value interface{}) {
 		return
 	}
 
-	c := &e.Code[e.CodeIndex]
+	c := &e.Code[e.codeIndex]
 	c.T = T
 	c.Value = value
-	e.CodeIndex += 1
+	e.codeIndex += 1
 }
 
 func (e *Parser) AddLeftValueMark() {
@@ -76,36 +76,35 @@ func (e *Parser) PushFloatNumber(value string) {
 	e.WriteCode(TypePushFloatNumber, float64(val))
 }
 
-type Runtime struct {
-	parser    *Parser
-	Flags     RollExtraFlags // 注: flag 之类还是不要写这，这样无法复用
-	RestInput string
-	Matched   string
-	Ret       *VMValue
+func NewVM() *Context {
+	// 创建parser
+	p := &Parser{}
+	// 初始化指令栈，默认指令长度512条
+	p.Context.Init(512)
+	p.parser = p
+	return &p.Context
 }
 
-func (e *Runtime) Run(value string) error {
+func (ctx *Context) Run(value string) error {
 	var err error
 
-	// 创建parser并初始化，这里是分词过程
-	p := &Parser{Buffer: value}
+	// 初始化Parser，这里是分词过程
+	p := ctx.parser
+	p.Buffer = value
 	err = p.Init()
-
-	// 初始化指令栈，默认指令长度512条
-	p.RollContext.Init(512)
 
 	// 开始解析，编译字节码
 	err = p.Parse()
-	p.RollContext.flags = e.Flags
 	p.Execute()
 
 	// 执行字节码
 	p.Evaluate()
-	if p.RollContext.Error != nil {
+	if ctx.Error != nil {
 		return err
 	}
 
-	e.Ret = &p.RollContext.Stack[0]
+	// 获取结果
+	ctx.Ret = &p.Context.stack[0]
 
 	// 给出VM解析完句子后的剩余文本
 	tks := p.Tokens()
@@ -113,8 +112,8 @@ func (e *Runtime) Run(value string) error {
 	// parser里有一个[]rune类型的，但问题是他句尾带了一个endsymbol
 	runeBuffer := []rune(value)
 	lastToken := tks[len(tks)-1]
-	e.RestInput = strings.TrimSpace(string(runeBuffer[lastToken.end:]))
-	e.Matched = strings.TrimSpace(string(runeBuffer[:lastToken.end]))
+	ctx.RestInput = strings.TrimSpace(string(runeBuffer[lastToken.end:]))
+	ctx.Matched = strings.TrimSpace(string(runeBuffer[:lastToken.end]))
 
 	return err
 }
@@ -132,10 +131,11 @@ func DiceRoll64(dicePoints int64) int64 {
 }
 
 func (e *Parser) Evaluate() {
-	e.Top = 0
-	e.Stack = make([]VMValue, 1000)
-	stack := e.Stack
+	e.top = 0
+	e.stack = make([]VMValue, 1000)
+	stack := e.stack
 
+	ctx := &e.Context
 	//lastDetails := []string{}
 	//lastDetailsLeft := []string{}
 	//
@@ -168,8 +168,8 @@ func (e *Parser) Evaluate() {
 	}
 
 	stackPop := func() *VMValue {
-		v := &e.Stack[e.Top-1]
-		e.Top -= 1
+		v := &e.stack[e.top-1]
+		e.top -= 1
 		return v
 	}
 
@@ -179,25 +179,26 @@ func (e *Parser) Evaluate() {
 	}
 
 	stackPush := func(v *VMValue) {
-		e.Stack[e.Top] = *v
-		e.Top += 1
+		e.stack[e.top] = *v
+		e.top += 1
 	}
 
-	for opIndex := 0; opIndex < e.CodeIndex; opIndex += 1 {
+	startTime := time.Now().UnixMilli()
+	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
 		numOpCountAdd(1)
 		code := e.Code[opIndex]
-		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.CodeIndex)
-		fmt.Println("!!!", code.CodeString(), time.Now().UnixMilli(), cIndex)
+		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.codeIndex)
+		fmt.Printf("!!! %-20s %s %dms\n", code.CodeString(), cIndex, time.Now().UnixMilli()-startTime)
 
 		switch code.T {
 		case TypePushIntNumber:
-			stack[e.Top].TypeId = VMTypeInt64
-			stack[e.Top].Value = code.Value
-			e.Top++
+			stack[e.top].TypeId = VMTypeInt64
+			stack[e.top].Value = code.Value
+			e.top++
 		case TypePushFloatNumber:
-			stack[e.Top].TypeId = VMTypeFloat64
-			stack[e.Top].Value = code.Value
-			e.Top++
+			stack[e.top].TypeId = VMTypeFloat64
+			stack[e.top].Value = code.Value
+			e.top++
 		case TypeDiceInit:
 			diceInit()
 		case TypeDiceSetTimes:
@@ -211,18 +212,27 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			diceStates[len(diceStates)-1].isPickLH = 2
 			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
-		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus,
+		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
 			// 所有二元运算符
 			v1, v2 := stackPop2()
 			opFunc := binOperator[code.T-TypeAdd]
-			stackPush(opFunc(v1, v2))
+			ret := opFunc(v1, ctx, v2)
+			if ret == nil {
+				// TODO: 整理所有错误类型
+				opErr := fmt.Sprintf("这两种类型无法使用 %s 算符连接: %s, %s", code.CodeString(), v1.GetTypeName(), v2.GetTypeName())
+				ctx.Error = errors.New(opErr)
+			}
+			if ctx.Error != nil {
+				break
+			}
+			stackPush(ret)
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
 			var nums []int64
 			bInt := int64(100)
 			for i := int64(0); i < diceState.times; i += 1 {
-				if e.flags.MinDiceMode {
+				if e.Flags.MinDiceMode {
 					nums = append(nums, bInt)
 				} else {
 					nums = append(nums, DiceRoll64(bInt))

@@ -15,7 +15,7 @@
 package dicescript
 
 type Parser Peg {
-    RollContext
+    Context
 }
 
 // 出口
@@ -53,7 +53,7 @@ exprMultiplicative <- exprExp (
 
 // 平方
 exprExp <- exprUnaryNeg (
-             exponentiation exprUnaryNeg
+             exponentiation { p.LMark() } exprUnaryNeg { p.AddOperator(TypeExponentiation) }
          )*
 
 
