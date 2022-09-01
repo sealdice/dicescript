@@ -19,41 +19,41 @@ type Parser Peg {
 }
 
 // 出口
-stmtRoot <- exprBitwise { p.AddOperator(TypeHalt) }
+stmtRoot <- exprBitwise { p.AddOp(TypeHalt) }
 
 exprRoot <- exprBitwise
 
 // 位运算
-exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOperator(TypeBitwiseOr) }
-                 / (logicAnd / bitwiseAnd) { p.LMark() } exprCompare { p.AddOperator(TypeBitwiseAnd) } )*
+exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseOr) }
+                 / (logicAnd / bitwiseAnd) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseAnd) } )*
 
 
 // 比较
 exprCompare <- exprAdditive (
-                 lt { p.LMark() } exprAdditive { p.AddOperator(TypeCompLT) }
-               / le { p.LMark() } exprAdditive { p.AddOperator(TypeCompLE) }
-               / eq { p.LMark() } exprAdditive { p.AddOperator(TypeCompEQ) }
-               / ne { p.LMark() } exprAdditive { p.AddOperator(TypeCompNE) }
-               / ge { p.LMark() } exprAdditive { p.AddOperator(TypeCompGE) }
-               / gt { p.LMark() } exprAdditive { p.AddOperator(TypeCompGT) }
+                 lt { p.LMark() } exprAdditive { p.AddOp(TypeCompLT) }
+               / le { p.LMark() } exprAdditive { p.AddOp(TypeCompLE) }
+               / eq { p.LMark() } exprAdditive { p.AddOp(TypeCompEQ) }
+               / ne { p.LMark() } exprAdditive { p.AddOp(TypeCompNE) }
+               / ge { p.LMark() } exprAdditive { p.AddOp(TypeCompGE) }
+               / gt { p.LMark() } exprAdditive { p.AddOp(TypeCompGT) }
              )*
 
 // 加减
 exprAdditive <- exprMultiplicative (
-                  add { p.LMark() } exprMultiplicative { p.AddOperator(TypeAdd) }
-                / minus { p.LMark() } exprMultiplicative { p.AddOperator(TypeSubtract) }
+                  add { p.LMark() } exprMultiplicative { p.AddOp(TypeAdd) }
+                / minus { p.LMark() } exprMultiplicative { p.AddOp(TypeSubtract) }
               )*
 
 // 乘除余
 exprMultiplicative <- exprExp (
-                        multiply { p.LMark() } exprExp { p.AddOperator(TypeMultiply) }
-                      / divide { p.LMark() } exprExp { p.AddOperator(TypeDivide) }
-                      / modulus { p.LMark() } exprExp { p.AddOperator(TypeModulus) }
+                        multiply { p.LMark() } exprExp { p.AddOp(TypeMultiply) }
+                      / divide { p.LMark() } exprExp { p.AddOp(TypeDivide) }
+                      / modulus { p.LMark() } exprExp { p.AddOp(TypeModulus) }
                     )*
 
 // 平方
 exprExp <- exprUnaryNeg (
-             exponentiation { p.LMark() } exprUnaryNeg { p.AddOperator(TypeExponentiation) }
+             exponentiation { p.LMark() } exprUnaryNeg { p.AddOp(TypeExponentiation) }
          )*
 
 
@@ -65,8 +65,19 @@ exprUnaryPos <- add exprDice
               / exprDice
 
 // 骰子算符，注: 越靠下的优先级越高
-exprDice <- ((number / sub) [dD] (number / sub))  // 3d20
-          / [dD] (number / sub)   // d100
+_diceMod <- (([kK] / 'kh') (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  // 这里fvtt与国内骰一致
+          / (([kK] / 'kh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) })
+          / (([qQ] / 'kl') (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
+          / (([qQ] / 'kl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
+          / (([dD] / 'dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest
+          / (([dD] / 'dl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropLowNum) } )
+          / ('dh' (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest
+
+_dicePearMod <- ('优势' / 'ys') { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
+              / ('劣势' / 'ls') { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
+
+exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); p.LMark() } [dD] (number / sub)) _diceMod { p.AddOp(TypeDice) } sp // 3d20
+          / [dD] { p.AddOp(TypeDiceInit); p.LMark() } (number / sub) (_dicePearMod / _diceMod) { p.AddOp(TypeDice) } sp  // d100
           / value
 
 // 右值

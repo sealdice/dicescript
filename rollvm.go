@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -63,6 +64,10 @@ func (e *Parser) LMark() {
 }
 
 func (e *Parser) AddOperator(operator CodeType) {
+	e.WriteCode(operator, nil)
+}
+
+func (e *Parser) AddOp(operator CodeType) {
 	e.WriteCode(operator, nil)
 }
 
@@ -150,7 +155,7 @@ func (e *Parser) Evaluate() {
 	diceStateIndex := -1
 	var diceStates []struct {
 		times    int64 // 次数，如 2d10，times为2
-		isPickLH int64 // 为1对应取低个数，为2对应取高个数
+		isKeepLH int64 // 为1对应取低个数，为2对应取高个数
 		lowNum   int64
 		highNum  int64
 	}
@@ -159,7 +164,7 @@ func (e *Parser) Evaluate() {
 		diceStateIndex += 1
 		diceStates = append(diceStates, struct {
 			times    int64 // 次数，如 2d10，times为2
-			isPickLH int64 // 为1对应取低个数，为2对应取高个数
+			isKeepLH int64 // 为1对应取低个数，为2对应取高个数
 			lowNum   int64
 			highNum  int64
 		}{
@@ -204,13 +209,21 @@ func (e *Parser) Evaluate() {
 		case TypeDiceSetTimes:
 			v := stackPop()
 			diceStates[len(diceStates)-1].times, _ = v.ReadInt64()
-		case TypeDiceSetPickLowNum:
+		case TypeDiceSetKeepLowNum:
 			v := stackPop()
-			diceStates[len(diceStates)-1].isPickLH = 1
+			diceStates[len(diceStates)-1].isKeepLH = 1
 			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt64()
-		case TypeDiceSetPickHighNum:
+		case TypeDiceSetKeepHighNum:
 			v := stackPop()
-			diceStates[len(diceStates)-1].isPickLH = 2
+			diceStates[len(diceStates)-1].isKeepLH = 2
+			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
+		case TypeDiceSetDropLowNum:
+			v := stackPop()
+			diceStates[len(diceStates)-1].isKeepLH = 3
+			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt64()
+		case TypeDiceSetDropHighNum:
+			v := stackPop()
+			diceStates[len(diceStates)-1].isKeepLH = 4
 			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
 		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
@@ -230,14 +243,42 @@ func (e *Parser) Evaluate() {
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
 			var nums []int64
-			bInt := int64(100)
+			val := stackPop()
+			bInt, _ := val.ReadInt64()
+
 			for i := int64(0); i < diceState.times; i += 1 {
-				if e.Flags.MinDiceMode {
+				if e.Flags.DiceMaxMode {
 					nums = append(nums, bInt)
 				} else {
 					nums = append(nums, DiceRoll64(bInt))
 				}
 			}
+
+			pickNum := diceState.times
+
+			if diceState.isKeepLH != 0 {
+				if diceState.isKeepLH == 1 || diceState.isKeepLH == 3 {
+					pickNum = diceState.lowNum
+					sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] }) // 从小到大
+				} else {
+					pickNum = diceState.highNum
+					sort.Slice(nums, func(i, j int) bool { return nums[i] > nums[j] }) // 从大到小
+				}
+				if diceState.isKeepLH > 2 {
+					pickNum = diceState.times - pickNum
+				}
+			}
+
+			num := int64(0)
+			for i := int64(0); i < pickNum; i++ {
+				// 当取数大于上限 跳过
+				if i >= int64(len(nums)) {
+					continue
+				}
+				num += nums[i]
+			}
+
+			stackPush(VMValueNewInt64(num))
 		}
 	}
 }
@@ -262,8 +303,22 @@ func (code *ByteCode) CodeString() string {
 		return "mod"
 	case TypeExponentiation:
 		return "pow"
+
+	case TypeDiceInit:
+		return "dice.init"
+	case TypeDiceSetTimes:
+		return "dice.setTimes"
+	case TypeDiceSetKeepLowNum:
+		return "dice.setKeepLow"
+	case TypeDiceSetKeepHighNum:
+		return "dice.setKeepHigh"
+	case TypeDiceSetDropLowNum:
+		return "dice.setDropLow"
+	case TypeDiceSetDropHighNum:
+		return "dice.setDropHigh"
 	case TypeDice:
 		return "dice"
+
 	case TypeDicePenalty:
 		return "dice.penalty"
 	case TypeDiceBonus:

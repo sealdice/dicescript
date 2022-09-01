@@ -63,8 +63,10 @@ const (
 
 	TypeDiceInit
 	TypeDiceSetTimes
-	TypeDiceSetPickLowNum
-	TypeDiceSetPickHighNum
+	TypeDiceSetKeepLowNum
+	TypeDiceSetKeepHighNum
+	TypeDiceSetDropLowNum
+	TypeDiceSetDropHighNum
 	TypeDice
 
 	TypeDicePenalty
@@ -119,8 +121,8 @@ type ByteCode struct {
 }
 
 type RollExtraFlags struct {
-	MinDiceMode        bool  // 骰子以最小值结算，用于获取下界
-	MaxDiceMode        bool  // 以最大值结算 获取上界
+	DiceMinMode        bool  // 骰子以最小值结算，用于获取下界
+	DiceMaxMode        bool  // 以最大值结算 获取上界
 	DisableLoadVarname bool  // 不允许加载变量，这是为了防止遇到 .r XXX 被当做属性读取，而不是“由于XXX，骰出了”
 	IgnoreDiv0         bool  // 当div0时暂不报错
 	DefaultDiceSideNum int64 // 默认骰子面数
@@ -180,6 +182,9 @@ func (v *VMValue) AsBool() bool {
 func (v *VMValue) ToString() string {
 	if v == nil {
 		return "NIL"
+	}
+	if v.Value == nil {
+		return "unknown"
 	}
 	switch v.TypeId {
 	case VMTypeInt64:
