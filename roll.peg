@@ -76,8 +76,8 @@ _diceMod <- (([kK] / 'kh') (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  
 _dicePearMod <- ('优势' / 'ys') { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
               / ('劣势' / 'ls') { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
 
-exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); p.LMark() } [dD] (number / sub)) _diceMod { p.AddOp(TypeDice) } sp // 3d20
-          / [dD] { p.AddOp(TypeDiceInit); p.LMark() } (number / sub) (_dicePearMod / _diceMod) { p.AddOp(TypeDice) } sp  // d100
+exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); p.LMark() } [dD] (number / sub)) _diceMod? { p.AddOp(TypeDice) } sp // 3d20
+          / [dD] { p.AddOp(TypeDiceInit); p.LMark() } (number / sub) (_dicePearMod / _diceMod)? { p.AddOp(TypeDice) } sp  // d100
           / value
 
 // 右值

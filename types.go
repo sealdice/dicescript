@@ -32,73 +32,6 @@ const (
 	VMTypeArray         VMValueType = 6
 )
 
-type CodeType uint8
-
-const (
-	TypePushIntNumber CodeType = iota
-	TypePushFloatNumber
-	TypePushString
-	TypeNegation
-
-	TypeDiceUnary
-
-	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
-	TypeSubtract
-	TypeMultiply
-	TypeDivide
-	TypeModulus
-	TypeExponentiation
-
-	TypeCompLT
-	TypeCompLE
-	TypeCompEQ
-	TypeCompNE
-	TypeCompGE
-	TypeCompGT
-
-	TypeBitwiseAnd
-	TypeBitwiseOr
-	TypeLogicAnd
-	TypeLogicOr
-
-	TypeDiceInit
-	TypeDiceSetTimes
-	TypeDiceSetKeepLowNum
-	TypeDiceSetKeepHighNum
-	TypeDiceSetDropLowNum
-	TypeDiceSetDropHighNum
-	TypeDice
-
-	TypeDicePenalty
-	TypeDiceBonus
-	TypeDiceFate
-	TypeDiceWod
-	TypeWodSetInit       // 重置参数
-	TypeWodSetPool       // 设置骰池(骰数)
-	TypeWodSetPoints     // 面数
-	TypeWodSetThreshold  // 阈值 >=
-	TypeWodSetThresholdQ // 阈值 <=
-	TypeDiceDC
-	TypeDCSetInit
-	TypeDCSetPool   // 骰池
-	TypeDCSetPoints // 面数
-	TypeLoadVarname
-	TypeLoadFormatString
-	TypeStore
-	TypeHalt
-	TypeSwap
-	TypeLeftValueMark
-	TypeDiceSetK
-	TypeDiceSetQ
-	TypeClearDetail
-
-	TypePop
-
-	TypeJmp
-	TypeJe
-	TypeJne
-)
-
 var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
 	(*VMValue).OpAdd,
 	(*VMValue).OpSub,
@@ -113,11 +46,6 @@ var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
 	(*VMValue).OpCompNE,
 	(*VMValue).OpCompGE,
 	(*VMValue).OpCompGT,
-}
-
-type ByteCode struct {
-	T     CodeType
-	Value interface{}
 }
 
 type RollExtraFlags struct {
@@ -517,4 +445,8 @@ func VMValueNewFloat64(i float64) *VMValue {
 
 func VMValueNewStr(s string) *VMValue {
 	return &VMValue{TypeId: VMTypeString, Value: s}
+}
+
+func VMValueNewNone() *VMValue {
+	return &VMValue{TypeId: VMTypeNone}
 }

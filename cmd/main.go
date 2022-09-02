@@ -2,34 +2,66 @@ package main
 
 import (
 	"fmt"
-	"github.com/abiosoft/ishell/v2"
+	"github.com/peterh/liner"
 	"github.com/sealdice/dicescript"
-	"strings"
+	"os"
+	"path/filepath"
+)
+
+var (
+	historyFn = filepath.Join(os.TempDir(), ".dicescript_history")
 )
 
 func main() {
-	shell := ishell.New()
-	shell.Println("DiceScript Shell")
+	line := liner.NewLiner()
+	defer line.Close()
 
-	shell.AddCmd(&ishell.Cmd{
-		Name:    "run",
-		Aliases: []string{"r", "eval"},
-		Help:    "执行脚本",
-		Func: func(c *ishell.Context) {
+	line.SetCtrlCAborts(true)
+	line.SetCompleter(func(line string) (c []string) {
+		return
+	})
+
+	if f, err := os.Open(historyFn); err == nil {
+		line.ReadHistory(f)
+		f.Close()
+	}
+
+	fmt.Println("DiceScript Shell")
+	ccTimes := 0
+	for true {
+		if text, err := line.Prompt(">>> "); err == nil {
+			line.AppendHistory(text)
+
 			vm := dicescript.NewVM()
-			err := vm.Run(strings.Join(c.Args, " "))
+			err := vm.Run(text)
 
 			if err != nil {
-				c.Err(err)
+				fmt.Println(err)
 			} else {
 				rest := vm.RestInput
 				if rest != "" {
 					rest = fmt.Sprintf(" 剩余文本: %s", rest)
 				}
-				c.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
+				fmt.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
 			}
-		},
-	})
 
-	shell.Run()
+		} else if err == liner.ErrPromptAborted {
+			if ccTimes >= 1 {
+				fmt.Print("Interrupted")
+				break
+			} else {
+				ccTimes += 1
+				fmt.Println("Input Ctrl-c once more to exit")
+			}
+		} else {
+			fmt.Print("Error reading line: ", err)
+		}
+	}
+
+	if f, err := os.Create(historyFn); err != nil {
+		fmt.Println("Error writing history file: ", err)
+	} else {
+		_, _ = line.WriteHistory(f)
+		_ = f.Close()
+	}
 }

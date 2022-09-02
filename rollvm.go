@@ -21,65 +21,9 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
-
-func (e *Parser) checkStackOverflow() bool {
-	if e.Error != nil {
-		return true
-	}
-	if e.codeIndex >= len(e.Code) {
-		need := len(e.Code) * 2
-		if need <= 8192 {
-			newCode := make([]ByteCode, need)
-			copy(newCode, e.Code)
-			e.Code = newCode
-		} else {
-			e.Error = errors.New("E1:指令虚拟机栈溢出，请不要发送过长的指令")
-			return true
-		}
-	}
-	return false
-}
-
-func (e *Parser) WriteCode(T CodeType, value interface{}) {
-	if e.checkStackOverflow() {
-		return
-	}
-
-	c := &e.Code[e.codeIndex]
-	c.T = T
-	c.Value = value
-	e.codeIndex += 1
-}
-
-func (e *Parser) AddLeftValueMark() {
-	e.WriteCode(TypeLeftValueMark, nil)
-}
-
-func (e *Parser) LMark() {
-	e.WriteCode(TypeLeftValueMark, nil)
-}
-
-func (e *Parser) AddOperator(operator CodeType) {
-	e.WriteCode(operator, nil)
-}
-
-func (e *Parser) AddOp(operator CodeType) {
-	e.WriteCode(operator, nil)
-}
-
-func (e *Parser) PushIntNumber(value string) {
-	val, _ := strconv.ParseInt(value, 10, 64)
-	e.WriteCode(TypePushIntNumber, int64(val))
-}
-
-func (e *Parser) PushFloatNumber(value string) {
-	val, _ := strconv.ParseFloat(value, 64)
-	e.WriteCode(TypePushFloatNumber, float64(val))
-}
 
 func NewVM() *Context {
 	// 创建parser
@@ -109,7 +53,11 @@ func (ctx *Context) Run(value string) error {
 	}
 
 	// 获取结果
-	ctx.Ret = &p.Context.stack[0]
+	if ctx.top != 0 {
+		ctx.Ret = &ctx.stack[0]
+	} else {
+		ctx.Ret = VMValueNewNone()
+	}
 
 	// 给出VM解析完句子后的剩余文本
 	tks := p.Tokens()
@@ -281,110 +229,4 @@ func (e *Parser) Evaluate() {
 			stackPush(VMValueNewInt64(num))
 		}
 	}
-}
-
-func (code *ByteCode) CodeString() string {
-	switch code.T {
-	case TypePushIntNumber:
-		return "push " + strconv.FormatInt(code.Value.(int64), 10)
-	case TypePushFloatNumber:
-		return "push " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
-	case TypePushString:
-		return "push.str " + code.Value.(string)
-	case TypeAdd:
-		return "add"
-	case TypeNegation, TypeSubtract:
-		return "sub"
-	case TypeMultiply:
-		return "mul"
-	case TypeDivide:
-		return "div"
-	case TypeModulus:
-		return "mod"
-	case TypeExponentiation:
-		return "pow"
-
-	case TypeDiceInit:
-		return "dice.init"
-	case TypeDiceSetTimes:
-		return "dice.setTimes"
-	case TypeDiceSetKeepLowNum:
-		return "dice.setKeepLow"
-	case TypeDiceSetKeepHighNum:
-		return "dice.setKeepHigh"
-	case TypeDiceSetDropLowNum:
-		return "dice.setDropLow"
-	case TypeDiceSetDropHighNum:
-		return "dice.setDropHigh"
-	case TypeDice:
-		return "dice"
-
-	case TypeDicePenalty:
-		return "dice.penalty"
-	case TypeDiceBonus:
-		return "dice.bonus"
-	case TypeDiceSetK:
-		return "dice.setk"
-	case TypeDiceSetQ:
-		return "dice.setq"
-	case TypeDiceUnary:
-		return "dice1"
-	case TypeDiceFate:
-		return "dice.fate"
-	case TypeWodSetInit:
-		return "wod.init"
-	case TypeWodSetPool:
-		return "wod.pool"
-	case TypeWodSetPoints:
-		return "wod.points"
-	case TypeWodSetThreshold:
-		return "wod.threshold"
-	case TypeWodSetThresholdQ:
-		return "wod.thresholdQ"
-	case TypeDiceDC:
-		return "dice.dc"
-	case TypeDCSetInit:
-		return "dice.setInit"
-	case TypeDCSetPool:
-		return "dice.setPool"
-	case TypeDCSetPoints:
-		return "dice.setPoints"
-	case TypeDiceWod:
-		return "dice.wod"
-	case TypeLoadVarname:
-		return "ld.v " + code.Value.(string)
-	case TypeLoadFormatString:
-		return fmt.Sprintf("ld.fs %d, %s", code.Value, "code.ValueStr")
-	case TypeStore:
-		return "store"
-	case TypeHalt:
-		return "halt"
-	case TypeSwap:
-		return "swap"
-	case TypeLeftValueMark:
-		return "mark.left"
-	case TypeJmp:
-		return fmt.Sprintf("jmp %d", code.Value)
-	case TypeJe:
-		return fmt.Sprintf("je %d", code.Value)
-	case TypeJne:
-		return fmt.Sprintf("jne %d", code.Value)
-	case TypeCompLT:
-		return "comp.lt"
-	case TypeCompLE:
-		return "comp.le"
-	case TypeCompEQ:
-		return "comp.eq"
-	case TypeCompNE:
-		return "comp.ne"
-	case TypeCompGE:
-		return "comp.ge"
-	case TypeCompGT:
-		return "comp.gt"
-	case TypePop:
-		return "pop"
-	case TypeClearDetail:
-		return "reset"
-	}
-	return ""
 }
