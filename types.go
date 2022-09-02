@@ -54,6 +54,7 @@ type RollExtraFlags struct {
 	DisableLoadVarname bool  // 不允许加载变量，这是为了防止遇到 .r XXX 被当做属性读取，而不是“由于XXX，骰出了”
 	IgnoreDiv0         bool  // 当div0时暂不报错
 	DefaultDiceSideNum int64 // 默认骰子面数
+	PrintBytecode      bool  // 执行时打印字节码
 }
 
 type Context struct {

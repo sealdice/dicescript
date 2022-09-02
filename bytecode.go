@@ -18,8 +18,6 @@ const (
 	TypePushString
 	TypeNegation
 
-	TypeDiceUnary
-
 	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
 	TypeSubtract
 	TypeMultiply
@@ -60,7 +58,7 @@ const (
 	TypeDCSetInit
 	TypeDCSetPool   // 骰池
 	TypeDCSetPoints // 面数
-	TypeLoadVarname
+	TypeLoadName
 	TypeLoadFormatString
 	TypeStore
 	TypeHalt
@@ -71,6 +69,7 @@ const (
 	TypeClearDetail
 
 	TypePop
+	TypeNop
 
 	TypeJmp
 	TypeJe
@@ -80,14 +79,15 @@ const (
 func (code *ByteCode) CodeString() string {
 	switch code.T {
 	case TypePushIntNumber:
-		return "push " + strconv.FormatInt(code.Value.(int64), 10)
+		return "push.int " + strconv.FormatInt(code.Value.(int64), 10)
 	case TypePushFloatNumber:
-		return "push " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
+		return "push.flt " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
 	case TypePushString:
 		return "push.str " + code.Value.(string)
+
 	case TypeAdd:
 		return "add"
-	case TypeNegation, TypeSubtract:
+	case TypeSubtract:
 		return "sub"
 	case TypeMultiply:
 		return "mul"
@@ -97,6 +97,11 @@ func (code *ByteCode) CodeString() string {
 		return "mod"
 	case TypeExponentiation:
 		return "pow"
+
+	case TypeBitwiseAnd:
+		return "&"
+	case TypeBitwiseOr:
+		return "|"
 
 	case TypeDiceInit:
 		return "dice.init"
@@ -121,8 +126,6 @@ func (code *ByteCode) CodeString() string {
 		return "dice.setk"
 	case TypeDiceSetQ:
 		return "dice.setq"
-	case TypeDiceUnary:
-		return "dice1"
 	case TypeDiceFate:
 		return "dice.fate"
 	case TypeWodSetInit:
@@ -145,7 +148,7 @@ func (code *ByteCode) CodeString() string {
 		return "dice.setPoints"
 	case TypeDiceWod:
 		return "dice.wod"
-	case TypeLoadVarname:
+	case TypeLoadName:
 		return "ld.v " + code.Value.(string)
 	case TypeLoadFormatString:
 		return fmt.Sprintf("ld.fs %d, %s", code.Value, "code.ValueStr")
@@ -175,6 +178,8 @@ func (code *ByteCode) CodeString() string {
 		return "comp.ge"
 	case TypeCompGT:
 		return "comp.gt"
+	case TypeNop:
+		return "nop"
 	case TypePop:
 		return "pop"
 	case TypeClearDetail:

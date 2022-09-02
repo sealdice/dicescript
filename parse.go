@@ -50,6 +50,10 @@ func (e *Parser) AddOp(operator CodeType) {
 	e.WriteCode(operator, nil)
 }
 
+func (e *Parser) AddLoadName(value string) {
+	e.WriteCode(TypeLoadName, value)
+}
+
 func (e *Parser) PushIntNumber(value string) {
 	val, _ := strconv.ParseInt(value, 10, 64)
 	e.WriteCode(TypePushIntNumber, int64(val))

@@ -26,17 +26,18 @@ func main() {
 		f.Close()
 	}
 
-	fmt.Println("DiceScript Shell")
+	fmt.Println("DiceScript Shell v0.0.0")
 	ccTimes := 0
 	for true {
 		if text, err := line.Prompt(">>> "); err == nil {
 			line.AppendHistory(text)
 
 			vm := dicescript.NewVM()
+			vm.Flags.PrintBytecode = true
 			err := vm.Run(text)
 
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("错误: %s\n", err.Error())
 			} else {
 				rest := vm.RestInput
 				if rest != "" {
@@ -46,7 +47,7 @@ func main() {
 			}
 
 		} else if err == liner.ErrPromptAborted {
-			if ccTimes >= 1 {
+			if ccTimes >= 0 {
 				fmt.Print("Interrupted")
 				break
 			} else {

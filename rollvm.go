@@ -49,7 +49,7 @@ func (ctx *Context) Run(value string) error {
 	// 执行字节码
 	p.Evaluate()
 	if ctx.Error != nil {
-		return err
+		return ctx.Error
 	}
 
 	// 获取结果
@@ -61,12 +61,17 @@ func (ctx *Context) Run(value string) error {
 
 	// 给出VM解析完句子后的剩余文本
 	tks := p.Tokens()
-	// 注意，golang的string下标等同于[]byte下标，也就是说中文会被打断
-	// parser里有一个[]rune类型的，但问题是他句尾带了一个endsymbol
-	runeBuffer := []rune(value)
-	lastToken := tks[len(tks)-1]
-	ctx.RestInput = strings.TrimSpace(string(runeBuffer[lastToken.end:]))
-	ctx.Matched = strings.TrimSpace(string(runeBuffer[:lastToken.end]))
+	if len(tks) > 0 {
+		// 注意，golang的string下标等同于[]byte下标，也就是说中文会被打断
+		// parser里有一个[]rune类型的，但问题是他句尾带了一个endsymbol
+		runeBuffer := []rune(value)
+		lastToken := tks[len(tks)-1]
+		ctx.RestInput = strings.TrimSpace(string(runeBuffer[lastToken.end:]))
+		ctx.Matched = strings.TrimSpace(string(runeBuffer[:lastToken.end]))
+	} else {
+		ctx.RestInput = ""
+		ctx.Matched = ""
+	}
 
 	return err
 }
@@ -141,7 +146,9 @@ func (e *Parser) Evaluate() {
 		numOpCountAdd(1)
 		code := e.Code[opIndex]
 		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.codeIndex)
-		fmt.Printf("!!! %-20s %s %dms\n", code.CodeString(), cIndex, time.Now().UnixMilli()-startTime)
+		if ctx.Flags.PrintBytecode {
+			fmt.Printf("!!! %-20s %s %dms\n", code.CodeString(), cIndex, time.Now().UnixMilli()-startTime)
+		}
 
 		switch code.T {
 		case TypePushIntNumber:

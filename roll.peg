@@ -69,24 +69,26 @@ _diceMod <- (([kK] / 'kh') (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  
           / (([kK] / 'kh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) })
           / (([qQ] / 'kl') (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
           / (([qQ] / 'kl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
+          / ('dh' (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
           / (([dD] / 'dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest
           / (([dD] / 'dl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropLowNum) } )
-          / ('dh' (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest
 
-_dicePearMod <- ('优势' / 'ys') { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
-              / ('劣势' / 'ls') { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
+_dicePearMod <- '优势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
+              / '劣势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
 
 exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); p.LMark() } [dD] (number / sub)) _diceMod? { p.AddOp(TypeDice) } sp // 3d20
           / [dD] { p.AddOp(TypeDiceInit); p.LMark() } (number / sub) (_dicePearMod / _diceMod)? { p.AddOp(TypeDice) } sp  // d100
           / value
 
 // 右值
-value <- number
-       / identifier
+value <- float
+       / number
+       / identifier { p.AddLoadName(string(text)) }
        / sub
 
 // 数字
 number <- < [0-9]+ > sp { p.PushIntNumber(string(text)) }
+float <- < [0-9]* '.' [0-9]+ > sp { p.PushFloatNumber(string(text)) }
 
 // 变量名
 identifier <- < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
