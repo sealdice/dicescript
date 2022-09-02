@@ -127,7 +127,7 @@ func TestValueStore1(t *testing.T) {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
-	err = vm.Run("测试")
+	err = vm.Run("bbb")
 	if err == nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
@@ -212,4 +212,10 @@ func TestWriteCodeOverflow(t *testing.T) {
 	if !vm.parser.checkStackOverflow() {
 		t.Errorf("Failed")
 	}
+}
+
+func TestGetASM(t *testing.T) {
+	vm := NewVM()
+	vm.Run("1+1")
+	vm.GetAsmText()
 }

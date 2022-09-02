@@ -31,7 +31,8 @@ https://sealdice.github.io/dicescript/
 
 * 支持浮点数
 * 支持字符串
-* RollVM的测试覆盖率提升至94%
+* 支持变量
+* RollVM的测试覆盖率提升至95%
 * 能够编译到JS
 
 #### 2022.9.1

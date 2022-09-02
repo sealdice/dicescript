@@ -196,15 +196,15 @@ func (e *Parser) Evaluate() {
 			e.top++
 		case TypeLoadName:
 			name := code.Value.(string)
-			storeFunc := ctx.ValueLoadNameFunc
-			if storeFunc != nil {
-				val := storeFunc(name)
+			loadFunc := ctx.ValueLoadNameFunc
+			if loadFunc != nil {
+				val := loadFunc(name)
 				if val == nil {
 					val = VMValueNewNone()
 				}
 				stackPush(val)
 			} else {
-				ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
+				ctx.Error = errors.New("未设置 ValueLoadNameFunc，无法获取变量")
 				return
 			}
 
