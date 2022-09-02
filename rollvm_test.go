@@ -6,7 +6,8 @@ func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
 	vm := NewVM()
 	err := vm.Run(expr)
 	if err != nil {
-		t.Errorf("VM Error")
+		t.Errorf("VM Error: %s", err.Error())
+		return vm
 	}
 	if !valueEqual(vm.Ret, ret) {
 		t.Errorf("VM Error")
@@ -20,9 +21,20 @@ func TestSimpleRun(t *testing.T) {
 	simpleExecute(t, ".5+1", nf(1.5))
 }
 
+func TestStr(t *testing.T) {
+	simpleExecute(t, "'123'", ns("123"))
+	simpleExecute(t, "'12' + '3' ", ns("123"))
+	simpleExecute(t, "`12{3}` ", ns("123"))
+	simpleExecute(t, "`12{'3'}` ", ns("123"))
+	simpleExecute(t, "`12{% 3 %}` ", ns("123"))
+	simpleExecute(t, `"123"`, ns("123"))
+	simpleExecute(t, "\x1e"+"12{% 3 %}"+"\x1e", ns("123"))
+}
+
 func TestDice(t *testing.T) {
 	// 语法可用性测试(并不做验算)
 	simpleExecute(t, "4d1", ni(4))
+	simpleExecute(t, "4D1", ni(4))
 
 	simpleExecute(t, "4d1k", ni(1))
 	simpleExecute(t, "4d1k1", ni(1))
@@ -41,6 +53,20 @@ func TestDice(t *testing.T) {
 
 	simpleExecute(t, "4d1dh", ni(3))
 	simpleExecute(t, "4d1dh1", ni(3))
+
+	// min max
+	simpleExecute(t, "d20min20", ni(20))
+	simpleExecute(t, "d20min30", ni(30)) // 与fvtt行为一致
+	simpleExecute(t, "d20max1", ni(1))
+	simpleExecute(t, "d20min30max1", ni(30)) // 同fvtt
+	simpleExecute(t, "4d20k1min20", ni(20))
+
+	// 算力上限
+	vm := NewVM()
+	err := vm.Run("30001d20")
+	if err == nil {
+		t.Errorf("VM Error")
+	}
 
 	// 这种情况报个错如何？
 	simpleExecute(t, "4d1k5", ni(4))

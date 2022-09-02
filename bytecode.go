@@ -157,7 +157,7 @@ func (code *ByteCode) CodeString() string {
 	case TypeLoadName:
 		return "ld.v " + code.Value.(string)
 	case TypeLoadFormatString:
-		return fmt.Sprintf("ld.fs %d, %s", code.Value, "code.ValueStr")
+		return fmt.Sprintf("ld.fs %d", code.Value)
 	case TypeStore:
 		return "store"
 	case TypeHalt:

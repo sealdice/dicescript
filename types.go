@@ -60,7 +60,7 @@ type RollExtraFlags struct {
 type Context struct {
 	parser *Parser
 
-	Code      []ByteCode
+	code      []ByteCode
 	codeIndex int
 
 	stack []VMValue
@@ -70,7 +70,7 @@ type Context struct {
 	CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
 	jmpStack     []int   // 跳转栈
-	counterStack []int64 // f-string 嵌套计数，我记这个做什么？
+	counterStack []int64 // f-string 嵌套计数，在解析时中起作用
 
 	Flags RollExtraFlags // 标记
 	Error error          // 报错信息
@@ -81,7 +81,7 @@ type Context struct {
 }
 
 func (e *Context) Init(stackLength int) {
-	e.Code = make([]ByteCode, stackLength)
+	e.code = make([]ByteCode, stackLength)
 	e.jmpStack = []int{}
 	e.counterStack = []int64{}
 }

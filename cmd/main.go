@@ -6,6 +6,7 @@ import (
 	"github.com/sealdice/dicescript"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -30,6 +31,10 @@ func main() {
 	ccTimes := 0
 	for true {
 		if text, err := line.Prompt(">>> "); err == nil {
+			if strings.TrimSpace(text) == "" {
+				continue
+			}
+
 			line.AppendHistory(text)
 
 			vm := dicescript.NewVM()

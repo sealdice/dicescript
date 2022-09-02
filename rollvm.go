@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -100,6 +101,7 @@ func (e *Parser) Evaluate() {
 	numOpCountAdd := func(count int64) bool {
 		e.NumOpCount += count
 		if e.NumOpCount > 30000 {
+			ctx.Error = errors.New("允许算力上限")
 			return true
 		}
 		return false
@@ -148,7 +150,7 @@ func (e *Parser) Evaluate() {
 	startTime := time.Now().UnixMilli()
 	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
 		numOpCountAdd(1)
-		code := e.Code[opIndex]
+		code := e.code[opIndex]
 		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.codeIndex)
 		if ctx.Flags.PrintBytecode {
 			fmt.Printf("!!! %-20s %s %dms\n", code.CodeString(), cIndex, time.Now().UnixMilli()-startTime)
@@ -163,6 +165,51 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeFloat64
 			stack[e.top].Value = code.Value
 			e.top++
+		case TypePushString:
+			s := code.Value.(string)
+			unquote, err := strconv.Unquote(`"` + strings.ReplaceAll(s, `"`, `\"`) + `"`)
+			if err != nil {
+				unquote = s
+			}
+			stack[e.top].TypeId = VMTypeString
+			stack[e.top].Value = unquote
+			e.top++
+			continue
+		case TypeLoadFormatString:
+			num := int(code.Value.(int64))
+
+			outStr := ""
+			for index := 0; index < num; index++ {
+				var val VMValue
+				if e.top-num+index < 0 {
+					e.Error = errors.New("E3:无效的表达式")
+					return
+				} else {
+					val = stack[e.top-num+index]
+				}
+				outStr += val.ToString()
+			}
+
+			e.top -= num
+			stack[e.top].TypeId = VMTypeString
+			stack[e.top].Value = outStr
+			e.top++
+			continue
+		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
+			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
+			// 所有二元运算符
+			v1, v2 := stackPop2()
+			opFunc := binOperator[code.T-TypeAdd]
+			ret := opFunc(v1, ctx, v2)
+			if ret == nil {
+				// TODO: 整理所有错误类型
+				opErr := fmt.Sprintf("这两种类型无法使用 %s 算符连接: %s, %s", code.CodeString(), v1.GetTypeName(), v2.GetTypeName())
+				ctx.Error = errors.New(opErr)
+			}
+			if ctx.Error != nil {
+				break
+			}
+			stackPush(ret)
 		case TypeDiceInit:
 			diceInit()
 		case TypeDiceSetTimes:
@@ -192,26 +239,16 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 4
 			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
-		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
-			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
-			// 所有二元运算符
-			v1, v2 := stackPop2()
-			opFunc := binOperator[code.T-TypeAdd]
-			ret := opFunc(v1, ctx, v2)
-			if ret == nil {
-				// TODO: 整理所有错误类型
-				opErr := fmt.Sprintf("这两种类型无法使用 %s 算符连接: %s, %s", code.CodeString(), v1.GetTypeName(), v2.GetTypeName())
-				ctx.Error = errors.New(opErr)
-			}
-			if ctx.Error != nil {
-				break
-			}
-			stackPush(ret)
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
 			var nums []int64
 			val := stackPop()
 			bInt, _ := val.ReadInt64()
+
+			numOpCountAdd(diceState.times)
+			if ctx.Error != nil {
+				break
+			}
 
 			for i := int64(0); i < diceState.times; i += 1 {
 				oneDice := DiceRoll64(bInt)
