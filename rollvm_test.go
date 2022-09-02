@@ -10,7 +10,7 @@ func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
 		return vm
 	}
 	if !valueEqual(vm.Ret, ret) {
-		t.Errorf("VM Error")
+		t.Errorf("not equal: %s %s", ret.ToString(), vm.Ret.ToString())
 	}
 	return vm
 }
@@ -29,6 +29,41 @@ func TestStr(t *testing.T) {
 	simpleExecute(t, "`12{% 3 %}` ", ns("123"))
 	simpleExecute(t, `"123"`, ns("123"))
 	simpleExecute(t, "\x1e"+"12{% 3 %}"+"\x1e", ns("123"))
+
+	simpleExecute(t, `"12\n3"`, ns("12\n3"))
+	simpleExecute(t, `"12\r3"`, ns("12\r3"))
+	simpleExecute(t, `"12\f3"`, ns("12\f3"))
+	simpleExecute(t, `"12\t3"`, ns("12\t3"))
+	simpleExecute(t, `"12\\3"`, ns("12\\3"))
+
+	simpleExecute(t, `'12\n3'`, ns("12\n3"))
+	simpleExecute(t, `'12\r3'`, ns("12\r3"))
+	simpleExecute(t, `'12\f3'`, ns("12\f3"))
+	simpleExecute(t, `'12\t3'`, ns("12\t3"))
+	simpleExecute(t, `'12\\3'`, ns("12\\3"))
+
+	simpleExecute(t, "\x1e"+`12\n3`+"\x1e", ns("12\n3"))
+	simpleExecute(t, "\x1e"+`12\r3`+"\x1e", ns("12\r3"))
+	simpleExecute(t, "\x1e"+`12\f3`+"\x1e", ns("12\f3"))
+	simpleExecute(t, "\x1e"+`12\t3`+"\x1e", ns("12\t3"))
+	simpleExecute(t, "\x1e"+`12\\3`+"\x1e", ns("12\\3"))
+
+	simpleExecute(t, "`"+`12\n3`+"`", ns("12\n3"))
+	simpleExecute(t, "`"+`12\r3`+"`", ns("12\r3"))
+	simpleExecute(t, "`"+`12\f3`+"`", ns("12\f3"))
+	simpleExecute(t, "`"+`12\t3`+"`", ns("12\t3"))
+	simpleExecute(t, "`"+`12\\3`+"`", ns("12\\3"))
+
+	// TODO: FIX
+	//simpleExecute(t, `"12\"3"`, ns(`12"3`))
+}
+
+func TestEmptyInput(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("")
+	if err == nil {
+		t.Errorf("VM Error")
+	}
 }
 
 func TestDice(t *testing.T) {
@@ -60,6 +95,10 @@ func TestDice(t *testing.T) {
 	simpleExecute(t, "d20max1", ni(1))
 	simpleExecute(t, "d20min30max1", ni(30)) // 同fvtt
 	simpleExecute(t, "4d20k1min20", ni(20))
+
+	// 优势
+	simpleExecute(t, "d1优势", ni(1))
+	simpleExecute(t, "d1劣势", ni(1))
 
 	// 算力上限
 	vm := NewVM()

@@ -34,16 +34,8 @@ func (e *Parser) WriteCode(T CodeType, value interface{}) {
 	e.codeIndex += 1
 }
 
-func (e *Parser) AddLeftValueMark() {
-	e.WriteCode(TypeLeftValueMark, nil)
-}
-
 func (e *Parser) LMark() {
 	e.WriteCode(TypeLeftValueMark, nil)
-}
-
-func (e *Parser) AddOperator(operator CodeType) {
-	e.WriteCode(operator, nil)
 }
 
 func (e *Parser) AddOp(operator CodeType) {
