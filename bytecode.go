@@ -60,9 +60,9 @@ const (
 	TypeDCSetInit
 	TypeDCSetPool   // 骰池
 	TypeDCSetPoints // 面数
-	TypeLoadName
 	TypeLoadFormatString
-	TypeStore
+	TypeLoadName
+	TypeStoreName
 	TypeHalt
 	TypeSwap
 	TypeLeftValueMark
@@ -158,8 +158,8 @@ func (code *ByteCode) CodeString() string {
 		return "ld.v " + code.Value.(string)
 	case TypeLoadFormatString:
 		return fmt.Sprintf("ld.fs %d", code.Value)
-	case TypeStore:
-		return "store"
+	case TypeStoreName:
+		return fmt.Sprintf("store %s", code.Value)
 	case TypeHalt:
 		return "halt"
 	case TypeSwap:

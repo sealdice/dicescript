@@ -15,11 +15,16 @@
 package dicescript
 
 type Parser Peg {
+    ParserData
     Context
 }
 
 // 出口
-stmtRoot <- exprBitwise { p.AddOp(TypeHalt) }
+stmtRoot <- stmtBase { p.AddOp(TypeHalt) }
+
+stmtBase <- stmtAssign / exprBitwise
+
+stmtAssign <- identifier { p.NamePush(string(text)) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
 
 exprRoot <- exprBitwise
 
@@ -69,7 +74,8 @@ _diceMod <- (([kK] / 'kh') (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  
           / (([kK] / 'kh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) })
           / (([qQ] / 'kl') (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
           / (([qQ] / 'kl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
-          / ('dh' (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
+          / (('dh') (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
+          / (('dh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropHighNum) } )
           / (('dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest, 这里故意去掉了3d20d1 的支持，需要写成3d20dl1
           / (('dl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropLowNum) } )
 

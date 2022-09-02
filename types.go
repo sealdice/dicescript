@@ -66,11 +66,10 @@ type Context struct {
 	stack []VMValue
 	top   int
 
-	NumOpCount       int64  // 算力计数
-	CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
+	NumOpCount int64 // 算力计数
+	//CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
-	jmpStack     []int   // 跳转栈
-	counterStack []int64 // f-string 嵌套计数，在解析时中起作用
+	jmpStack []int // 跳转栈
 
 	Flags RollExtraFlags // 标记
 	Error error          // 报错信息
@@ -78,12 +77,14 @@ type Context struct {
 	Ret       *VMValue // 返回值
 	RestInput string   // 剩余字符串
 	Matched   string   // 匹配的字符串
+
+	ValueStoreNameFunc func(name string, v *VMValue)
+	ValueLoadNameFunc  func(name string) *VMValue
 }
 
 func (e *Context) Init(stackLength int) {
 	e.code = make([]ByteCode, stackLength)
 	e.jmpStack = []int{}
-	e.counterStack = []int64{}
 }
 
 type VMValue struct {

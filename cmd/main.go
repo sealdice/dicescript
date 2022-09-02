@@ -27,6 +27,8 @@ func main() {
 		f.Close()
 	}
 
+	attrs := map[string]*dicescript.VMValue{}
+
 	fmt.Println("DiceScript Shell v0.0.0")
 	ccTimes := 0
 	for true {
@@ -34,13 +36,21 @@ func main() {
 			if strings.TrimSpace(text) == "" {
 				continue
 			}
-
 			line.AppendHistory(text)
 
 			vm := dicescript.NewVM()
 			vm.Flags.PrintBytecode = true
-			err := vm.Run(text)
+			vm.ValueStoreNameFunc = func(name string, v *dicescript.VMValue) {
+				attrs[name] = v
+			}
+			vm.ValueLoadNameFunc = func(name string) *dicescript.VMValue {
+				if val, ok := attrs[name]; ok {
+					return val
+				}
+				return nil
+			}
 
+			err := vm.Run(text)
 			if err != nil {
 				fmt.Printf("错误: %s\n", err.Error())
 			} else {

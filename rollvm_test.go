@@ -115,7 +115,51 @@ func TestUnsupportedOperandType(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("2 % 3.1")
 	if err == nil {
-		t.Errorf("VM Error")
+		t.Errorf("VM Error: %s", err.Error())
+	}
+}
+
+func TestValueStore1(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("a=1")
+	if err == nil {
+		// 未设置 ValueStoreNameFunc，无法储存变量
+		t.Errorf("VM Error: %s", err.Error())
+	}
+
+	err = vm.Run("测试")
+	if err == nil {
+		t.Errorf("VM Error: %s", err.Error())
+	}
+}
+
+func TestValueStore(t *testing.T) {
+	vm := NewVM()
+	attrs := map[string]*VMValue{}
+
+	vm.ValueStoreNameFunc = func(name string, v *VMValue) {
+		attrs[name] = v
+	}
+	vm.ValueLoadNameFunc = func(name string) *VMValue {
+		if val, ok := attrs[name]; ok {
+			return val
+		}
+		return nil
+	}
+
+	err := vm.Run("测试=1")
+	if err != nil {
+		t.Errorf("VM Error: %s", err.Error())
+	}
+
+	err = vm.Run("测试   =   1")
+	if err != nil {
+		t.Errorf("VM Error: %s", err.Error())
+	}
+
+	err = vm.Run("测试")
+	if err != nil {
+		t.Errorf("VM Error: %s", err.Error())
 	}
 }
 
@@ -142,6 +186,15 @@ func TestBytecodeToString(t *testing.T) {
 		{TypeBitwiseAnd, nil},
 		{TypeBitwiseOr, nil},
 		{TypeNop, nil},
+
+		{TypeDiceInit, nil},
+		{TypeDiceSetTimes, nil},
+		{TypeDiceSetKeepLowNum, nil},
+		{TypeDiceSetKeepHighNum, nil},
+		{TypeDiceSetDropLowNum, nil},
+		{TypeDiceSetDropHighNum, nil},
+		{TypeDiceSetMin, nil},
+		{TypeDiceSetMax, nil},
 	}
 
 	for _, i := range ops {

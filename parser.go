@@ -5,6 +5,16 @@ import (
 	"strconv"
 )
 
+type ParserData struct {
+	counterStack []int64  // f-string 嵌套计数，在解析时中起作用
+	varnameStack []string // 另一个解析用栈
+}
+
+func (pd *ParserData) init() {
+	pd.counterStack = []int64{}
+	pd.varnameStack = []string{}
+}
+
 func (e *Parser) checkStackOverflow() bool {
 	if e.Error != nil {
 		return true
@@ -63,6 +73,21 @@ func (e *Parser) AddFormatString(value string, num int64) {
 func (e *Parser) PushFloatNumber(value string) {
 	val, _ := strconv.ParseFloat(value, 64)
 	e.WriteCode(TypePushFloatNumber, float64(val))
+}
+
+func (e *Parser) AddStore(text string) {
+	e.WriteCode(TypeStoreName, text)
+}
+
+func (e *Parser) NamePush(test string) {
+	e.varnameStack = append(e.varnameStack, test)
+}
+
+func (e *Parser) NamePop() string {
+	last := len(e.varnameStack) - 1
+	val := e.varnameStack[last]
+	e.varnameStack = e.varnameStack[:last]
+	return val
 }
 
 func (e *Parser) CounterPush() {

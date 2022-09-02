@@ -29,6 +29,7 @@ import (
 func NewVM() *Context {
 	// 创建parser
 	p := &Parser{}
+	p.ParserData.init()
 	// 初始化指令栈，默认指令长度512条
 	p.Context.Init(512)
 	p.parser = p
@@ -174,7 +175,6 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = unquote
 			e.top++
-			continue
 		case TypeLoadFormatString:
 			num := int(code.Value.(int64))
 
@@ -194,7 +194,30 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = outStr
 			e.top++
-			continue
+		case TypeLoadName:
+			name := code.Value.(string)
+			storeFunc := ctx.ValueLoadNameFunc
+			if storeFunc != nil {
+				val := storeFunc(name)
+				if val == nil {
+					val = VMValueNewNone()
+				}
+				stackPush(val)
+			} else {
+				ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
+				return
+			}
+
+		case TypeStoreName:
+			v := stackPop()
+			name := code.Value.(string)
+			storeFunc := ctx.ValueStoreNameFunc
+			if storeFunc != nil {
+				storeFunc(name, v)
+			} else {
+				ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
+				return
+			}
 		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
 			// 所有二元运算符

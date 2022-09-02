@@ -10,12 +10,15 @@ Simple script language for TRPG dice engine.
 - [x] 骰点运算 流行: d20, 3d20, (4+5)d(20), 2d20k1, 2d20q1 
 - [x] 骰点运算 - fvtt语法: 2d20kl, 2d20kh, 2d20dl, 2d20dh, d20min10, d20max10
 - [ ] 骰点运算 - 自定义算符
+- [ ] 骰点运算 - Fate / WOD / Double Cross
 - [ ] 高级类型 array
 - [ ] 高级类型 computed
 - [ ] 逻辑文法 if ... else .. / for
 - [ ] 函数支持
-- [ ] 变量支持
-- [ ] 测试覆盖率 61.5% / 90%
+- [x] 变量支持
+- [ ] 序列化和反序列化
+- [ ] 计算过程显示
+- [ ] 测试覆盖率 64% / 90%
 
 测试页面:
 
