@@ -111,6 +111,8 @@ func (e *Parser) Evaluate() {
 		isKeepLH int64 // 为1对应取低个数，为2对应取高个数
 		lowNum   int64
 		highNum  int64
+		min      *int64
+		max      *int64
 	}
 
 	diceInit := func() {
@@ -120,6 +122,8 @@ func (e *Parser) Evaluate() {
 			isKeepLH int64 // 为1对应取低个数，为2对应取高个数
 			lowNum   int64
 			highNum  int64
+			min      *int64
+			max      *int64
 		}{
 			times: 1,
 		})
@@ -176,6 +180,14 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 3
 			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt64()
+		case TypeDiceSetMin:
+			v := stackPop()
+			i, _ := v.ReadInt64()
+			diceStates[len(diceStates)-1].min = &i
+		case TypeDiceSetMax:
+			v := stackPop()
+			i, _ := v.ReadInt64()
+			diceStates[len(diceStates)-1].max = &i
 		case TypeDiceSetDropHighNum:
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 4
@@ -202,11 +214,18 @@ func (e *Parser) Evaluate() {
 			bInt, _ := val.ReadInt64()
 
 			for i := int64(0); i < diceState.times; i += 1 {
-				if e.Flags.DiceMaxMode {
-					nums = append(nums, bInt)
-				} else {
-					nums = append(nums, DiceRoll64(bInt))
+				oneDice := DiceRoll64(bInt)
+				if diceState.max != nil {
+					if oneDice > *diceState.max {
+						oneDice = *diceState.max
+					}
 				}
+				if diceState.min != nil {
+					if oneDice < *diceState.min {
+						oneDice = *diceState.min
+					}
+				}
+				nums = append(nums, oneDice)
 			}
 
 			pickNum := diceState.times

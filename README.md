@@ -8,6 +8,7 @@ Simple script language for TRPG dice engine.
 
 * 支持浮点数
 * RollVM的测试覆盖率提升至94%
+* 能够编译到JS
 
 #### 2022.9.1
 
@@ -63,7 +64,7 @@ DiceScript将使用和RollVM相同的技术栈，但会有更好的接口设计�
 
 #### Number数字类型 
 
-初步定为Float(之前实际上是int)，因为trpg的特殊性(多数时候向下取整)，还需再斟酌
+一个 Int 一个 Float
 
 兼任Bool类型
 

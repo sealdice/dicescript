@@ -43,6 +43,8 @@ const (
 	TypeDiceSetKeepHighNum
 	TypeDiceSetDropLowNum
 	TypeDiceSetDropHighNum
+	TypeDiceSetMin
+	TypeDiceSetMax
 	TypeDice
 
 	TypeDicePenalty
@@ -115,6 +117,10 @@ func (code *ByteCode) CodeString() string {
 		return "dice.setDropLow"
 	case TypeDiceSetDropHighNum:
 		return "dice.setDropHigh"
+	case TypeDiceSetMin:
+		return "dice.setMin"
+	case TypeDiceSetMax:
+		return "dice.setMax"
 	case TypeDice:
 		return "dice"
 
