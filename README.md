@@ -1,6 +1,26 @@
 # DiceScript
 Simple script language for TRPG dice engine.
 
+进度:
+
+- [x] 基础类型 int float string
+- [ ] 一元算符 + -
+- [x] 二元算符 +-*/% >,>=,==,!=,<,<=
+- [ ] 三元算符 ? :
+- [x] 骰点运算 流行: d20, 3d20, (4+5)d(20), 2d20k1, 2d20q1 
+- [x] 骰点运算 - fvtt语法: 2d20kl, 2d20kh, 2d20dl, 2d20dh, d20min10, d20max10
+- [ ] 骰点运算 - 自定义算符
+- [ ] 高级类型 array
+- [ ] 高级类型 computed
+- [ ] 逻辑文法 if ... else .. / for
+- [ ] 函数支持
+- [ ] 变量支持
+- [ ] 测试覆盖率 61.5% / 90%
+
+测试页面:
+
+https://sealdice.github.io/dicescript/
+
 
 ## 更新记录
 

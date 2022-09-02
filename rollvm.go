@@ -293,3 +293,21 @@ func (e *Parser) Evaluate() {
 		}
 	}
 }
+
+func (e *Context) GetAsmText() string {
+	ret := ""
+	ret += "=== VM Code ===\n"
+	for index, i := range e.code {
+		if index >= e.codeIndex {
+			break
+		}
+		s := i.CodeString()
+		if s != "" {
+			ret += s + "\n"
+		} else {
+			ret += "@raw: " + strconv.FormatInt(int64(i.T), 10) + "\n"
+		}
+	}
+	ret += "=== VM Code End===\n"
+	return ret
+}

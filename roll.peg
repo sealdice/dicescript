@@ -70,8 +70,8 @@ _diceMod <- (([kK] / 'kh') (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  
           / (([qQ] / 'kl') (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
           / (([qQ] / 'kl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
           / ('dh' (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
-          / (([dD] / 'dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest
-          / (([dD] / 'dl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropLowNum) } )
+          / (('dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest, 这里故意去掉了3d20d1 的支持，需要写成3d20dl1
+          / (('dl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropLowNum) } )
 
 _diceMod2 <- ('min' (number / sub) { p.AddOp(TypeDiceSetMin) })?
              ('max' (number / sub) { p.AddOp(TypeDiceSetMax) })?
