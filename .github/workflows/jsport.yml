@@ -19,7 +19,13 @@ jobs:
         go-version: 1.18
 
     - name: Install peg
+      run: go get -u github.com/pointlander/peg
+
+    - name: Install peg
       run: go install github.com/pointlander/peg
+
+    - name: Install gopherjs
+      run: go get -u github.com/gopherjs/gopherjs@v1.18.0-beta1+go1.18.5
 
     - name: Install gopherjs
       run: go install github.com/gopherjs/gopherjs@v1.18.0-beta1+go1.18.5
