@@ -24,3 +24,5 @@ data/
 temp/
 
 dist/
+jsport/dicescript.js
+jsport/dicescript.js.map

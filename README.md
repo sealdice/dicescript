@@ -2,8 +2,12 @@
 Simple script language for TRPG dice engine.
 
 
-
 ## 更新记录
+
+#### 2022.9.2
+
+* 支持浮点数
+* RollVM的测试覆盖率提升至94%
 
 #### 2022.9.1
 
