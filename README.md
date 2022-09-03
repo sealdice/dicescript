@@ -17,9 +17,10 @@ Simple script language for TRPG dice engine.
 进度:
 
 - [x] 基础类型 int float string
+- [x] 基础类型 undefined null
 - [ ] 一元算符 + -
 - [x] 二元算符 +-*/% >,>=,==,!=,<,<=
-- [ ] 三元算符 ? :
+- [x] 三元算符 ? :
 - [x] 骰点运算 流行: d20, 3d20, (4+5)d(20), 2d20k1, 2d20q1 
 - [x] 骰点运算 - fvtt语法: 2d20kl, 2d20kh, 2d20dl, 2d20dh, d20min10, d20max10
 - [ ] 骰点运算 - 自定义算符
@@ -32,12 +33,69 @@ Simple script language for TRPG dice engine.
 - [x] 变量支持
 - [ ] 序列化和反序列化
 - [ ] 计算过程显示
-- [ ] 测试覆盖率 68% / 90%
+- [ ] 报错信息优化
+- [ ] 测试覆盖率 70% / 90%
 
 测试页面:
 
 https://sealdice.github.io/dicescript/
 
+## 如何使用
+
+Golang:
+```go
+package main
+
+import (
+	"fmt"
+	dice "github.com/sealdice/dicescript"
+)
+
+func main() {
+	vm := dice.NewVM()
+
+	// 如果需要使用变量，那么接入一下ValueStoreNameFunc和ValueLoadNameFunc
+	// 不需要就跳过
+    attrs := map[string]*dice.VMValue{}
+
+	vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
+		attrs[name] = v
+	}
+	vm.ValueLoadNameFunc = func(name string) *dice.VMValue {
+		if val, ok := attrs[name]; ok {
+			return val
+		}
+		return nil
+	}
+
+	// 可以运算了
+	err := vm.Run(`d20`)
+
+	// 打印结果
+	if err != nil {
+		fmt.Printf("错误: %s\n", err.Error())
+	} else {
+		fmt.Printf("结果: %s\n", vm.Ret.ToString())
+	}
+}
+```
+
+JavaScript // 还会再调整API
+```javascript
+function roll(text) {
+    let ctx = dice.newVM();
+    try {
+        ctx.Run(text)
+        if (ctx.Error) {
+            console.log(`错误: ${ctx.Error.Error()}`)
+        } else {
+            console.log(`结果: ${ctx.Ret.ToString()}`)
+        }
+    } catch (e) {
+        this.items.push(`错误: 未知错误`)
+    }
+}
+```
 
 ## 更新记录
 
@@ -45,7 +103,8 @@ https://sealdice.github.io/dicescript/
 
 * if else 语句
 * undefined 类型
-
+* a == 1 ? 1 : 2 三目运算符
+* a == 1 ? 'A', a == 2 ? 'B', a == 3 : 'C'
 
 #### 2022.9.2
 

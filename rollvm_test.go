@@ -205,6 +205,47 @@ func TestIf(t *testing.T) {
 	assert.True(t, attrs["a"] == nil)
 }
 
+func TestTernary(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("1 == 1 ? 2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("1 == 1 ? 2 : 3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("1 != 1 ? 2 : 3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm, attrs := newVMWithStore(nil)
+	attrs["a"] = VMValueNewInt64(1)
+	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B'")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("A")))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	attrs["a"] = VMValueNewInt64(2)
+	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("B")))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	attrs["a"] = VMValueNewInt64(3)
+	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("C")))
+	}
+}
+
 func TestBytecodeToString(t *testing.T) {
 	ops := []ByteCode{
 		{TypePushIntNumber, int64(1)},
@@ -237,6 +278,10 @@ func TestBytecodeToString(t *testing.T) {
 		{TypeDiceSetDropHighNum, nil},
 		{TypeDiceSetMin, nil},
 		{TypeDiceSetMax, nil},
+
+		{TypeJmp, int64(0)},
+		{TypeJe, int64(0)},
+		{TypeJne, int64(0)},
 	}
 
 	for _, i := range ops {

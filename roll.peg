@@ -26,7 +26,7 @@ stmtRoot <- (stmtLines / ';' sp)+
 stmtLines <- stmtWithBlock
            / stmtWithSemicolon (';' sp stmtWithSemicolon)*
 
-stmtWithSemicolon <- stmtAssign / exprBitwise
+stmtWithSemicolon <- stmtAssign / exprRoot
 
 stmtWithBlock <- stmtIf
 
@@ -47,7 +47,27 @@ stmtIf <- 'if' sp exprRoot { p.AddOp(TypeJne); p.CodePushOffset() } block { p.Ad
 
 stmtAssign <- identifier { p.NamePush(string(text)) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
 
-exprRoot <- exprBitwise
+exprRoot <- exprTernary
+
+
+// 三元算符 ? :
+exprValueIfExists <- exprBitwise '?' sp { p.AddOp(TypeJne); p.CodePushOffset() } exprBitwise { p.AddOp(TypeJmp); p.CodePopSetOffset(); p.CodePushOffset(); } // 这里的Pop对应的是jne，所有jmp将攒到最后
+exprTernary <- exprBitwise '?' sp { p.AddOp(TypeJne); p.CodePushOffset() } exprBitwise ':' sp { p.AddOp(TypeJmp); p.CodePopSetOffset(); p.CodePushOffset() } exprBitwise { p.CodePopSetOffset() }
+        / exprValueIfExists { p.CounterPush() } ( ',' sp exprValueIfExists {p.CounterAdd(1)} )*  { p.PushStr(""); limit:=p.CounterPop()+1; for i:=int64(0); i<limit; i++ { p.CodePopSetOffset() } }
+        / exprBitwise
+
+// switch { case 1: ..., case 2: ... }
+// push cond1
+// jne 2
+// push "ret1"
+// jmp 5
+// push cond2
+// jne 2
+// push "ret2"
+// jmp 1
+// push 0 // 默认
+// push "ret3"
+
 
 // 位运算
 exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseOr) }

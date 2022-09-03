@@ -8,11 +8,13 @@ import (
 type ParserData struct {
 	counterStack []int64  // f-string 嵌套计数，在解析时中起作用
 	varnameStack []string // 另一个解析用栈
+	jmpStack     []int64
 }
 
 func (pd *ParserData) init() {
 	pd.counterStack = []int64{}
 	pd.varnameStack = []string{}
+	pd.jmpStack = []int64{} // 不复用counterStack的原因是在 ?: 算符中两个都有用到
 }
 
 func (e *Parser) checkStackOverflow() bool {
@@ -49,7 +51,11 @@ func (e *Parser) LMark() {
 }
 
 func (e *Parser) AddOp(operator CodeType) {
-	e.WriteCode(operator, nil)
+	var val interface{} = nil
+	if operator == TypeJne || operator == TypeJmp {
+		val = int64(0)
+	}
+	e.WriteCode(operator, val)
 }
 
 func (e *Parser) AddLoadName(value string) {
@@ -91,13 +97,13 @@ func (e *Parser) NamePop() string {
 }
 
 func (e *Parser) CodePushOffset() {
-	e.counterStack = append(e.counterStack, int64(e.codeIndex)-1)
+	e.jmpStack = append(e.jmpStack, int64(e.codeIndex)-1)
 }
 
 func (e *Parser) CodePopSetOffset() {
-	last := len(e.counterStack) - 1
-	codeIndex := e.counterStack[last]
-	e.counterStack = e.counterStack[:last]
+	last := len(e.jmpStack) - 1
+	codeIndex := e.jmpStack[last]
+	e.jmpStack = e.jmpStack[:last]
 	e.code[codeIndex].Value = int64(int64(e.codeIndex) - codeIndex - 1)
 	//fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
 }

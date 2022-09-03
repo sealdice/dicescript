@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/peterh/liner"
-	"github.com/sealdice/dicescript"
+	dice "github.com/sealdice/dicescript"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,7 +27,7 @@ func main() {
 		f.Close()
 	}
 
-	attrs := map[string]*dicescript.VMValue{}
+	attrs := map[string]*dice.VMValue{}
 
 	fmt.Println("DiceScript Shell v0.0.0")
 	ccTimes := 0
@@ -38,12 +38,12 @@ func main() {
 			}
 			line.AppendHistory(text)
 
-			vm := dicescript.NewVM()
+			vm := dice.NewVM()
 			vm.Flags.PrintBytecode = true
-			vm.ValueStoreNameFunc = func(name string, v *dicescript.VMValue) {
+			vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
 				attrs[name] = v
 			}
-			vm.ValueLoadNameFunc = func(name string) *dicescript.VMValue {
+			vm.ValueLoadNameFunc = func(name string) *dice.VMValue {
 				if val, ok := attrs[name]; ok {
 					return val
 				}
