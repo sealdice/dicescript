@@ -13,6 +13,7 @@ Simple script language for TRPG dice engine.
 - 稳定可靠，极高的测试覆盖率
 - 免费，并可商用
 - 支持JavaScript
+- 海豹TRPG骰点核心的第二代解释器
 
 进度:
 
@@ -25,8 +26,8 @@ Simple script language for TRPG dice engine.
 - [x] 骰点运算 - fvtt语法: 2d20kl, 2d20kh, 2d20dl, 2d20dh, d20min10, d20max10
 - [ ] 骰点运算 - 自定义算符
 - [ ] 骰点运算 - Fate / WOD / Double Cross
-- [ ] 高级类型 array
-- [ ] 高级类型 computed
+- [x] 高级类型 数组array
+- [ ] 高级类型 计算数值computed
 - [x] 逻辑语法 if ... else ..
 - [ ] 逻辑语法 for
 - [ ] 函数支持
@@ -34,7 +35,7 @@ Simple script language for TRPG dice engine.
 - [ ] 序列化和反序列化
 - [ ] 计算过程显示
 - [ ] 报错信息优化
-- [ ] 测试覆盖率 70% / 90%
+- [ ] 测试覆盖率 72% / 90%
 
 测试页面:
 
@@ -106,6 +107,9 @@ function roll(text) {
 * a == 1 ? 1 : 2 三目运算符
 * a == 1 ? 'A', a == 2 ? 'B', a == 3 : 'C'
 * 一元算符 +1 -1
+* 数组
+* 数组下标
+* fvtt语法: \[1,2,3]kh   \[1,2,3]kl
 
 #### 2022.9.2
 

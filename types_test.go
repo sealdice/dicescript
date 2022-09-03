@@ -16,7 +16,10 @@
 
 package dicescript
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 type compareTestData []struct {
 	v1       *VMValue
@@ -32,7 +35,19 @@ func valueEqual(a *VMValue, b *VMValue) bool {
 		return false
 	}
 	if a.TypeId == b.TypeId {
-		return a.Value == b.Value
+		switch a.TypeId {
+		case VMTypeArray:
+			arr1, _ := a.ReadArray()
+			arr2, _ := b.ReadArray()
+			for index, i := range arr1 {
+				if !valueEqual(i, arr2[index]) {
+					return false
+				}
+			}
+			return true
+		default:
+			return a.Value == b.Value
+		}
 	}
 	return false
 }
@@ -315,4 +330,84 @@ func TestAdditive(t *testing.T) {
 			t.Errorf("Power(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
 	}
+}
+
+func TestArray(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("[1,2,3]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,3,2]kh")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1.2,2,3]kh")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2.2,3]kh")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,3,2]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[2,3,1]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,3.1,2.1]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[4.1,3.1,1]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][-1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][-4]")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][4]")
+	assert.Error(t, err)
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a = [1,2,3]; a[1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("b[1]")
+	assert.Error(t, err)
 }

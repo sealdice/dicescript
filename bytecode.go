@@ -16,6 +16,14 @@ const (
 	TypePushIntNumber CodeType = iota
 	TypePushFloatNumber
 	TypePushString
+	TypePushArray
+
+	TypeLoadFormatString
+	TypeLoadName
+	TypeStoreName
+
+	TypeCallSelf
+	TypeGetItem
 
 	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
 	TypeSubtract
@@ -62,9 +70,6 @@ const (
 	TypeDCSetInit
 	TypeDCSetPool   // 骰池
 	TypeDCSetPoints // 面数
-	TypeLoadFormatString
-	TypeLoadName
-	TypeStoreName
 	TypeHalt
 	TypeSwap
 	TypeLeftValueMark
@@ -88,6 +93,13 @@ func (code *ByteCode) CodeString() string {
 		return "push.flt " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
 	case TypePushString:
 		return "push.str " + code.Value.(string)
+	case TypePushArray:
+		return "push.arr " + strconv.FormatInt(code.Value.(int64), 10)
+
+	case TypeCallSelf:
+		return "call.self " + code.Value.(string)
+	case TypeGetItem:
+		return "item.get"
 
 	case TypeAdd:
 		return "add"

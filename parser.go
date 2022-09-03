@@ -71,6 +71,10 @@ func (e *Parser) PushStr(value string) {
 	e.WriteCode(TypePushString, value)
 }
 
+func (e *Parser) PushArray(value int64) {
+	e.WriteCode(TypePushArray, value)
+}
+
 func (e *Parser) AddFormatString(value string, num int64) {
 	//e.PushStr(value)
 	e.WriteCode(TypeLoadFormatString, num) // num
@@ -124,4 +128,9 @@ func (e *Parser) CounterPop() int64 {
 	num := e.counterStack[last]
 	e.counterStack = e.counterStack[:last]
 	return num
+}
+
+func (e *Parser) AddFuncCall(name string, paramsNum int64) {
+	e.WriteCode(TypePushIntNumber, paramsNum)
+	e.WriteCode(TypeCallSelf, name)
 }

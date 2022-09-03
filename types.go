@@ -17,6 +17,7 @@
 package dicescript
 
 import (
+	"errors"
 	"math"
 	"strconv"
 )
@@ -135,6 +136,21 @@ func (v *VMValue) ToString() string {
 		return "undefined"
 	case VMTypeNone:
 		return "null"
+	case VMTypeArray:
+		s := "["
+		arr := v.Value.([]*VMValue)
+		for index, i := range arr {
+			if i.TypeId == VMTypeArray {
+				s += "[...]"
+			} else {
+				s += i.ToString()
+			}
+			if index != len(arr)-1 {
+				s += ", "
+			}
+		}
+		s += "]"
+		return s
 	//case VMTypeComputedValue:
 	//vd := v.Value.(*VMComputedValueData)
 	//return vd.BaseValue.ToString() + "=> (" + vd.Expr + ")"
@@ -162,6 +178,13 @@ func (v *VMValue) ReadString() (string, bool) {
 		return v.Value.(string), true
 	}
 	return "", false
+}
+
+func (v *VMValue) ReadArray() ([]*VMValue, bool) {
+	if v.TypeId == VMTypeArray {
+		return v.Value.([]*VMValue), true
+	}
+	return []*VMValue{}, false
 }
 
 func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
@@ -455,6 +478,117 @@ func (v *VMValue) OpNegation() *VMValue {
 	return nil
 }
 
+func (v *VMValue) CallFunc(ctx *Context, name string, values []*VMValue) *VMValue {
+	switch v.TypeId {
+	case VMTypeArray:
+		switch name {
+		case "kh":
+			return v.ArrayFuncKeepHigh(ctx)
+		case "kl":
+			return v.ArrayFuncKeepLow(ctx)
+		}
+	}
+	return VMValueNewUndefined()
+}
+
+func (v *VMValue) ArrayFuncKeepHigh(ctx *Context) *VMValue {
+	arr := v.Value.([]*VMValue)
+
+	var maxFloat float64 // 次函数最大上限为flaot64上限
+	isFloat := false
+	isFirst := true
+
+	for _, i := range arr {
+		switch i.TypeId {
+		case VMTypeInt64:
+			if isFirst {
+				isFirst = false
+				maxFloat = float64(i.Value.(int64))
+			} else {
+				val := float64(i.Value.(int64))
+				if val > maxFloat {
+					maxFloat = val
+				}
+			}
+		case VMTypeFloat64:
+			isFloat = true
+			if isFirst {
+				isFirst = false
+				maxFloat = i.Value.(float64)
+			} else {
+				val := i.Value.(float64)
+				if val > maxFloat {
+					maxFloat = val
+				}
+			}
+		}
+	}
+
+	if isFloat {
+		return VMValueNewFloat64(maxFloat)
+	} else {
+		return VMValueNewInt64(int64(maxFloat))
+	}
+}
+
+func (v *VMValue) ArrayFuncKeepLow(ctx *Context) *VMValue {
+	arr := v.Value.([]*VMValue)
+
+	var maxFloat float64 // 次函数最大上限为flaot64上限
+	isFloat := false
+	isFirst := true
+
+	for _, i := range arr {
+		switch i.TypeId {
+		case VMTypeInt64:
+			if isFirst {
+				isFirst = false
+				maxFloat = float64(i.Value.(int64))
+			} else {
+				val := float64(i.Value.(int64))
+				if val < maxFloat {
+					maxFloat = val
+				}
+			}
+		case VMTypeFloat64:
+			isFloat = true
+			if isFirst {
+				isFirst = false
+				maxFloat = i.Value.(float64)
+			} else {
+				val := i.Value.(float64)
+				if val < maxFloat {
+					maxFloat = val
+				}
+			}
+		}
+	}
+
+	if isFloat {
+		return VMValueNewFloat64(maxFloat)
+	} else {
+		return VMValueNewInt64(int64(maxFloat))
+	}
+}
+
+func (v *VMValue) ArrayGetItem(ctx *Context, index int64) *VMValue {
+	if v.TypeId == VMTypeArray {
+		arr, _ := v.ReadArray()
+		length := int64(len(arr))
+		if index < 0 {
+			// 负数下标支持
+			index = length + index
+		}
+		if index >= length || index < 0 {
+			ctx.Error = errors.New("无法获取此下标")
+			return nil
+		}
+		return arr[index]
+	}
+	ctx.Error = errors.New("此类型无法取下标")
+	return nil
+}
+
 func (v *VMValue) GetTypeName() string {
 	switch v.TypeId {
 	case VMTypeInt64:
@@ -494,4 +628,12 @@ func VMValueNewUndefined() *VMValue {
 
 func VMValueNewNone() *VMValue {
 	return &VMValue{TypeId: VMTypeNone}
+}
+
+func VMValueNewArray(values ...*VMValue) *VMValue {
+	var data []*VMValue
+	for _, i := range values {
+		data = append(data, i)
+	}
+	return &VMValue{TypeId: VMTypeArray, Value: data}
 }

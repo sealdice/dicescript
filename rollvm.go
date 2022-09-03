@@ -143,6 +143,17 @@ func (e *Parser) Evaluate() {
 		return v1, v2
 	}
 
+	stackPopN := func(num int64) []*VMValue {
+		var data []*VMValue
+		for i := int64(0); i < num; i++ {
+			data = append(data, stackPop().Clone()) // 复制一遍规避栈问题
+		}
+		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+			data[i], data[j] = data[j], data[i]
+		}
+		return data
+	}
+
 	stackPush := func(v *VMValue) {
 		e.stack[e.top] = *v
 		e.top += 1
@@ -175,6 +186,23 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = unquote
 			e.top++
+		case TypePushArray:
+			num := code.Value.(int64)
+			stackPush(VMValueNewArray(stackPopN(num)...))
+
+		case TypeCallSelf:
+			paramsNum, _ := stackPop().ReadInt64()
+			arr := stackPopN(paramsNum)
+			stackPush(arr[0].CallFunc(ctx, code.Value.(string), arr[1:]))
+		case TypeGetItem:
+			itemIndex, _ := stackPop().ReadInt64()
+			arr := stackPop()
+			v := arr.ArrayGetItem(ctx, itemIndex)
+			if ctx.Error != nil {
+				break
+			}
+			stackPush(v)
+
 		case TypeLoadFormatString:
 			num := int(code.Value.(int64))
 
