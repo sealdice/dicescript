@@ -27,7 +27,8 @@ const (
 	VMTypeInt64         VMValueType = 0
 	VMTypeFloat64       VMValueType = 1
 	VMTypeString        VMValueType = 2
-	VMTypeNone          VMValueType = 4 // 这里错开是为了和旧版兼容
+	VMTypeUndefined     VMValueType = 3
+	VMTypeNone          VMValueType = 4
 	VMTypeComputedValue VMValueType = 5
 	VMTypeArray         VMValueType = 6
 )
@@ -58,7 +59,9 @@ type RollExtraFlags struct {
 }
 
 type Context struct {
-	parser *Parser
+	parser         *Parser
+	subThread      *Context // 用于执行子句
+	subThreadDepth int
 
 	code      []ByteCode
 	codeIndex int
@@ -68,8 +71,6 @@ type Context struct {
 
 	NumOpCount int64 // 算力计数
 	//CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
-
-	jmpStack []int // 跳转栈
 
 	Flags RollExtraFlags // 标记
 	Error error          // 报错信息
@@ -84,7 +85,6 @@ type Context struct {
 
 func (e *Context) Init(stackLength int) {
 	e.code = make([]ByteCode, stackLength)
-	e.jmpStack = []int{}
 }
 
 type VMValue struct {
@@ -93,13 +93,21 @@ type VMValue struct {
 	ExpiredTime int64       `json:"expiredTime"`
 }
 
+func (v *VMValue) Clone() *VMValue {
+	vNew := &VMValue{TypeId: v.TypeId, Value: v.Value}
+	// TODO: 针对特定类型，进行Value的处理，不过大多数时候应该够用
+	switch v.TypeId {
+	}
+	return vNew
+}
+
 func (v *VMValue) AsBool() bool {
 	switch v.TypeId {
 	case VMTypeInt64:
 		return v.Value != int64(0)
 	case VMTypeString:
 		return v.Value != ""
-	case VMTypeNone:
+	case VMTypeNone, VMTypeUndefined:
 		return false
 	//case VMTypeComputedValue:
 	//	vd := v.Value.(*VMComputedValueData)
@@ -123,8 +131,10 @@ func (v *VMValue) ToString() string {
 		return strconv.FormatFloat(v.Value.(float64), 'f', 2, 64)
 	case VMTypeString:
 		return v.Value.(string)
+	case VMTypeUndefined:
+		return "undefined"
 	case VMTypeNone:
-		return v.Value.(string)
+		return "null"
 	//case VMTypeComputedValue:
 	//vd := v.Value.(*VMComputedValueData)
 	//return vd.BaseValue.ToString() + "=> (" + vd.Expr + ")"
@@ -136,6 +146,13 @@ func (v *VMValue) ToString() string {
 func (v *VMValue) ReadInt64() (int64, bool) {
 	if v.TypeId == VMTypeInt64 {
 		return v.Value.(int64), true
+	}
+	return 0, false
+}
+
+func (v *VMValue) ReadFloat64() (float64, bool) {
+	if v.TypeId == VMTypeFloat64 {
+		return v.Value.(float64), true
 	}
 	return 0, false
 }
@@ -426,6 +443,8 @@ func (v *VMValue) GetTypeName() string {
 		return "float64"
 	case VMTypeString:
 		return "str"
+	case VMTypeUndefined:
+		return "undefined"
 	case VMTypeNone:
 		return "none"
 	case VMTypeComputedValue:
@@ -447,6 +466,10 @@ func VMValueNewFloat64(i float64) *VMValue {
 
 func VMValueNewStr(s string) *VMValue {
 	return &VMValue{TypeId: VMTypeString, Value: s}
+}
+
+func VMValueNewUndefined() *VMValue {
+	return &VMValue{TypeId: VMTypeUndefined}
 }
 
 func VMValueNewNone() *VMValue {

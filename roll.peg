@@ -20,9 +20,30 @@ type Parser Peg {
 }
 
 // 出口
-stmtRoot <- stmtBase { p.AddOp(TypeHalt) }
+dicescript <- stmtRoot { p.AddOp(TypeHalt) }
+stmtRoot <- (stmtLines / ';' sp)+
 
-stmtBase <- stmtAssign / exprBitwise
+stmtLines <- stmtWithBlock
+           / stmtWithSemicolon (';' sp stmtWithSemicolon)*
+
+stmtWithSemicolon <- stmtAssign / exprBitwise
+
+stmtWithBlock <- stmtIf
+
+block <- ( '{' sp '}' / '{' sp stmtRoot '}' ) sp
+stmtElse <- 'else' sp (block / stmtIf)
+stmtIf <- 'if' sp exprRoot { p.AddOp(TypeJne); p.CodePushOffset() } block { p.AddOp(TypeJmp); p.CodePopSetOffset(); p.CodePushOffset(); }
+           stmtElse? { p.CodePopSetOffset() }
+// 'if' exprRoot block
+// ('else' block)?
+
+// if ... then .. else
+// push 1
+// jne 2
+// push "ret1"
+// jmp 1
+// push "ret2"
+
 
 stmtAssign <- identifier { p.NamePush(string(text)) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
 
@@ -69,11 +90,11 @@ exprUnaryNeg <- minus exprUnaryPos
 exprUnaryPos <- add exprDice
               / exprDice
 
-// 骰子算符，注: 越靠下的优先级越高
-_diceMod <- (([kK] / 'kh') (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  // 这里fvtt与国内骰一致
-          / (([kK] / 'kh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) })
-          / (([qQ] / 'kl') (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
-          / (([qQ] / 'kl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
+// 骰子算符，注: 越靠下的算符优先级越高
+_diceMod <- (('kl' / [qQ]) (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
+          / (('kl' / [qQ]) { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
+          / (('kh' / [kK]) (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  // 这里fvtt与国内骰一致
+          / (('kh' / [kK]) { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) })
           / (('dh') (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
           / (('dh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropHighNum) } )
           / (('dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest, 这里故意去掉了3d20d1 的支持，需要写成3d20dl1
@@ -114,6 +135,7 @@ fstring <- (
     ) sp
 
 // 变量名
+// TODO: 排除掉关键字
 identifier <- < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
 
 // 括号

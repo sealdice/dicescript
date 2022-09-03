@@ -1,5 +1,18 @@
 # DiceScript
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/sealdice/dicescript)](https://goreportcard.com/report/github.com/sealdice/dicescript)
+![Software License](https://img.shields.io/badge/license-Apache2-brightgreen.svg?style=flat-square)
+[![GoDoc](https://godoc.org/github.com/sealdice/dicescript?status.svg)](https://godoc.org/github.com/sealdice/dicescript)
+
+最符合国内跑团习惯的TRPG骰点脚本语言。
+
 Simple script language for TRPG dice engine.
+
+特性:
+- 易于使用，方便扩展
+- 稳定可靠，极高的测试覆盖率
+- 免费，并可商用
+- 支持JavaScript
 
 进度:
 
@@ -13,12 +26,13 @@ Simple script language for TRPG dice engine.
 - [ ] 骰点运算 - Fate / WOD / Double Cross
 - [ ] 高级类型 array
 - [ ] 高级类型 computed
-- [ ] 逻辑文法 if ... else .. / for
+- [x] 逻辑语法 if ... else ..
+- [ ] 逻辑语法 for
 - [ ] 函数支持
 - [x] 变量支持
 - [ ] 序列化和反序列化
 - [ ] 计算过程显示
-- [ ] 测试覆盖率 64% / 90%
+- [ ] 测试覆盖率 68% / 90%
 
 测试页面:
 
@@ -26,6 +40,12 @@ https://sealdice.github.io/dicescript/
 
 
 ## 更新记录
+
+#### 2022.9.3
+
+* if else 语句
+* undefined 类型
+
 
 #### 2022.9.2
 
@@ -101,10 +121,10 @@ DiceScript将使用和RollVM相同的技术栈，但会有更好的接口设计�
 
 
 
-**Nil / None / Null 空值类型** 
+#### 空值
 
-用哪个名字还没想好，也是懂得都懂
-
+null 空值
+undefined 未定义
 
 
 #### Computed 计算类型

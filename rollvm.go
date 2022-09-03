@@ -58,7 +58,7 @@ func (ctx *Context) Run(value string) error {
 	if ctx.top != 0 {
 		ctx.Ret = &ctx.stack[0]
 	} else {
-		ctx.Ret = VMValueNewNone()
+		ctx.Ret = VMValueNewUndefined()
 	}
 
 	// 给出VM解析完句子后的剩余文本
@@ -200,24 +200,32 @@ func (e *Parser) Evaluate() {
 			if loadFunc != nil {
 				val := loadFunc(name)
 				if val == nil {
-					val = VMValueNewNone()
+					val = VMValueNewUndefined()
 				}
 				stackPush(val)
 			} else {
 				ctx.Error = errors.New("未设置 ValueLoadNameFunc，无法获取变量")
 				return
 			}
-
 		case TypeStoreName:
 			v := stackPop()
 			name := code.Value.(string)
 			storeFunc := ctx.ValueStoreNameFunc
 			if storeFunc != nil {
-				storeFunc(name, v)
+				storeFunc(name, v.Clone())
 			} else {
 				ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
 				return
 			}
+
+		case TypeJne:
+			t := stackPop()
+			if !t.AsBool() {
+				opIndex += int(code.Value.(int64))
+			}
+		case TypeJmp:
+			opIndex += int(code.Value.(int64))
+
 		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
 			// 所有二元运算符
@@ -233,6 +241,7 @@ func (e *Parser) Evaluate() {
 				break
 			}
 			stackPush(ret)
+
 		case TypeDiceInit:
 			diceInit()
 		case TypeDiceSetTimes:

@@ -90,6 +90,18 @@ func (e *Parser) NamePop() string {
 	return val
 }
 
+func (e *Parser) CodePushOffset() {
+	e.counterStack = append(e.counterStack, int64(e.codeIndex)-1)
+}
+
+func (e *Parser) CodePopSetOffset() {
+	last := len(e.counterStack) - 1
+	codeIndex := e.counterStack[last]
+	e.counterStack = e.counterStack[:last]
+	e.code[codeIndex].Value = int64(int64(e.codeIndex) - codeIndex - 1)
+	//fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
+}
+
 func (e *Parser) CounterPush() {
 	e.counterStack = append(e.counterStack, 0)
 }

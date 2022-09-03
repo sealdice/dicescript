@@ -1,12 +1,33 @@
 package dicescript
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func newVMWithStore(attrs map[string]*VMValue) (*Context, map[string]*VMValue) {
+	vm := NewVM()
+	if attrs == nil {
+		attrs = map[string]*VMValue{}
+	}
+
+	vm.ValueStoreNameFunc = func(name string, v *VMValue) {
+		attrs[name] = v
+	}
+	vm.ValueLoadNameFunc = func(name string) *VMValue {
+		if val, ok := attrs[name]; ok {
+			return val
+		}
+		return nil
+	}
+	return vm, attrs
+}
 
 func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
 	vm := NewVM()
 	err := vm.Run(expr)
 	if err != nil {
-		t.Errorf("VM Error: %s", err.Error())
+		t.Errorf("VM Error: %s, %s", expr, err.Error())
 		return vm
 	}
 	if !valueEqual(vm.Ret, ret) {
@@ -78,6 +99,7 @@ func TestDice(t *testing.T) {
 
 	simpleExecute(t, "4d1q", ni(1))
 	simpleExecute(t, "4d1q1", ni(1))
+	simpleExecute(t, "4d1kl(1)", ni(1))
 	simpleExecute(t, "4d1kl1", ni(1))
 
 	simpleExecute(t, "4d1dl", ni(3))
@@ -127,6 +149,7 @@ func TestValueStore1(t *testing.T) {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
+	vm = NewVM()
 	err = vm.Run("bbb")
 	if err == nil {
 		t.Errorf("VM Error: %s", err.Error())
@@ -134,33 +157,52 @@ func TestValueStore1(t *testing.T) {
 }
 
 func TestValueStore(t *testing.T) {
-	vm := NewVM()
 	attrs := map[string]*VMValue{}
-
-	vm.ValueStoreNameFunc = func(name string, v *VMValue) {
-		attrs[name] = v
-	}
-	vm.ValueLoadNameFunc = func(name string) *VMValue {
-		if val, ok := attrs[name]; ok {
-			return val
-		}
-		return nil
-	}
-
+	vm, _ := newVMWithStore(attrs)
 	err := vm.Run("测试=1")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
+	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("测试   =   1")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
+	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("测试")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("CC")
+	if err != nil {
+		t.Errorf("VM Error: %s", err.Error())
+	}
+	assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
+
+	// 栈指针bug(两个变量实际都指向了栈的某一个位置，导致值相同)
+	attrs = map[string]*VMValue{}
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("b=1;d=2")
+	if err != nil {
+		t.Errorf("VM Error: %s", err.Error())
+	}
+	assert.True(t, valueEqual(attrs["b"], ni(1)))
+	assert.True(t, valueEqual(attrs["d"], ni(2)))
+}
+
+func TestIf(t *testing.T) {
+	attrs := map[string]*VMValue{}
+	vm, _ := newVMWithStore(attrs)
+	err := vm.Run("if 0 { a = 2 } else if 2 { b = 1 } c= 1; ;;;;; d= 2;b")
+	assert.NoError(t, err)
+	assert.True(t, valueEqual(attrs["b"], ni(1)))
+	assert.True(t, valueEqual(attrs["c"], ni(1)))
+	assert.True(t, valueEqual(attrs["d"], ni(2)))
+	assert.True(t, attrs["a"] == nil)
 }
 
 func TestBytecodeToString(t *testing.T) {
