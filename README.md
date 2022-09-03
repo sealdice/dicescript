@@ -18,7 +18,7 @@ Simple script language for TRPG dice engine.
 
 - [x] 基础类型 int float string
 - [x] 基础类型 undefined null
-- [ ] 一元算符 + -
+- [x] 一元算符 + -
 - [x] 二元算符 +-*/% >,>=,==,!=,<,<=
 - [x] 三元算符 ? :
 - [x] 骰点运算 流行: d20, 3d20, (4+5)d(20), 2d20k1, 2d20q1 
@@ -105,6 +105,7 @@ function roll(text) {
 * undefined 类型
 * a == 1 ? 1 : 2 三目运算符
 * a == 1 ? 'A', a == 2 ? 'B', a == 3 : 'C'
+* 一元算符 +1 -1
 
 #### 2022.9.2
 

@@ -16,7 +16,6 @@ const (
 	TypePushIntNumber CodeType = iota
 	TypePushFloatNumber
 	TypePushString
-	TypeNegation
 
 	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
 	TypeSubtract
@@ -36,6 +35,9 @@ const (
 	TypeBitwiseOr
 	TypeLogicAnd
 	TypeLogicOr
+
+	TypeNegation
+	TypePositive
 
 	TypeDiceInit
 	TypeDiceSetTimes
@@ -104,6 +106,11 @@ func (code *ByteCode) CodeString() string {
 		return "&"
 	case TypeBitwiseOr:
 		return "|"
+
+	case TypeNegation:
+		return "neg"
+	case TypePositive:
+		return "pos"
 
 	case TypeDiceInit:
 		return "dice.init"

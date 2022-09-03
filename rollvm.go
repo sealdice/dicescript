@@ -242,6 +242,24 @@ func (e *Parser) Evaluate() {
 			}
 			stackPush(ret)
 
+		case TypePositive, TypeNegation:
+			v := stackPop()
+			var ret *VMValue
+			if code.T == TypePositive {
+				ret = v.OpPositive()
+			} else {
+				ret = v.OpNegation()
+			}
+			if ret == nil {
+				// TODO: 整理所有错误类型
+				opErr := fmt.Sprintf("此类型无法使用一元算符 %s: %s", code.CodeString(), v.GetTypeName())
+				ctx.Error = errors.New(opErr)
+			}
+			if ctx.Error != nil {
+				break
+			}
+			stackPush(ret)
+
 		case TypeDiceInit:
 			diceInit()
 		case TypeDiceSetTimes:

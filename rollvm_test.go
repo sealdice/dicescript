@@ -1,6 +1,7 @@
 package dicescript
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -27,10 +28,12 @@ func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
 	vm := NewVM()
 	err := vm.Run(expr)
 	if err != nil {
+		fmt.Println(vm.GetAsmText())
 		t.Errorf("VM Error: %s, %s", expr, err.Error())
 		return vm
 	}
 	if !valueEqual(vm.Ret, ret) {
+		fmt.Println(vm.GetAsmText())
 		t.Errorf("not equal: %s %s", ret.ToString(), vm.Ret.ToString())
 	}
 	return vm
@@ -43,6 +46,11 @@ func TestSimpleRun(t *testing.T) {
 }
 
 func TestStr(t *testing.T) {
+	simpleExecute(t, `""`, ns(""))
+	simpleExecute(t, `''`, ns(""))
+	simpleExecute(t, "``", ns(""))
+	simpleExecute(t, "\x1e\x1e", ns(""))
+
 	simpleExecute(t, "'123'", ns("123"))
 	simpleExecute(t, "'12' + '3' ", ns("123"))
 	simpleExecute(t, "`12{3}` ", ns("123"))
@@ -244,6 +252,42 @@ func TestTernary(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("C")))
 	}
+}
+
+func TestUnary(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("-1")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(-1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("--1")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("-+1")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(-1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("+-1")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(-1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("-1.3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(-1.3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("-'123'")
+	assert.Error(t, err)
 }
 
 func TestBytecodeToString(t *testing.T) {

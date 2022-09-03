@@ -435,6 +435,26 @@ func (v *VMValue) OpCompGT(ctx *Context, v2 *VMValue) *VMValue {
 	return nil
 }
 
+func (v *VMValue) OpPositive() *VMValue {
+	switch v.TypeId {
+	case VMTypeInt64:
+		return VMValueNewInt64(v.Value.(int64))
+	case VMTypeFloat64:
+		return VMValueNewFloat64(v.Value.(float64))
+	}
+	return nil
+}
+
+func (v *VMValue) OpNegation() *VMValue {
+	switch v.TypeId {
+	case VMTypeInt64:
+		return VMValueNewInt64(-v.Value.(int64))
+	case VMTypeFloat64:
+		return VMValueNewFloat64(-v.Value.(float64))
+	}
+	return nil
+}
+
 func (v *VMValue) GetTypeName() string {
 	switch v.TypeId {
 	case VMTypeInt64:
