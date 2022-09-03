@@ -56,7 +56,7 @@ func main() {
 
 	// 如果需要使用变量，那么接入一下ValueStoreNameFunc和ValueLoadNameFunc
 	// 不需要就跳过
-    attrs := map[string]*dice.VMValue{}
+	attrs := map[string]*dice.VMValue{}
 
 	vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
 		attrs[name] = v
