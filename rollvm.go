@@ -199,7 +199,7 @@ func (e *Parser) Evaluate() {
 		case TypePushUndefined:
 			stackPush(VMValueNewUndefined())
 
-		case TypeCallSelf:
+		case TypeInvokeSelf:
 			paramsNum, _ := stackPop().ReadInt64()
 			arr := stackPopN(paramsNum)
 			stackPush(arr[0].CallFunc(ctx, code.Value.(string), arr[1:]))
@@ -211,6 +211,30 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(v)
+		case TypeSetAttr:
+			attrVal, obj := stackPop2()
+			attrName := code.Value.(string)
+
+			ret := obj.SetAttr(attrName, attrVal)
+			if ctx.Error == nil && ret == nil {
+				ctx.Error = errors.New("不支持的类型：当前变量无法用.来设置属性")
+			}
+			if ctx.Error != nil {
+				return
+			}
+
+		case TypeGetAttr:
+			obj := stackPop()
+			attrName := code.Value.(string)
+			ret := obj.GetAttr(attrName)
+			if ctx.Error != nil {
+				return
+			}
+			if ret == nil {
+				ctx.Error = errors.New("不支持的类型：当前变量无法用.来取属性")
+				return
+			}
+			stackPush(ret)
 
 		case TypeLoadFormatString:
 			num := int(code.Value.(int64))
@@ -244,6 +268,19 @@ func (e *Parser) Evaluate() {
 					if ctx.Error != nil {
 						return
 					}
+				}
+				stackPush(val)
+			} else {
+				ctx.Error = errors.New("未设置 ValueLoadNameFunc，无法获取变量")
+				return
+			}
+		case TypeLoadNameRaw:
+			name := code.Value.(string)
+			loadFunc := ctx.ValueLoadNameFunc
+			if loadFunc != nil {
+				val := loadFunc(name)
+				if val == nil {
+					val = VMValueNewUndefined()
 				}
 				stackPush(val)
 			} else {

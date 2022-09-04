@@ -23,10 +23,13 @@ const (
 
 	TypeLoadFormatString
 	TypeLoadName
+	TypeLoadNameRaw // 如遇到computed，这个版本不取出其内容
 	TypeStoreName
 
-	TypeCallSelf
+	TypeInvokeSelf
 	TypeGetItem
+	TypeSetAttr
+	TypeGetAttr
 
 	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
 	TypeSubtract
@@ -106,10 +109,14 @@ func (code *ByteCode) CodeString() string {
 	case TypePushNone:
 		return "push.none"
 
-	case TypeCallSelf:
-		return "call.self " + code.Value.(string)
+	case TypeInvokeSelf:
+		return "invoke.self " + code.Value.(string)
 	case TypeGetItem:
 		return "item.get"
+	case TypeSetAttr:
+		return "attr.set " + code.Value.(string)
+	case TypeGetAttr:
+		return "attr.get " + code.Value.(string)
 
 	case TypeAdd:
 		return "add"
@@ -184,7 +191,9 @@ func (code *ByteCode) CodeString() string {
 	case TypeDiceWod:
 		return "dice.wod"
 	case TypeLoadName:
-		return "ld.v " + code.Value.(string)
+		return "ld " + code.Value.(string)
+	case TypeLoadNameRaw:
+		return "ld.raw " + code.Value.(string)
 	case TypeLoadFormatString:
 		return fmt.Sprintf("ld.fs %d", code.Value)
 	case TypeStoreName:

@@ -27,15 +27,17 @@ Simple script language for TRPG dice engine.
 - [ ] 骰点运算 - 自定义算符
 - [ ] 骰点运算 - Fate / WOD / Double Cross
 - [x] 高级类型 数组array
-- [ ] 高级类型 计算数值computed
+- [ ] 高级类型 字典dict
+- [x] 高级类型 计算数值computed
 - [x] 逻辑语法 if ... else ..
 - [ ] 逻辑语法 for
 - [ ] 函数支持
+- [ ] 内置函数
 - [x] 变量支持
 - [ ] 序列化和反序列化
 - [ ] 计算过程显示
 - [ ] 报错信息优化
-- [ ] 测试覆盖率 72% / 90%
+- [ ] 测试覆盖率 73% / 90%
 
 测试页面:
 
@@ -99,6 +101,12 @@ function roll(text) {
 ```
 
 ## 更新记录
+
+#### 2022.9.4
+
+* 多维数组
+* computed 计算类型
+* 计算属性扩展 &a = 1d1 + x; a.x = 1 此时有 a == 2
 
 #### 2022.9.3
 

@@ -403,6 +403,25 @@ func TestComputed(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
 	}
 
+	vm, attrs := newVMWithStore(nil)
+	err = vm.Run("&a = d1 + x")
+	assert.NoError(t, err)
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a.x = 2")
+	assert.NoError(t, err)
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("&a.x")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
 }
 
 func TestBytecodeToString(t *testing.T) {

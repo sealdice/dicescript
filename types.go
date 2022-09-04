@@ -494,6 +494,37 @@ func (v *VMValue) OpNegation() *VMValue {
 	return nil
 }
 
+func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
+	switch v.TypeId {
+	case VMTypeComputedValue:
+		cd, _ := v.ReadComputed()
+		if cd.Attrs == nil {
+			cd.Attrs = map[string]*VMValue{}
+		}
+		cd.Attrs[name] = val
+		return val
+	}
+
+	return nil
+}
+
+func (v *VMValue) GetAttr(name string) *VMValue {
+	switch v.TypeId {
+	case VMTypeComputedValue:
+		cd, _ := v.ReadComputed()
+		var ret *VMValue
+		if cd.Attrs != nil {
+			ret = cd.Attrs[name]
+		}
+		if ret == nil {
+			ret = VMValueNewUndefined()
+		}
+		return ret
+	}
+
+	return nil
+}
+
 func (v *VMValue) CallFunc(ctx *Context, name string, values []*VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeArray:
@@ -627,6 +658,12 @@ func (v *VMValue) GetTypeName() string {
 
 func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	cd, _ := v.ReadComputed()
+
+	if cd.Attrs != nil {
+		for k, v := range cd.Attrs {
+			ctx.ValueStoreNameFunc(k, v)
+		}
+	}
 
 	vm := NewVM()
 	vm.Flags = ctx.Flags

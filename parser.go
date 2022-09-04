@@ -83,8 +83,8 @@ func (e *Parser) PushArray(value int64) {
 	e.WriteCode(TypePushArray, value)
 }
 
-func (e *Parser) PushUndefined(value int64) {
-	e.WriteCode(TypePushUndefined, value)
+func (e *Parser) PushUndefined() {
+	e.WriteCode(TypePushUndefined, nil)
 }
 
 func (e *Parser) AddFormatString(value string, num int64) {
@@ -144,7 +144,7 @@ func (e *Parser) CounterPop() int64 {
 
 func (e *Parser) AddFuncCall(name string, paramsNum int64) {
 	e.WriteCode(TypePushIntNumber, paramsNum)
-	e.WriteCode(TypeCallSelf, name)
+	e.WriteCode(TypeInvokeSelf, name)
 }
 
 func (p *Parser) AddStoreComputed(name string, text string) {
@@ -157,6 +157,11 @@ func (p *Parser) AddStoreComputed(name string, text string) {
 
 	p.WriteCode(TypePushComputed, val)
 	p.WriteCode(TypeStoreName, name)
+}
+
+func (p *Parser) AddSetAttr(objName string, attr string) {
+	p.WriteCode(TypeLoadNameRaw, objName)
+	p.WriteCode(TypeSetAttr, attr)
 }
 
 func (p *Parser) CodePush() {
