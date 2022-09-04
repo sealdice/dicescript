@@ -213,11 +213,15 @@ func (e *Parser) Evaluate() {
 			paramsNum := code.Value.(int64)
 			arr := stackPopN(paramsNum)
 			funcObj := stackPop()
-			ret := funcObj.FuncInvoke(ctx, arr)
-			if ctx.Error != nil {
-				return
+			if funcObj.TypeId == VMTypeFunction {
+				ret := funcObj.FuncInvoke(ctx, arr)
+				if ctx.Error != nil {
+					return
+				}
+				stackPush(ret)
+			} else {
+				ctx.Error = errors.New("无法调用")
 			}
-			stackPush(ret)
 
 		case TypeInvokeSelf:
 			paramsNum, _ := stackPop().ReadInt64()
@@ -246,7 +250,7 @@ func (e *Parser) Evaluate() {
 		case TypeGetAttr:
 			obj := stackPop()
 			attrName := code.Value.(string)
-			ret := obj.GetAttr(attrName)
+			ret := obj.GetAttr(ctx, attrName)
 			if ctx.Error != nil {
 				return
 			}

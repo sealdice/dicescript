@@ -65,6 +65,7 @@ type Context struct {
 	parser         *Parser
 	currentThis    *VMValue
 	subThreadDepth int
+	attrs          map[string]*VMValue
 	//subThread      *Context // 用于执行子句
 
 	code      []ByteCode
@@ -121,7 +122,7 @@ type FunctionData struct {
 	/* 缓存数据 */
 	code      []ByteCode
 	codeIndex int
-	attrs     map[string]*VMValue
+	ctx       *Context
 }
 
 func (v *VMValue) Clone() *VMValue {
@@ -567,7 +568,7 @@ func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
 	return nil
 }
 
-func (v *VMValue) GetAttr(name string) *VMValue {
+func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
 	switch v.TypeId {
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
@@ -580,11 +581,13 @@ func (v *VMValue) GetAttr(name string) *VMValue {
 		}
 		return ret
 	case VMTypeFunction:
-		cd, _ := v.ReadFunctionData()
+		//cd, _ := v.ReadFunctionData()
 		var ret *VMValue
-		if cd.attrs != nil {
-			ret = cd.attrs[name]
+		//if cd.ctx != nil {
+		if ctx.attrs != nil {
+			ret = ctx.attrs[name]
 		}
+		//}
 		if ret == nil {
 			ret = VMValueNewUndefined()
 		}
@@ -763,24 +766,28 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 
 func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	// TODO: 先复制computed代码修改，后续重构
+
+	vm := NewVM()
 	cd, _ := v.ReadFunctionData()
-	cd.attrs = map[string]*VMValue{}
+	vm.attrs = map[string]*VMValue{}
+	//cd.ctx = vm
 
 	// 设置参数
 	for index, i := range cd.Params {
 		if index >= len(params) {
 			break
 		}
-		cd.attrs[i] = params[index]
+		//fmt.Println("XX!!!", i, params[index].ToString())
+		vm.attrs[i] = params[index]
 	}
 
-	vm := NewVM()
 	vm.Flags = ctx.Flags
+	//vm.Flags.PrintBytecode = false
 	vm.ValueStoreNameFunc = ctx.ValueStoreNameFunc
 	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.currentThis = v
-	vm.NumOpCount = ctx.NumOpCount + 200
+	vm.NumOpCount = ctx.NumOpCount + 100
 	vm.code = cd.code
 	vm.codeIndex = cd.codeIndex
 	vm.parser.Evaluate()
@@ -798,7 +805,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
-	cd.attrs = map[string]*VMValue{} // 清空
+	vm.attrs = map[string]*VMValue{} // 清空
 	return ret
 }
 

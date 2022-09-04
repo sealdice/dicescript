@@ -468,6 +468,29 @@ func test(a, b, c) {
 test('张三') // 获得文本 hello world, 张三
 ```
 
+示例，斐波那契数列计算：
+```
+func fib(n) {
+  this.n == 0 ? 0,
+  this.n == 1 ? 1,
+  this.n == 2 ? 1,
+   1 ? fib(this.n-1)+fib(this.n-2)
+}
+fib(11) // 89
+```
+
+另一种写法：
+```
+func fib(n) {
+  if this.n == 0 { 0 }
+  else if this.n == 1 { 1 }
+  else if this.n == 2 { 1 } else {
+    fib(this.n-1) + fib(this.n-2)
+  }
+}
+fib(10) // 55
+```
+
 ### 语句块(还未想好)
 
 {} 是一个语句块，内含至少1条语句。
