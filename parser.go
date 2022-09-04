@@ -146,9 +146,14 @@ func (e *Parser) CounterPop() int64 {
 	return num
 }
 
-func (e *Parser) AddFuncCall(name string, paramsNum int64) {
+func (e *Parser) AddInvokeMethod(name string, paramsNum int64) {
 	e.WriteCode(TypePushIntNumber, paramsNum)
 	e.WriteCode(TypeInvokeSelf, name)
+}
+
+func (e *Parser) AddInvoke(paramsNum int64) {
+	//e.WriteCode(TypePushIntNumber, paramsNum)
+	e.WriteCode(TypeInvoke, paramsNum)
 }
 
 func (p *Parser) AddStoreComputed(name string, text string) {
@@ -160,6 +165,26 @@ func (p *Parser) AddStoreComputed(name string, text string) {
 	})
 
 	p.WriteCode(TypePushComputed, val)
+	p.WriteCode(TypeStoreName, name)
+}
+
+func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text string) {
+	code, length := p.CodePop()
+
+	// 翻转一次
+	for i, j := 0, len(paramsReversed)-1; i < j; i, j = i+1, j-1 {
+		paramsReversed[i], paramsReversed[j] = paramsReversed[j], paramsReversed[i]
+	}
+
+	val := VMValueNewFunctionRaw(&FunctionData{
+		Expr:      text,
+		Name:      name,
+		Params:    paramsReversed,
+		code:      code,
+		codeIndex: length,
+	})
+
+	p.WriteCode(TypePushFuction, val)
 	p.WriteCode(TypeStoreName, name)
 }
 

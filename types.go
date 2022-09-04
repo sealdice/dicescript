@@ -25,13 +25,15 @@ import (
 type VMValueType int
 
 const (
-	VMTypeInt64         VMValueType = 0
-	VMTypeFloat64       VMValueType = 1
-	VMTypeString        VMValueType = 2
-	VMTypeUndefined     VMValueType = 3
-	VMTypeNone          VMValueType = 4
-	VMTypeComputedValue VMValueType = 5
-	VMTypeArray         VMValueType = 6
+	VMTypeInt64          VMValueType = 0
+	VMTypeFloat64        VMValueType = 1
+	VMTypeString         VMValueType = 2
+	VMTypeUndefined      VMValueType = 3
+	VMTypeNone           VMValueType = 4
+	VMTypeComputedValue  VMValueType = 5
+	VMTypeArray          VMValueType = 6
+	VMTypeFunction       VMValueType = 8
+	VMTypeNativeFunction VMValueType = 9
 )
 
 var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
@@ -89,6 +91,13 @@ func (e *Context) Init(stackLength int) {
 	e.code = make([]ByteCode, stackLength)
 }
 
+func (e *Context) loadInnerVar(name string) func(name string) *VMValue {
+	switch name {
+	case "ceil":
+	}
+	return nil
+}
+
 type VMValue struct {
 	TypeId      VMValueType `json:"typeId"`
 	Value       interface{} `json:"value"`
@@ -102,6 +111,17 @@ type ComputedData struct {
 	/* 缓存数据 */
 	code      []ByteCode
 	codeIndex int
+}
+
+type FunctionData struct {
+	Expr   string
+	Name   string
+	Params []string
+
+	/* 缓存数据 */
+	code      []ByteCode
+	codeIndex int
+	attrs     map[string]*VMValue
 }
 
 func (v *VMValue) Clone() *VMValue {
@@ -161,9 +181,12 @@ func (v *VMValue) ToString() string {
 		}
 		s += "]"
 		return s
-	//case VMTypeComputedValue:
-	//vd := v.Value.(*VMComputedValueData)
-	//return vd.BaseValue.ToString() + "=> (" + vd.Expr + ")"
+	case VMTypeComputedValue:
+		cd, _ := v.ReadComputed()
+		return "&(" + cd.Expr + ")"
+	case VMTypeFunction:
+		cd, _ := v.ReadFunctionData()
+		return "function " + cd.Name
 	default:
 		return "a value"
 	}
@@ -200,6 +223,13 @@ func (v *VMValue) ReadArray() ([]*VMValue, bool) {
 func (v *VMValue) ReadComputed() (*ComputedData, bool) {
 	if v.TypeId == VMTypeComputedValue {
 		return v.Value.(*ComputedData), true
+	}
+	return nil, false
+}
+
+func (v *VMValue) ReadFunctionData() (*FunctionData, bool) {
+	if v.TypeId == VMTypeFunction {
+		return v.Value.(*FunctionData), true
 	}
 	return nil, false
 }
@@ -300,22 +330,42 @@ func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 
 func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
 	// TODO: 被除数为0
+	setDivideZero := func() {
+		ctx.Error = errors.New("被除数被0")
+	}
+
 	switch v.TypeId {
 	case VMTypeInt64:
 		switch v2.TypeId {
 		case VMTypeInt64:
+			if v2.Value.(int64) == 0 {
+				setDivideZero()
+				return nil
+			}
 			val := v.Value.(int64) / v2.Value.(int64)
 			return VMValueNewInt64(val)
 		case VMTypeFloat64:
+			if v2.Value.(float64) == 0 {
+				setDivideZero()
+				return nil
+			}
 			val := float64(v.Value.(int64)) / v2.Value.(float64)
 			return VMValueNewFloat64(val)
 		}
 	case VMTypeFloat64:
 		switch v2.TypeId {
 		case VMTypeInt64:
+			if v2.Value.(int64) == 0 {
+				setDivideZero()
+				return nil
+			}
 			val := v.Value.(float64) / float64(v2.Value.(int64))
 			return VMValueNewFloat64(val)
 		case VMTypeFloat64:
+			if v2.Value.(float64) == 0 {
+				setDivideZero()
+				return nil
+			}
 			val := v.Value.(float64) / v2.Value.(float64)
 			return VMValueNewFloat64(val)
 		}
@@ -529,6 +579,16 @@ func (v *VMValue) GetAttr(name string) *VMValue {
 			ret = VMValueNewUndefined()
 		}
 		return ret
+	case VMTypeFunction:
+		cd, _ := v.ReadFunctionData()
+		var ret *VMValue
+		if cd.attrs != nil {
+			ret = cd.attrs[name]
+		}
+		if ret == nil {
+			ret = VMValueNewUndefined()
+		}
+		return ret
 	}
 
 	return nil
@@ -661,6 +721,8 @@ func (v *VMValue) GetTypeName() string {
 		return "computed"
 	case VMTypeArray:
 		return "array"
+	case VMTypeFunction:
+		//return "function"
 	}
 	return "unknown"
 }
@@ -696,6 +758,47 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
+	return ret
+}
+
+func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
+	// TODO: 先复制computed代码修改，后续重构
+	cd, _ := v.ReadFunctionData()
+	cd.attrs = map[string]*VMValue{}
+
+	// 设置参数
+	for index, i := range cd.Params {
+		if index >= len(params) {
+			break
+		}
+		cd.attrs[i] = params[index]
+	}
+
+	vm := NewVM()
+	vm.Flags = ctx.Flags
+	vm.ValueStoreNameFunc = ctx.ValueStoreNameFunc
+	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
+	vm.subThreadDepth = ctx.subThreadDepth + 1
+	vm.currentThis = v
+	vm.NumOpCount = ctx.NumOpCount + 200
+	vm.code = cd.code
+	vm.codeIndex = cd.codeIndex
+	vm.parser.Evaluate()
+
+	if vm.Error != nil {
+		ctx.Error = vm.Error
+		return nil
+	}
+
+	var ret *VMValue
+	if vm.top != 0 {
+		ret = vm.stack[0].Clone()
+	} else {
+		ret = VMValueNewUndefined()
+	}
+
+	ctx.NumOpCount = vm.NumOpCount
+	cd.attrs = map[string]*VMValue{} // 清空
 	return ret
 }
 
@@ -736,4 +839,8 @@ func VMValueNewComputed(expr string) *VMValue {
 	return &VMValue{TypeId: VMTypeComputedValue, Value: &ComputedData{
 		Expr: expr,
 	}}
+}
+
+func VMValueNewFunctionRaw(computed *FunctionData) *VMValue {
+	return &VMValue{TypeId: VMTypeFunction, Value: computed}
 }

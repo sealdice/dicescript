@@ -197,7 +197,7 @@ func (e *Parser) Evaluate() {
 		case TypePushArray:
 			num := code.Value.(int64)
 			stackPush(VMValueNewArray(stackPopN(num)...))
-		case TypePushComputed:
+		case TypePushComputed, TypePushFuction:
 			val := code.Value.(*VMValue)
 			stackPush(val)
 		case TypePushUndefined:
@@ -208,6 +208,16 @@ func (e *Parser) Evaluate() {
 			} else {
 				stackPush(VMValueNewUndefined())
 			}
+
+		case TypeInvoke:
+			paramsNum := code.Value.(int64)
+			arr := stackPopN(paramsNum)
+			funcObj := stackPop()
+			ret := funcObj.FuncInvoke(ctx, arr)
+			if ctx.Error != nil {
+				return
+			}
+			stackPush(ret)
 
 		case TypeInvokeSelf:
 			paramsNum, _ := stackPop().ReadInt64()
@@ -267,7 +277,13 @@ func (e *Parser) Evaluate() {
 			e.top++
 		case TypeLoadName:
 			name := code.Value.(string)
-			loadFunc := ctx.ValueLoadNameFunc
+
+			var loadFunc func(name string) *VMValue
+			loadFunc = ctx.loadInnerVar(name)
+			if loadFunc == nil {
+				loadFunc = ctx.ValueLoadNameFunc
+			}
+
 			if loadFunc != nil {
 				val := loadFunc(name)
 				if val == nil {
@@ -322,7 +338,7 @@ func (e *Parser) Evaluate() {
 			v1, v2 := stackPop2()
 			opFunc := binOperator[code.T-TypeAdd]
 			ret := opFunc(v1, ctx, v2)
-			if ret == nil {
+			if ctx.Error == nil && ret == nil {
 				// TODO: 整理所有错误类型
 				opErr := fmt.Sprintf("这两种类型无法使用 %s 算符连接: %s, %s", code.CodeString(), v1.GetTypeName(), v2.GetTypeName())
 				ctx.Error = errors.New(opErr)

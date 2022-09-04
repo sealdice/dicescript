@@ -21,12 +21,14 @@ const (
 	TypePushUndefined
 	TypePushNone
 	TypePushThis
+	TypePushFuction
 
 	TypeLoadFormatString
 	TypeLoadName
 	TypeLoadNameRaw // 如遇到computed，这个版本不取出其内容
 	TypeStoreName
 
+	TypeInvoke
 	TypeInvokeSelf
 	TypeGetItem
 	TypeSetAttr
@@ -111,6 +113,12 @@ func (code *ByteCode) CodeString() string {
 		return "push.none"
 	case TypePushThis:
 		return "push.this"
+	case TypePushFuction:
+		computed, _ := code.Value.(*VMValue).ReadFunctionData()
+		return "push.func " + computed.Expr
+
+	case TypeInvoke:
+		return "invoke " + strconv.FormatInt(code.Value.(int64), 10)
 
 	case TypeInvokeSelf:
 		return "invoke.self " + code.Value.(string)

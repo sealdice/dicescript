@@ -29,11 +29,11 @@ stmtLines <- stmtWithBlock stmtLines*
 
 stmtWithSemicolon <- stmtAssign / exprRoot
 
-stmtWithBlock <- stmtIf
+stmtWithBlock <- stmtIf / stmtFunc
 
 block <- ( '{' sp '}' / '{' sp stmtRoot '}' ) sp
-stmtElse <- 'else' sp (block / stmtIf)
-stmtIf <- 'if' sp exprRoot { p.AddOp(TypeJne); p.OffsetPush() } block { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); }
+stmtElse <- 'else' sp1 (block / stmtIf)
+stmtIf <- 'if' sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() } block { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); }
            stmtElse? { p.OffsetPopAndSet() }
 // 'if' exprRoot block
 // ('else' block)?
@@ -45,10 +45,17 @@ stmtIf <- 'if' sp exprRoot { p.AddOp(TypeJne); p.OffsetPush() } block { p.AddOp(
 // jmp 1
 // push "ret2"
 
+// 函数定义
+func_def_params <- '(' sp ')' sp { p.CounterPush() }
+                 / '(' sp { p.CounterPush(); p.CounterAdd(1) } identifier { p.NamePush(text) } (',' sp identifier { p.NamePush(text) } {p.CounterAdd(1)} )* ')' sp
 
-stmtAssign <- identifier { p.NamePush(string(text)) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
-            / '&' identifier { p.NamePush(string(text)) } '=' sp { p.CodePush() } < exprRoot > { p.AddStoreComputed(p.NamePop(), string(text)) }
-            / identifier { p.NamePush(string(text)) } '.' sp identifier { p.NamePush(string(text)) } '=' sp exprRoot { attr, objName := p.NamePop(), p.NamePop(); p.AddSetAttr(objName, attr) }
+stmtFunc <- 'func' sp1 identifier { p.NamePush(text) } func_def_params '{' sp { p.CodePush() } < stmtRoot? > '}' sp
+            {  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction(p.NamePop(), arr, string(text)) }
+
+// 赋值
+stmtAssign <- identifier { p.NamePush(text) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
+            / '&' identifier { p.NamePush(text) } '=' sp { p.CodePush() } < exprRoot > { p.AddStoreComputed(p.NamePop(), string(text)) }
+            / identifier { p.NamePush(text) } '.' sp identifier { p.NamePush(text) } '=' sp exprRoot { attr, objName := p.NamePop(), p.NamePop(); p.AddSetAttr(objName, attr) }
 
 exprRoot <- exprTernary
 
@@ -135,11 +142,14 @@ exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); 
 
 get_item <- ('[' sp exprRoot ']' sp { p.AddOp(TypeGetItem) })*
 
-array_call <- 'kh' { p.AddFuncCall("kh", 1) }
-            / 'kl' { p.AddFuncCall("kl", 1) }
+array_call <- 'kh' { p.AddInvokeMethod("kh", 1) }
+            / 'kl' { p.AddInvokeMethod("kl", 1) }
             / ('[' sp exprRoot ']' sp { p.AddOp(TypeGetItem) })+
 
 get_attr <- ('.' sp identifier { p.WriteCode(TypeGetAttr, string(text)) })*
+
+func_invoke <- '(' sp ')' sp { p.AddInvoke(0) }
+             / '(' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ')' sp { p.AddInvoke(p.CounterPop()) }
 
 // 右值
 value <- float
@@ -147,11 +157,11 @@ value <- float
        / 'undefined' sp { p.PushUndefined() }
        / 'this' sp { p.PushThis() } get_item get_attr
        / '&' identifier { p.WriteCode(TypeLoadNameRaw, string(text)) } get_attr
-       / identifier { p.AddLoadName(string(text)) } get_item get_attr
+       / identifier { p.AddLoadName(string(text)) } func_invoke? get_item get_attr
        / fstring
        / sub get_item get_attr
        / '[' sp ']' sp { p.PushArray(0) } array_call?
-       / '[' { p.CounterPush(); p.CounterAdd(1) } sp exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ']' sp { p.PushArray(p.CounterPop()) } array_call?
+       / '[' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ']' sp { p.PushArray(p.CounterPop()) } array_call?
 
 // 数字
 number <- < [0-9]+ > sp { p.PushIntNumber(string(text)) }
@@ -209,4 +219,5 @@ ne <- ('!=' / '！＝') sp
 
 // 其他
 sp <- ( ' ' / '\t' / '\n' / '\r' / ('//' [^\n]*) )*
+sp1 <- ' ' sp
 escape <- '\\' ([btnfr"'\\])  //  / OctalEscape / UnicodeEscape

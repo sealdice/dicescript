@@ -443,6 +443,30 @@ func TestComputed(t *testing.T) {
 	}
 }
 
+func TestFunction(t *testing.T) {
+	vm, attrs := newVMWithStore(nil)
+	err := vm.Run("func a() { 123 }; a()")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(123)))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("func a(d,b,c) { this.b }; a(1,2,3,4,5)")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("func a(d,b,c) { this.b }; a(1,2)")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("func a() { 2 / 0 }; a()")
+	assert.Error(t, err)
+}
+
 func TestBytecodeToString(t *testing.T) {
 	ops := []ByteCode{
 		{TypePushIntNumber, int64(1)},
