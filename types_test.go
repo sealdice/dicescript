@@ -54,6 +54,7 @@ func valueEqual(a *VMValue, b *VMValue) bool {
 var ni = VMValueNewInt64
 var nf = VMValueNewFloat64
 var ns = VMValueNewStr
+var na = VMValueNewArray
 
 func TestCompare(t *testing.T) {
 	ctx := NewVM()
@@ -228,6 +229,8 @@ func TestAdditive(t *testing.T) {
 		{nf(1), nf(2), nf(3)}, // 1+2=3
 		// str, str
 		{ns("aa"), ns("bb"), ns("aabb")}, // 'aa'+'bb'='aabb'
+		//
+		{na(ni(1), ni(2)), na(ni(3)), na(ni(1), ni(2), ni(3))},
 	}
 
 	for _, i := range addTest {

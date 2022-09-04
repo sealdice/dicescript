@@ -87,6 +87,10 @@ func (e *Parser) PushUndefined() {
 	e.WriteCode(TypePushUndefined, nil)
 }
 
+func (e *Parser) PushThis() {
+	e.WriteCode(TypePushThis, nil)
+}
+
 func (e *Parser) AddFormatString(value string, num int64) {
 	//e.PushStr(value)
 	e.WriteCode(TypeLoadFormatString, num) // num

@@ -404,7 +404,7 @@ func TestComputed(t *testing.T) {
 	}
 
 	vm, attrs := newVMWithStore(nil)
-	err = vm.Run("&a = d1 + x")
+	err = vm.Run("&a = d1 + this.x")
 	assert.NoError(t, err)
 
 	vm, _ = newVMWithStore(attrs)

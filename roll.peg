@@ -144,6 +144,7 @@ get_attr <- ('.' sp identifier { p.WriteCode(TypeGetAttr, string(text)) })*
 value <- float
        / number
        / 'undefined' sp { p.PushUndefined() }
+       / 'this' sp { p.PushThis() } get_item get_attr
        / '&' identifier { p.WriteCode(TypeLoadNameRaw, string(text)) } get_attr
        / identifier { p.AddLoadName(string(text)) } get_item get_attr
        / fstring

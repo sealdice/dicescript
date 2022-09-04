@@ -198,6 +198,12 @@ func (e *Parser) Evaluate() {
 			stackPush(val)
 		case TypePushUndefined:
 			stackPush(VMValueNewUndefined())
+		case TypePushThis:
+			if ctx.currentThis != nil {
+				stackPush(ctx.currentThis)
+			} else {
+				stackPush(VMValueNewUndefined())
+			}
 
 		case TypeInvokeSelf:
 			paramsNum, _ := stackPop().ReadInt64()

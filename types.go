@@ -61,8 +61,9 @@ type RollExtraFlags struct {
 
 type Context struct {
 	parser         *Parser
-	subThread      *Context // 用于执行子句
+	currentThis    *VMValue
 	subThreadDepth int
+	//subThread      *Context // 用于执行子句
 
 	code      []ByteCode
 	codeIndex int
@@ -229,10 +230,18 @@ func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
 			val := v.Value.(string) + v2.Value.(string)
 			return VMValueNewStr(val)
 		}
-	case VMTypeComputedValue:
-		// TODO:
 	case VMTypeArray:
-		// TODO:
+		switch v2.TypeId {
+		case VMTypeArray:
+			arr, _ := v.ReadArray()
+			arr2, _ := v2.ReadArray()
+			arrFinal := make([]*VMValue, len(arr)+len(arr2))
+			copy(arrFinal, arr)
+			for index, i := range arr2 {
+				arrFinal[len(arr)+index] = i
+			}
+			return VMValueNewArray(arrFinal...)
+		}
 	}
 
 	return nil
@@ -658,18 +667,18 @@ func (v *VMValue) GetTypeName() string {
 
 func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	cd, _ := v.ReadComputed()
-
-	if cd.Attrs != nil {
-		for k, v := range cd.Attrs {
-			ctx.ValueStoreNameFunc(k, v)
-		}
-	}
+	//if cd.Attrs != nil {
+	//	for k, v := range cd.Attrs {
+	//		ctx.ValueStoreNameFunc(k, v)
+	//	}
+	//}
 
 	vm := NewVM()
 	vm.Flags = ctx.Flags
 	vm.ValueStoreNameFunc = ctx.ValueStoreNameFunc
 	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
+	vm.currentThis = v
 	vm.code = cd.code
 	vm.codeIndex = cd.codeIndex
 	vm.parser.Evaluate()

@@ -20,6 +20,7 @@ const (
 	TypePushComputed
 	TypePushUndefined
 	TypePushNone
+	TypePushThis
 
 	TypeLoadFormatString
 	TypeLoadName
@@ -108,6 +109,8 @@ func (code *ByteCode) CodeString() string {
 		return "push.undefined"
 	case TypePushNone:
 		return "push.none"
+	case TypePushThis:
+		return "push.this"
 
 	case TypeInvokeSelf:
 		return "invoke.self " + code.Value.(string)
