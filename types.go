@@ -679,6 +679,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.currentThis = v
+	vm.NumOpCount = ctx.NumOpCount + 200
 	vm.code = cd.code
 	vm.codeIndex = cd.codeIndex
 	vm.parser.Evaluate()
@@ -694,6 +695,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 		ret = VMValueNewUndefined()
 	}
 
+	ctx.NumOpCount = vm.NumOpCount
 	return ret
 }
 

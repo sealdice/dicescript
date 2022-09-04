@@ -162,6 +162,10 @@ func (e *Parser) Evaluate() {
 	startTime := time.Now().UnixMilli()
 	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
 		numOpCountAdd(1)
+		if ctx.Error != nil {
+			return
+		}
+
 		code := e.code[opIndex]
 		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.codeIndex)
 		if ctx.Flags.PrintBytecode {

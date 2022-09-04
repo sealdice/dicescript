@@ -21,10 +21,11 @@ type Parser Peg {
 
 // 出口
 dicescript <- stmtRoot { p.AddOp(TypeHalt) }
-stmtRoot <- (stmtLines / ';' sp)+
+stmtRoot <- stmtLines
 
-stmtLines <- stmtWithBlock
-           / stmtWithSemicolon (';' sp stmtWithSemicolon)*
+stmtLines <- stmtWithBlock stmtLines*
+           / stmtWithSemicolon (';' sp (stmtWithSemicolon) / stmtWithBlock)*
+           / (';' sp)+
 
 stmtWithSemicolon <- stmtAssign / exprRoot
 

@@ -207,9 +207,9 @@ func TestIf(t *testing.T) {
 	vm, _ := newVMWithStore(attrs)
 	err := vm.Run("if 0 { a = 2 } else if 2 { b = 1 } c= 1; ;;;;; d= 2;b")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["b"], ni(1)))
-	assert.True(t, valueEqual(attrs["c"], ni(1)))
-	assert.True(t, valueEqual(attrs["d"], ni(2)))
+	assert.True(t, valueEqual(attrs["b"], ni(1)), attrs["b"])
+	assert.True(t, valueEqual(attrs["c"], ni(1)), attrs["c"])
+	assert.True(t, valueEqual(attrs["d"], ni(2)), attrs["d"])
 	assert.True(t, attrs["a"] == nil)
 }
 
@@ -288,6 +288,25 @@ func TestUnary(t *testing.T) {
 	vm = NewVM()
 	err = vm.Run("-'123'")
 	assert.Error(t, err)
+}
+
+func TestRest(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("1 2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+		assert.True(t, vm.RestInput == "2")
+	}
+}
+
+func TestRecursion(t *testing.T) {
+	vm, attrs := newVMWithStore(nil)
+	err := vm.Run("&a = a + 1")
+	assert.NoError(t, err)
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a")
+	assert.Error(t, err) // 算力上限
 }
 
 func TestArray(t *testing.T) {
