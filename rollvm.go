@@ -165,7 +165,11 @@ func (e *Parser) Evaluate() {
 		code := e.code[opIndex]
 		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.codeIndex)
 		if ctx.Flags.PrintBytecode {
-			fmt.Printf("!!! %-20s %s %dms\n", code.CodeString(), cIndex, time.Now().UnixMilli()-startTime)
+			var subThread string
+			if ctx.subThreadDepth != 0 {
+				subThread = fmt.Sprintf("  S%d", ctx.subThreadDepth)
+			}
+			fmt.Printf("!!! %-20s %s %dms%s\n", code.CodeString(), cIndex, time.Now().UnixMilli()-startTime, subThread)
 		}
 
 		switch code.T {
@@ -189,6 +193,11 @@ func (e *Parser) Evaluate() {
 		case TypePushArray:
 			num := code.Value.(int64)
 			stackPush(VMValueNewArray(stackPopN(num)...))
+		case TypePushComputed:
+			val := code.Value.(*VMValue)
+			stackPush(val)
+		case TypePushUndefined:
+			stackPush(VMValueNewUndefined())
 
 		case TypeCallSelf:
 			paramsNum, _ := stackPop().ReadInt64()
@@ -199,7 +208,7 @@ func (e *Parser) Evaluate() {
 			arr := stackPop()
 			v := arr.ArrayGetItem(ctx, itemIndex)
 			if ctx.Error != nil {
-				break
+				return
 			}
 			stackPush(v)
 
@@ -229,6 +238,12 @@ func (e *Parser) Evaluate() {
 				val := loadFunc(name)
 				if val == nil {
 					val = VMValueNewUndefined()
+				}
+				if val.TypeId == VMTypeComputedValue {
+					val = val.ComputedExecute(ctx)
+					if ctx.Error != nil {
+						return
+					}
 				}
 				stackPush(val)
 			} else {
@@ -266,7 +281,7 @@ func (e *Parser) Evaluate() {
 				ctx.Error = errors.New(opErr)
 			}
 			if ctx.Error != nil {
-				break
+				return
 			}
 			stackPush(ret)
 
@@ -284,7 +299,7 @@ func (e *Parser) Evaluate() {
 				ctx.Error = errors.New(opErr)
 			}
 			if ctx.Error != nil {
-				break
+				return
 			}
 			stackPush(ret)
 
@@ -325,7 +340,7 @@ func (e *Parser) Evaluate() {
 
 			numOpCountAdd(diceState.times)
 			if ctx.Error != nil {
-				break
+				return
 			}
 
 			for i := int64(0); i < diceState.times; i += 1 {

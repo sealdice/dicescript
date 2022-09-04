@@ -17,6 +17,9 @@ const (
 	TypePushFloatNumber
 	TypePushString
 	TypePushArray
+	TypePushComputed
+	TypePushUndefined
+	TypePushNone
 
 	TypeLoadFormatString
 	TypeLoadName
@@ -95,6 +98,13 @@ func (code *ByteCode) CodeString() string {
 		return "push.str " + code.Value.(string)
 	case TypePushArray:
 		return "push.arr " + strconv.FormatInt(code.Value.(int64), 10)
+	case TypePushComputed:
+		computed, _ := code.Value.(*VMValue).ReadComputed()
+		return "push.computed " + computed.Expr
+	case TypePushUndefined:
+		return "push.undefined"
+	case TypePushNone:
+		return "push.none"
 
 	case TypeCallSelf:
 		return "call.self " + code.Value.(string)

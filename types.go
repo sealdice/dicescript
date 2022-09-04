@@ -94,6 +94,15 @@ type VMValue struct {
 	ExpiredTime int64       `json:"expiredTime"`
 }
 
+type ComputedData struct {
+	Expr  string
+	Attrs map[string]*VMValue
+
+	/* 缓存数据 */
+	code      []ByteCode
+	codeIndex int
+}
+
 func (v *VMValue) Clone() *VMValue {
 	vNew := &VMValue{TypeId: v.TypeId, Value: v.Value}
 	// TODO: 针对特定类型，进行Value的处理，不过大多数时候应该够用
@@ -185,6 +194,13 @@ func (v *VMValue) ReadArray() ([]*VMValue, bool) {
 		return v.Value.([]*VMValue), true
 	}
 	return []*VMValue{}, false
+}
+
+func (v *VMValue) ReadComputed() (*ComputedData, bool) {
+	if v.TypeId == VMTypeComputedValue {
+		return v.Value.(*ComputedData), true
+	}
+	return nil, false
 }
 
 func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
@@ -609,6 +625,32 @@ func (v *VMValue) GetTypeName() string {
 	return "unknown"
 }
 
+func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
+	cd, _ := v.ReadComputed()
+
+	vm := NewVM()
+	vm.Flags = ctx.Flags
+	vm.ValueStoreNameFunc = ctx.ValueStoreNameFunc
+	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
+	vm.subThreadDepth = ctx.subThreadDepth + 1
+	vm.code = cd.code
+	vm.codeIndex = cd.codeIndex
+	vm.parser.Evaluate()
+	if vm.Error != nil {
+		ctx.Error = vm.Error
+		return nil
+	}
+
+	var ret *VMValue
+	if vm.top != 0 {
+		ret = vm.stack[0].Clone()
+	} else {
+		ret = VMValueNewUndefined()
+	}
+
+	return ret
+}
+
 func VMValueNewInt64(i int64) *VMValue {
 	// TODO: 小整数可以处理为不可变对象，且一直停留在内存中，就像python那样。这可以避免很多内存申请
 	return &VMValue{TypeId: VMTypeInt64, Value: i}
@@ -636,4 +678,14 @@ func VMValueNewArray(values ...*VMValue) *VMValue {
 		data = append(data, i)
 	}
 	return &VMValue{TypeId: VMTypeArray, Value: data}
+}
+
+func VMValueNewComputedRaw(computed *ComputedData) *VMValue {
+	return &VMValue{TypeId: VMTypeComputedValue, Value: computed}
+}
+
+func VMValueNewComputed(expr string) *VMValue {
+	return &VMValue{TypeId: VMTypeComputedValue, Value: &ComputedData{
+		Expr: expr,
+	}}
 }

@@ -9,12 +9,20 @@ type ParserData struct {
 	counterStack []int64  // f-string 嵌套计数，在解析时中起作用
 	varnameStack []string // 另一个解析用栈
 	jmpStack     []int64
+	codeStack    []struct {
+		code  []ByteCode
+		index int
+	}
 }
 
 func (pd *ParserData) init() {
 	pd.counterStack = []int64{}
 	pd.varnameStack = []string{}
 	pd.jmpStack = []int64{} // 不复用counterStack的原因是在 ?: 算符中两个都有用到
+	pd.codeStack = []struct {
+		code  []ByteCode
+		index int
+	}{} // 用于处理函数
 }
 
 func (e *Parser) checkStackOverflow() bool {
@@ -75,6 +83,10 @@ func (e *Parser) PushArray(value int64) {
 	e.WriteCode(TypePushArray, value)
 }
 
+func (e *Parser) PushUndefined(value int64) {
+	e.WriteCode(TypePushUndefined, value)
+}
+
 func (e *Parser) AddFormatString(value string, num int64) {
 	//e.PushStr(value)
 	e.WriteCode(TypeLoadFormatString, num) // num
@@ -100,11 +112,11 @@ func (e *Parser) NamePop() string {
 	return val
 }
 
-func (e *Parser) CodePushOffset() {
+func (e *Parser) OffsetPush() {
 	e.jmpStack = append(e.jmpStack, int64(e.codeIndex)-1)
 }
 
-func (e *Parser) CodePopSetOffset() {
+func (e *Parser) OffsetPopAndSet() {
 	last := len(e.jmpStack) - 1
 	codeIndex := e.jmpStack[last]
 	e.jmpStack = e.jmpStack[:last]
@@ -133,4 +145,36 @@ func (e *Parser) CounterPop() int64 {
 func (e *Parser) AddFuncCall(name string, paramsNum int64) {
 	e.WriteCode(TypePushIntNumber, paramsNum)
 	e.WriteCode(TypeCallSelf, name)
+}
+
+func (p *Parser) AddStoreComputed(name string, text string) {
+	code, length := p.CodePop()
+	val := VMValueNewComputedRaw(&ComputedData{
+		Expr:      text,
+		code:      code,
+		codeIndex: length,
+	})
+
+	p.WriteCode(TypePushComputed, val)
+	p.WriteCode(TypeStoreName, name)
+}
+
+func (p *Parser) CodePush() {
+	p.codeStack = append(p.codeStack, struct {
+		code  []ByteCode
+		index int
+	}{code: p.code, index: p.codeIndex})
+	p.code = make([]ByteCode, 256)
+	p.codeIndex = 0
+}
+
+func (p *Parser) CodePop() ([]ByteCode, int) {
+	lastCode, lastIndex := p.code, p.codeIndex
+
+	last := len(p.codeStack) - 1
+	info := p.codeStack[last]
+	p.codeStack = p.codeStack[:last]
+	p.code = info.code
+	p.codeIndex = info.index
+	return lastCode, lastIndex
 }

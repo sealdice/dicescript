@@ -290,6 +290,121 @@ func TestUnary(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestArray(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("[1,2,3]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,3,2]kh")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1.2,2,3]kh")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2.2,3]kh")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,3,2]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[2,3,1]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,3.1,2.1]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[4.1,3.1,1]kl")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][-1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][-4]")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3][4]")
+	assert.Error(t, err)
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a = [1,2,3]; a[1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("b[1]")
+	assert.Error(t, err)
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("b[0][0]")
+	assert.Error(t, err)
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("[[1]][0][0]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("([[2]])[0][0]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+}
+
+func TestComputed(t *testing.T) {
+	vm, _ := newVMWithStore(nil)
+	err := vm.Run("&a = d1+2; a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("&a = []+2; a")
+	assert.Error(t, err)
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("&a = undefined; a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
+	}
+
+}
+
 func TestBytecodeToString(t *testing.T) {
 	ops := []ByteCode{
 		{TypePushIntNumber, int64(1)},
