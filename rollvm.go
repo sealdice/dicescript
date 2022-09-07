@@ -33,6 +33,10 @@ func NewVM() *Context {
 	// 初始化指令栈，默认指令长度512条
 	p.Context.Init(512)
 	p.parser = p
+
+	//aa := VarMap{}
+	//aa.Put("aa", VMValueNewInt64(222))
+	//fmt.Println("!!!", aa)
 	return &p.Context
 }
 

@@ -467,6 +467,21 @@ func TestFunction(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestFunctionFib(t *testing.T) {
+	vm, _ := newVMWithStore(nil)
+	err := vm.Run(`func fib(n) {
+  this.n == 0 ? 0,
+  this.n == 1 ? 1,
+  this.n == 2 ? 1,
+   1 ? fib(this.n-1)+fib(this.n-2)
+}
+fib(11)
+`)
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(89)))
+	}
+}
+
 func TestBytecodeToString(t *testing.T) {
 	ops := []ByteCode{
 		{TypePushIntNumber, int64(1)},

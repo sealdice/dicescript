@@ -65,7 +65,7 @@ type Context struct {
 	parser         *Parser
 	currentThis    *VMValue
 	subThreadDepth int
-	attrs          map[string]*VMValue
+	attrs          *ValueMap
 	//subThread      *Context // 用于执行子句
 
 	code      []ByteCode
@@ -107,7 +107,7 @@ type VMValue struct {
 
 type ComputedData struct {
 	Expr  string
-	Attrs map[string]*VMValue
+	Attrs *ValueMap
 
 	/* 缓存数据 */
 	code      []ByteCode
@@ -152,9 +152,6 @@ func (v *VMValue) AsBool() bool {
 func (v *VMValue) ToString() string {
 	if v == nil {
 		return "NIL"
-	}
-	if v.Value == nil {
-		return "unknown"
 	}
 	switch v.TypeId {
 	case VMTypeInt64:
@@ -559,9 +556,9 @@ func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
 		if cd.Attrs == nil {
-			cd.Attrs = map[string]*VMValue{}
+			cd.Attrs = &ValueMap{}
 		}
-		cd.Attrs[name] = val
+		cd.Attrs.Put(name, val)
 		return val
 	}
 
@@ -574,7 +571,7 @@ func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
 		cd, _ := v.ReadComputed()
 		var ret *VMValue
 		if cd.Attrs != nil {
-			ret = cd.Attrs[name]
+			ret, _ = cd.Attrs.Get(name)
 		}
 		if ret == nil {
 			ret = VMValueNewUndefined()
@@ -585,7 +582,7 @@ func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
 		var ret *VMValue
 		//if cd.ctx != nil {
 		if ctx.attrs != nil {
-			ret = ctx.attrs[name]
+			ret, _ = ctx.attrs.Get(name)
 		}
 		//}
 		if ret == nil {
@@ -769,7 +766,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 
 	vm := NewVM()
 	cd, _ := v.ReadFunctionData()
-	vm.attrs = map[string]*VMValue{}
+	vm.attrs = &ValueMap{}
 	//cd.ctx = vm
 
 	// 设置参数
@@ -778,7 +775,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 			break
 		}
 		//fmt.Println("XX!!!", i, params[index].ToString())
-		vm.attrs[i] = params[index]
+		vm.attrs.Put(i, params[index])
 	}
 
 	vm.Flags = ctx.Flags
@@ -805,7 +802,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
-	vm.attrs = map[string]*VMValue{} // 清空
+	vm.attrs = &ValueMap{} // 清空
 	return ret
 }
 
