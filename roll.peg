@@ -24,12 +24,26 @@ dicescript <- stmtRoot { p.AddOp(TypeHalt) }
 stmtRoot <- stmtLines
 
 stmtLines <- stmtWithBlock stmtLines*
-           / stmtWithSemicolon (';' sp (stmtWithSemicolon) / stmtWithBlock)*
+           / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* stmtWithBlock)*
            / (';' sp)+
 
 stmtWithSemicolon <- stmtAssign / exprRoot
 
-stmtWithBlock <- stmtIf / stmtFunc
+stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtBreak / stmtContinue / stmtReturn
+
+stmtBreak <- 'break' sp
+
+stmtContinue <- 'break' sp
+
+stmtReturn <- 'return' sp
+            / 'return' sp1 exprRoot
+
+stmtWhile <- 'while' { p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
+             block { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.OffsetPopN(3); }
+// push xxx // 这里是while后面的exprRoot
+// jne 1
+// ...
+// jmp -3 // 跳回开始点
 
 block <- ( '{' sp '}' / '{' sp stmtRoot '}' ) sp
 stmtElse <- 'else' sp1 (block / stmtIf)
@@ -185,8 +199,7 @@ fstring <- (
     ) sp
 
 // 变量名
-// TODO: 排除掉关键字
-identifier <- < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
+identifier <- !(('while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func') sp1) < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
 
 // 括号
 sub <- parenOpen exprRoot parenClose
@@ -219,5 +232,5 @@ ne <- ('!=' / '！＝') sp
 
 // 其他
 sp <- ( ' ' / '\t' / '\n' / '\r' / ('//' [^\n]*) )*
-sp1 <- ' ' sp
+sp1 <- ( ' ' / '\t' / '\n' / '\r' / ('//' [^\n]*)) sp / !.
 escape <- '\\' ([btnfr"'\\])  //  / OctalEscape / UnicodeEscape

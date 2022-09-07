@@ -128,6 +128,25 @@ func (e *Parser) OffsetPopAndSet() {
 	//fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
 }
 
+func (e *Parser) OffsetPopN(num int) {
+	last := len(e.jmpStack) - num
+	e.jmpStack = e.jmpStack[:last]
+}
+
+func (e *Parser) OffsetJmpSetX(offsetA int, offsetB int, rev bool) {
+	lastA := len(e.jmpStack) - 1 - offsetA
+	lastB := len(e.jmpStack) - 1 - offsetB
+
+	codeIndex := e.jmpStack[lastA]
+	jmpIndex := e.jmpStack[lastB]
+
+	if rev {
+		e.code[codeIndex].Value = -(int64(e.codeIndex) - jmpIndex - 1)
+	} else {
+		e.code[codeIndex].Value = int64(e.codeIndex) - jmpIndex - 1
+	}
+}
+
 func (e *Parser) CounterPush() {
 	e.counterStack = append(e.counterStack, 0)
 }

@@ -85,6 +85,8 @@ func TestStr(t *testing.T) {
 
 	// TODO: FIX
 	//simpleExecute(t, `"12\"3"`, ns(`12"3`))
+	//simpleExecute(t, `"\""`, ns(`"`))
+	//simpleExecute(t, `"\r"`, ns("\r"))
 }
 
 func TestEmptyInput(t *testing.T) {
@@ -211,6 +213,88 @@ func TestIf(t *testing.T) {
 	assert.True(t, valueEqual(attrs["c"], ni(1)), attrs["c"])
 	assert.True(t, valueEqual(attrs["d"], ni(2)), attrs["d"])
 	assert.True(t, attrs["a"] == nil)
+}
+
+//
+
+func TestStatementLines(t *testing.T) {
+	vm, attrs := newVMWithStore(nil)
+	err := vm.Run("i = 0 ;; i = 3")
+	assert.NoError(t, err)
+	assert.True(t, valueEqual(attrs["i"], ni(3)))
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0 ;    ;  ; i = 3")
+	assert.NoError(t, err)
+	assert.True(t, valueEqual(attrs["i"], ni(3)))
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0 if 1 { i = 3 }")
+	assert.NoError(t, err)
+	assert.True(t, valueEqual(attrs["i"], ni(3)))
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0   ;if 1 { i = 3 }")
+	assert.NoError(t, err)
+	assert.True(t, valueEqual(attrs["i"], ni(3)))
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0;  if 1 { i = 3 }")
+	assert.NoError(t, err)
+	assert.True(t, valueEqual(attrs["i"], ni(3)))
+}
+
+func TestKeywords(t *testing.T) {
+	vm, attrs := newVMWithStore(nil)
+	err := vm.Run("while123")
+	assert.NoError(t, err)
+	assert.True(t, vm.RestInput == "")
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("while")
+	assert.Error(t, err)
+}
+
+func TestWhile(t *testing.T) {
+	vm, attrs := newVMWithStore(nil)
+	err := vm.Run("i = 0; while i<5 { i=i+1 }")
+	assert.NoError(t, err)
+	assert.True(t, vm.NumOpCount < 100)
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0; while 1 {  }")
+	assert.Error(t, err) // 算力上限
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0; while 1 {}")
+	assert.Error(t, err) // 算力上限
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("i = 0; while1 {}")
+	assert.True(t, vm.RestInput == "{}", vm.RestInput)
+
+}
+
+func TestCompareExpr(t *testing.T) {
+	tests := []struct {
+		expr  string
+		value *VMValue
+	}{
+		{"1>0", ni(1)},
+		{"1>=0", ni(1)},
+		{"1==0", ni(0)},
+		{"1==1", ni(1)},
+		{"1<0", ni(0)},
+		{"1<=0", ni(0)},
+		{"1!=0", ni(1)},
+	}
+
+	for _, i := range tests {
+		vm := NewVM()
+		err := vm.Run(i.expr)
+		assert.NoError(t, err, i.expr)
+		assert.True(t, valueEqual(vm.Ret, i.value), i.expr)
+	}
 }
 
 func TestTernary(t *testing.T) {

@@ -267,9 +267,9 @@ func (e *entryValueMap) tryLoadOrStore(i *VMValue) (actual *VMValue, loaded, ok 
 	}
 }
 
-// LoadAndDelete deletes the value for a key, returning the previous value if any.
+// GetAndDelete deletes the value for a key, returning the previous value if any.
 // The loaded result reports whether the key was present.
-func (m *ValueMap) LoadAndDelete(key string) (value *VMValue, loaded bool) {
+func (m *ValueMap) GetAndDelete(key string) (value *VMValue, loaded bool) {
 	read, _ := m.read.Load().(readOnlyValueMap)
 	e, ok := read.m[key]
 	if !ok && read.amended {
@@ -294,7 +294,7 @@ func (m *ValueMap) LoadAndDelete(key string) (value *VMValue, loaded bool) {
 
 // Delete deletes the value for a key.
 func (m *ValueMap) Delete(key string) {
-	m.LoadAndDelete(key)
+	m.GetAndDelete(key)
 }
 
 func (e *entryValueMap) delete() (value *VMValue, ok bool) {

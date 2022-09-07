@@ -34,9 +34,6 @@ func NewVM() *Context {
 	p.Context.Init(512)
 	p.parser = p
 
-	//aa := VarMap{}
-	//aa.Put("aa", VMValueNewInt64(222))
-	//fmt.Println("!!!", aa)
 	return &p.Context
 }
 
@@ -339,6 +336,8 @@ func (e *Parser) Evaluate() {
 			}
 		case TypeJmp:
 			opIndex += int(code.Value.(int64))
+		case TypePop:
+			stackPop()
 
 		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:

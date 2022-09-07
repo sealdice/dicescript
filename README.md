@@ -31,6 +31,7 @@ Simple script language for TRPG dice engine.
 - [x] 高级类型 计算数值computed
 - [x] 逻辑语法 if ... else ..
 - [ ] 逻辑语法 for
+- [x] 逻辑语法 while
 - [x] 函数支持
 - [ ] 内置函数
 - [x] 变量支持
