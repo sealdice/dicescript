@@ -250,9 +250,22 @@ func TestKeywords(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, vm.RestInput == "")
 
-	vm, _ = newVMWithStore(attrs)
-	err = vm.Run("while")
-	assert.Error(t, err)
+	keywords := []string{
+		"while", "if", "else", "continue", "break", "func",
+	}
+
+	suffixBad := []string{
+		"", "=", "#", ";", "=1", " ", " =1", "!", "\"", "%", "^", "&", "*", "(", ")", "/", "+", "-", ".", ".aa",
+		"[", "]", "[1]", ":", "<", ">", "?",
+	}
+
+	for _, i := range keywords {
+		for _, j := range suffixBad {
+			vm, _ = newVMWithStore(attrs)
+			err = vm.Run(i + j)
+			assert.Error(t, err)
+		}
+	}
 }
 
 func TestWhile(t *testing.T) {
@@ -272,7 +285,32 @@ func TestWhile(t *testing.T) {
 	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("i = 0; while1 {}")
 	assert.True(t, vm.RestInput == "{}", vm.RestInput)
+}
 
+func TestWhileContinueBreak(t *testing.T) {
+	vm, _ := newVMWithStore(nil)
+	err := vm.Run("a = 0; while a < 5 { a = a+1; continue; a=a+10 }; a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(5)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a = 0; while a < 5 { a = a+1; a=a+10; continue }; a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(11)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a = 1; while a < 5 { break; a = a+1; a=a+10 }; a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a = 1; while a < 5 { a = a+1; break; a=a+10 }; a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
 }
 
 func TestCompareExpr(t *testing.T) {

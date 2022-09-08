@@ -786,7 +786,6 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	vm := NewVM()
 	cd, _ := v.ReadFunctionData()
 	vm.attrs = &ValueMap{}
-	//cd.ctx = vm
 
 	// 设置参数
 	if len(cd.Params) != len(params) {

@@ -6,10 +6,12 @@ import (
 )
 
 type ParserData struct {
-	counterStack []int64  // f-string 嵌套计数，在解析时中起作用
-	varnameStack []string // 另一个解析用栈
-	jmpStack     []int64
-	codeStack    []struct {
+	counterStack  []int64  // f-string 嵌套计数，在解析时中起作用
+	varnameStack  []string // 另一个解析用栈
+	jmpStack      []int64
+	breakStack    []int64 // break用，用时创建
+	continueStack []int64 // continue用，用时创建
+	codeStack     []struct {
 		code  []ByteCode
 		index int
 	}
@@ -118,6 +120,41 @@ func (e *Parser) NamePop() string {
 
 func (e *Parser) OffsetPush() {
 	e.jmpStack = append(e.jmpStack, int64(e.codeIndex)-1)
+}
+
+func (p *Parser) ContinuePush() {
+	if p.continueStack == nil {
+		p.continueStack = []int64{}
+	}
+	p.AddOp(TypeJmp)
+	p.continueStack = append(p.continueStack, int64(p.codeIndex)-1)
+}
+
+func (p *Parser) ContinueSet(offsetB int) {
+	if p.continueStack != nil {
+		for _, codeIndex := range p.continueStack {
+			lastB := len(p.jmpStack) - 1 - offsetB
+			jmpIndex := p.jmpStack[lastB]
+			// 试出来的，这个是对的，那么也许while那个是错的？？还是说因为while最后多push了一个jmp呢？
+			p.code[codeIndex].Value = -(int64(codeIndex) - jmpIndex)
+		}
+	}
+}
+
+func (p *Parser) BreakSet() {
+	if p.breakStack != nil {
+		for _, codeIndex := range p.breakStack {
+			p.code[codeIndex].Value = int64(p.codeIndex) - codeIndex - 1
+		}
+	}
+}
+
+func (p *Parser) BreakPush() {
+	if p.breakStack == nil {
+		p.breakStack = []int64{}
+	}
+	p.AddOp(TypeJmp)
+	p.breakStack = append(p.breakStack, int64(p.codeIndex)-1)
 }
 
 func (e *Parser) OffsetPopAndSet() {

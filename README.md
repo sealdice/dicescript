@@ -30,7 +30,6 @@ Simple script language for TRPG dice engine.
 - [ ] 高级类型 字典dict
 - [x] 高级类型 计算数值computed
 - [x] 逻辑语法 if ... else ..
-- [ ] 逻辑语法 for
 - [x] 逻辑语法 while
 - [x] 函数支持
 - [ ] 内置函数
@@ -111,6 +110,7 @@ function roll(text) {
 * 数组下标赋值
 * 线程安全优化
 * 现在可以使用 true / false 其值为 1 / 0
+* break / continue 支持
 
 #### 2022.9.4
 

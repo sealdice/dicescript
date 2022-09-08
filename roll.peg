@@ -22,24 +22,30 @@ type Parser Peg {
 // 出口
 dicescript <- stmtRoot { p.AddOp(TypeHalt) }
 stmtRoot <- stmtLines
+stmtRootInLoop <- stmtLinesInLoop
 
 stmtLines <- stmtWithBlock stmtLines*
            / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* stmtWithBlock)*
            / (';' sp)+
 
+stmtLinesInLoop <- (stmtWithBlock / stmtBreak / stmtContinue) stmtLines*
+                 / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* (stmtWithBlock / stmtBreak / stmtContinue))*
+                 / (';' sp)+
+
 stmtWithSemicolon <- stmtAssign / exprRoot
 
-stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtBreak / stmtContinue / stmtReturn
+stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtReturn
 
-stmtBreak <- 'break' sp
+stmtBreak <- 'break' sp { p.BreakPush() }
 
-stmtContinue <- 'continue' sp
+stmtContinue <- 'continue' sp { p.ContinuePush() }
 
-stmtReturn <- 'return' sp { p.PushUndefined(); p.AddOp(TypeReturn); }
-            / 'return' sp1 exprRoot { p.AddOp(TypeReturn); }
+stmtReturn <- 'return' sp1 exprRoot { p.AddOp(TypeReturn); }
+            / 'return' sp { p.PushUndefined(); p.AddOp(TypeReturn); }
 
+blockInLoop <- ( '{' sp '}' / '{' sp stmtRootInLoop '}' ) sp
 stmtWhile <- 'while' { p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
-             block { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.OffsetPopN(3); }
+             blockInLoop { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.ContinueSet(2); p.BreakSet(); p.OffsetPopN(3); }
 // push xxx // 这里是while后面的exprRoot
 // jne 1
 // ...
@@ -202,7 +208,7 @@ fstring <- (
     ) sp
 
 // 变量名
-identifier <- !(('while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func') sp1) < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
+identifier <- !(('while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func') (sp1 / [!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ \t\n\r\36])) < [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~0-9 \t\n\r\36] [^!"#$%&\'()*+,-./;<=>?@\[\\\]^`{|}~ \t\n\r\36]* > sp // not (punctuation+number)
 
 // 括号
 sub <- parenOpen exprRoot parenClose
