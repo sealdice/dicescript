@@ -789,11 +789,14 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	//cd.ctx = vm
 
 	// 设置参数
+	if len(cd.Params) != len(params) {
+		ctx.Error = errors.New("调用参数个数与函数定义不符")
+		return nil
+	}
 	for index, i := range cd.Params {
-		if index >= len(params) {
-			break
-		}
-		//fmt.Println("XX!!!", i, params[index].ToString())
+		//if index >= len(params) {
+		//	break
+		//}
 		vm.attrs.Put(i, params[index])
 	}
 

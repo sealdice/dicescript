@@ -553,16 +553,18 @@ func TestFunction(t *testing.T) {
 	}
 
 	vm, _ = newVMWithStore(attrs)
-	err = vm.Run("func a(d,b,c) { this.b }; a(1,2,3,4,5)")
+	err = vm.Run("func a(d,b,c) { return this.b }; a(1,2,3)")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
 	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("func a(d,b,c) { this.b }; a(1,2)")
-	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ni(2)))
-	}
+	assert.Error(t, err)
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("func a(d,b,c) { this.b }; a(1,2,3,4,5)")
+	assert.Error(t, err)
 
 	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("func a() { 2 / 0 }; a()")

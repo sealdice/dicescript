@@ -107,8 +107,10 @@ function roll(text) {
 #### 2022.9.8
 
 * while 语法
+* return 语法
 * 数组下标赋值
 * 线程安全优化
+* 现在可以使用 true / false 其值为 1 / 0
 
 #### 2022.9.4
 
