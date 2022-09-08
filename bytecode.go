@@ -93,6 +93,7 @@ const (
 	TypeJmp
 	TypeJe
 	TypeJne
+	TypeReturn
 )
 
 func (code *ByteCode) CodeString() string {
@@ -240,6 +241,8 @@ func (code *ByteCode) CodeString() string {
 		return "nop"
 	case TypePop:
 		return "pop"
+	case TypeReturn:
+		return "ret"
 	case TypeClearDetail:
 		return "reset"
 	}

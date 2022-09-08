@@ -33,10 +33,10 @@ stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtBreak / stmtContinue / stmt
 
 stmtBreak <- 'break' sp
 
-stmtContinue <- 'break' sp
+stmtContinue <- 'continue' sp
 
-stmtReturn <- 'return' sp
-            / 'return' sp1 exprRoot
+stmtReturn <- 'return' sp { p.PushUndefined(); p.AddOp(TypeReturn); }
+            / 'return' sp1 exprRoot { p.AddOp(TypeReturn); }
 
 stmtWhile <- 'while' { p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
              block { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.OffsetPopN(3); }

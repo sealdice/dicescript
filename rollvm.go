@@ -268,6 +268,8 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(ret)
+		case TypeReturn:
+			break
 
 		case TypeLoadFormatString:
 			num := int(code.Value.(int64))

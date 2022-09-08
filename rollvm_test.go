@@ -499,6 +499,14 @@ func TestArray(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestReturn(t *testing.T) {
+	vm, _ := newVMWithStore(nil)
+	err := vm.Run("func test(n) { return 1; 2 }; test(11)")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+}
+
 func TestComputed(t *testing.T) {
 	vm, _ := newVMWithStore(nil)
 	err := vm.Run("&a = d1+2; a")
