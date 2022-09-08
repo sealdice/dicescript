@@ -487,6 +487,16 @@ func TestArray(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a = [0,0,0]; a[0] = 1; a[0]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("a[0] = 1")
+	assert.Error(t, err)
 }
 
 func TestComputed(t *testing.T) {

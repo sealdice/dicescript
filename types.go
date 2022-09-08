@@ -705,6 +705,25 @@ func (v *VMValue) ArrayGetItem(ctx *Context, index int64) *VMValue {
 	return nil
 }
 
+func (v *VMValue) ArraySetItem(ctx *Context, index int64, val *VMValue) bool {
+	if v.TypeId == VMTypeArray {
+		arr, _ := v.ReadArray()
+		length := int64(len(arr))
+		if index < 0 {
+			// 负数下标支持
+			index = length + index
+		}
+		if index >= length || index < 0 {
+			ctx.Error = errors.New("无法获取此下标")
+			return false
+		}
+		arr[index] = val
+		return true
+	}
+	ctx.Error = errors.New("此类型无法取下标")
+	return false
+}
+
 func (v *VMValue) GetTypeName() string {
 	switch v.TypeId {
 	case VMTypeInt64:

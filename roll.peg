@@ -70,6 +70,7 @@ stmtFunc <- 'func' sp1 identifier { p.NamePush(text) } func_def_params '{' sp { 
 stmtAssign <- identifier { p.NamePush(text) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
             / '&' identifier { p.NamePush(text) } '=' sp { p.CodePush() } < exprRoot > { p.AddStoreComputed(p.NamePop(), string(text)) }
             / identifier { p.NamePush(text) } '.' sp identifier { p.NamePush(text) } '=' sp exprRoot { attr, objName := p.NamePop(), p.NamePop(); p.AddSetAttr(objName, attr) }
+            / exprRoot '[' sp exprRoot ']' sp '=' sp exprRoot { p.AddOp(TypeSetItem) }
 
 exprRoot <- exprTernary
 
@@ -154,7 +155,7 @@ exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); 
           / [dD] { p.AddOp(TypeDiceInit); p.LMark() } (number / sub) (_dicePearMod / _diceMod)? _diceMod2 { p.AddOp(TypeDice) } sp  // d100
           / value
 
-get_item <- ('[' sp exprRoot ']' sp { p.AddOp(TypeGetItem) })*
+get_item <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeGetItem) })*
 
 array_call <- 'kh' { p.AddInvokeMethod("kh", 1) }
             / 'kl' { p.AddInvokeMethod("kl", 1) }
@@ -168,6 +169,8 @@ func_invoke <- '(' sp ')' sp { p.AddInvoke(0) }
 // 右值
 value <- float
        / number
+       / 'true' sp { p.PushIntNumber("1") }
+       / 'false' sp { p.PushIntNumber("0") }
        / 'undefined' sp { p.PushUndefined() }
        / 'this' sp { p.PushThis() } get_item get_attr
        / '&' identifier { p.WriteCode(TypeLoadNameRaw, string(text)) } get_attr

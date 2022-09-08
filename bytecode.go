@@ -31,6 +31,7 @@ const (
 	TypeInvoke
 	TypeInvokeSelf
 	TypeGetItem
+	TypeSetItem
 	TypeSetAttr
 	TypeGetAttr
 
@@ -124,6 +125,8 @@ func (code *ByteCode) CodeString() string {
 		return "invoke.self " + code.Value.(string)
 	case TypeGetItem:
 		return "item.get"
+	case TypeSetItem:
+		return "item.set"
 	case TypeSetAttr:
 		return "attr.set " + code.Value.(string)
 	case TypeGetAttr:

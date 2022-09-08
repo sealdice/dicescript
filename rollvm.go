@@ -229,13 +229,22 @@ func (e *Parser) Evaluate() {
 			arr := stackPopN(paramsNum)
 			stackPush(arr[0].CallFunc(ctx, code.Value.(string), arr[1:]))
 		case TypeGetItem:
-			itemIndex, _ := stackPop().ReadInt64()
+			itemIndex, _ := stackPop().ReadInt64() // 这有类型问题
 			arr := stackPop()
 			v := arr.ArrayGetItem(ctx, itemIndex)
 			if ctx.Error != nil {
 				return
 			}
 			stackPush(v)
+		case TypeSetItem:
+			val := stackPop()                      // 右值
+			itemIndex, _ := stackPop().ReadInt64() // 下标
+			arr := stackPop()                      // 数组
+			arr.ArraySetItem(ctx, itemIndex, val)
+			if ctx.Error != nil {
+				return
+			}
+
 		case TypeSetAttr:
 			attrVal, obj := stackPop2()
 			attrName := code.Value.(string)
@@ -247,7 +256,6 @@ func (e *Parser) Evaluate() {
 			if ctx.Error != nil {
 				return
 			}
-
 		case TypeGetAttr:
 			obj := stackPop()
 			attrName := code.Value.(string)
