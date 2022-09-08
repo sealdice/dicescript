@@ -313,6 +313,26 @@ func TestWhileContinueBreak(t *testing.T) {
 	}
 }
 
+func TestLineBreak(t *testing.T) {
+	vm, _ := newVMWithStore(nil)
+	err := vm.Run("if 1 {} 2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("1; if 1 {} 2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	vm, _ = newVMWithStore(nil)
+	err = vm.Run("1; if 1 {}; 2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+}
+
 func TestCompareExpr(t *testing.T) {
 	tests := []struct {
 		expr  string

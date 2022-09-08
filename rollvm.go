@@ -57,7 +57,7 @@ func (ctx *Context) Run(value string) error {
 
 	// 获取结果
 	if ctx.top != 0 {
-		ctx.Ret = &ctx.stack[0]
+		ctx.Ret = &ctx.stack[ctx.top-1]
 	} else {
 		ctx.Ret = VMValueNewUndefined()
 	}
@@ -269,7 +269,9 @@ func (e *Parser) Evaluate() {
 			}
 			stackPush(ret)
 		case TypeReturn:
-			break
+			return
+		case TypeHalt:
+			return
 
 		case TypeLoadFormatString:
 			num := int(code.Value.(int64))

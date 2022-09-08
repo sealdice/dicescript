@@ -20,16 +20,16 @@ type Parser Peg {
 }
 
 // 出口
-dicescript <- stmtRoot { p.AddOp(TypeHalt) }
+dicescript <- sp stmtRoot { p.AddOp(TypeHalt) }
 stmtRoot <- stmtLines
 stmtRootInLoop <- stmtLinesInLoop
 
 stmtLines <- stmtWithBlock stmtLines*
-           / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* stmtWithBlock)*
+           / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* stmtWithBlock stmtLines*)*
            / (';' sp)+
 
-stmtLinesInLoop <- (stmtWithBlock / stmtBreak / stmtContinue) stmtLines*
-                 / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* (stmtWithBlock / stmtBreak / stmtContinue))*
+stmtLinesInLoop <- (stmtWithBlock / stmtBreak / stmtContinue) stmtLinesInLoop*
+                 / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* (stmtWithBlock stmtLinesInLoop* / stmtBreak / stmtContinue))*
                  / (';' sp)+
 
 stmtWithSemicolon <- stmtAssign / exprRoot

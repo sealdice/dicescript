@@ -771,7 +771,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 
 	var ret *VMValue
 	if vm.top != 0 {
-		ret = vm.stack[0].Clone()
+		ret = vm.stack[vm.top-1].Clone()
 	} else {
 		ret = VMValueNewUndefined()
 	}
@@ -817,7 +817,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 
 	var ret *VMValue
 	if vm.top != 0 {
-		ret = vm.stack[0].Clone()
+		ret = vm.stack[vm.top-1].Clone()
 	} else {
 		ret = VMValueNewUndefined()
 	}
