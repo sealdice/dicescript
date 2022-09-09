@@ -38,8 +38,8 @@ func valueEqual(a *VMValue, b *VMValue) bool {
 		case VMTypeArray:
 			arr1, _ := a.ReadArray()
 			arr2, _ := b.ReadArray()
-			for index, i := range arr1 {
-				if !valueEqual(i, arr2[index]) {
+			for index, i := range arr1.List {
+				if !valueEqual(i, arr2.List[index]) {
 					return false
 				}
 			}

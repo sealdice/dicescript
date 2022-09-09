@@ -34,6 +34,8 @@ const (
 	TypeSetItem
 	TypeSetAttr
 	TypeGetAttr
+	TypeSliceGet
+	TypeSliceSet
 
 	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
 	TypeSubtract
@@ -117,7 +119,7 @@ func (code *ByteCode) CodeString() string {
 		return "push.this"
 	case TypePushFuction:
 		computed, _ := code.Value.(*VMValue).ReadFunctionData()
-		return "push.func " + computed.Expr
+		return "push.func " + computed.Name
 
 	case TypeInvoke:
 		return "invoke " + strconv.FormatInt(code.Value.(int64), 10)
@@ -132,6 +134,10 @@ func (code *ByteCode) CodeString() string {
 		return "attr.set " + code.Value.(string)
 	case TypeGetAttr:
 		return "attr.get " + code.Value.(string)
+	case TypeSliceGet:
+		return "slice.get"
+	case TypeSliceSet:
+		return "slice.set"
 
 	case TypeAdd:
 		return "add"

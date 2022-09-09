@@ -268,6 +268,25 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(ret)
+		case TypeSliceGet:
+			_ = stackPop() // step
+			a, b := stackPop2()
+			obj := stackPop()
+			ret := obj.GetSliceEx(ctx, a, b)
+			if ctx.Error != nil {
+				return
+			}
+			stackPush(ret)
+		case TypeSliceSet:
+			val := stackPop()
+			_ = stackPop() // step
+			a, b := stackPop2()
+			obj := stackPop()
+			obj.SetSliceEx(ctx, a, b, val)
+			if ctx.Error != nil {
+				return
+			}
+
 		case TypeReturn:
 			return
 		case TypeHalt:

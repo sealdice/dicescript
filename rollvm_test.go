@@ -713,3 +713,51 @@ func TestGetASM(t *testing.T) {
 	vm.Run("1+1")
 	vm.GetAsmText()
 }
+
+func TestSliceGet(t *testing.T) {
+	vm, attrs := newVMWithStore(nil)
+	err := vm.Run("a = [1,2,3,4]")
+	assert.NoError(t, err)
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a[:]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3), ni(4))))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a[:2]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2))))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a[0:-1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a[-3:-1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a[-3:-1:1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("a[-3:-1:]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+	}
+
+	vm, _ = newVMWithStore(attrs)
+	err = vm.Run("b = a[-3:-1:]; b[0] = 9; a[-3:-1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+	}
+}

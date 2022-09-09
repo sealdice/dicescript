@@ -105,6 +105,10 @@ type VMValue struct {
 	ExpiredTime int64       `json:"expiredTime"`
 }
 
+type ArrayData struct {
+	List []*VMValue
+}
+
 type ComputedData struct {
 	Expr  string
 	Attrs *ValueMap
@@ -166,14 +170,14 @@ func (v *VMValue) ToString() string {
 		return "null"
 	case VMTypeArray:
 		s := "["
-		arr := v.Value.([]*VMValue)
-		for index, i := range arr {
+		arr, _ := v.ReadArray()
+		for index, i := range arr.List {
 			if i.TypeId == VMTypeArray {
 				s += "[...]"
 			} else {
 				s += i.ToString()
 			}
-			if index != len(arr)-1 {
+			if index != len(arr.List)-1 {
 				s += ", "
 			}
 		}
@@ -211,11 +215,11 @@ func (v *VMValue) ReadString() (string, bool) {
 	return "", false
 }
 
-func (v *VMValue) ReadArray() ([]*VMValue, bool) {
+func (v *VMValue) ReadArray() (*ArrayData, bool) {
 	if v.TypeId == VMTypeArray {
-		return v.Value.([]*VMValue), true
+		return v.Value.(*ArrayData), true
 	}
-	return []*VMValue{}, false
+	return nil, false
 }
 
 func (v *VMValue) ReadComputed() (*ComputedData, bool) {
@@ -263,10 +267,10 @@ func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
 		case VMTypeArray:
 			arr, _ := v.ReadArray()
 			arr2, _ := v2.ReadArray()
-			arrFinal := make([]*VMValue, len(arr)+len(arr2))
-			copy(arrFinal, arr)
-			for index, i := range arr2 {
-				arrFinal[len(arr)+index] = i
+			arrFinal := make([]*VMValue, len(arr.List)+len(arr2.List))
+			copy(arrFinal, arr.List)
+			for index, i := range arr2.List {
+				arrFinal[len(arr.List)+index] = i
 			}
 			return VMValueNewArray(arrFinal...)
 		}
@@ -687,19 +691,40 @@ func (v *VMValue) ArrayFuncKeepLow(ctx *Context) *VMValue {
 	}
 }
 
+func getClampRealIndex(ctx *Context, index int64, length int64) int64 {
+	if index < 0 {
+		// 负数下标支持
+		index = length + index
+	}
+	if index < 0 {
+		index = 0
+	}
+
+	if index > length {
+		index = length
+	}
+	return index
+}
+
+func getRealIndex(ctx *Context, index int64, length int64) int64 {
+	if index < 0 {
+		// 负数下标支持
+		index = length + index
+	}
+	if index >= length || index < 0 {
+		ctx.Error = errors.New("无法获取此下标")
+	}
+	return index
+}
+
 func (v *VMValue) ArrayGetItem(ctx *Context, index int64) *VMValue {
 	if v.TypeId == VMTypeArray {
 		arr, _ := v.ReadArray()
-		length := int64(len(arr))
-		if index < 0 {
-			// 负数下标支持
-			index = length + index
-		}
-		if index >= length || index < 0 {
-			ctx.Error = errors.New("无法获取此下标")
+		index = getRealIndex(ctx, index, int64(len(arr.List)))
+		if ctx.Error != nil {
 			return nil
 		}
-		return arr[index]
+		return arr.List[index]
 	}
 	ctx.Error = errors.New("此类型无法取下标")
 	return nil
@@ -708,20 +733,130 @@ func (v *VMValue) ArrayGetItem(ctx *Context, index int64) *VMValue {
 func (v *VMValue) ArraySetItem(ctx *Context, index int64, val *VMValue) bool {
 	if v.TypeId == VMTypeArray {
 		arr, _ := v.ReadArray()
-		length := int64(len(arr))
-		if index < 0 {
-			// 负数下标支持
-			index = length + index
-		}
-		if index >= length || index < 0 {
-			ctx.Error = errors.New("无法获取此下标")
+		index = getRealIndex(ctx, index, int64(len(arr.List)))
+		if ctx.Error != nil {
 			return false
 		}
-		arr[index] = val.Clone()
+		arr.List[index] = val.Clone()
 		return true
 	}
 	ctx.Error = errors.New("此类型无法取下标")
 	return false
+}
+
+func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue {
+	arr, ok := v.ReadArray()
+	if !ok {
+		ctx.Error = errors.New("这个类型无法取得分片")
+		return nil
+	}
+	length := int64(len(arr.List))
+	_a := getClampRealIndex(ctx, a, length)
+	_b := getClampRealIndex(ctx, b, length)
+
+	if _a > _b {
+		_a = _b
+	}
+	newArr := arr.List[_a:_b]
+	return VMValueNewArray(newArr...)
+}
+
+func (v *VMValue) GetSliceEx(ctx *Context, a *VMValue, b *VMValue) *VMValue {
+	if a.TypeId == VMTypeUndefined {
+		a = VMValueNewInt64(0)
+	}
+
+	arr, ok := v.ReadArray()
+	if !ok {
+		ctx.Error = errors.New("这个类型无法取得分片")
+		return nil
+	}
+
+	if b.TypeId == VMTypeUndefined {
+		b = VMValueNewInt64(int64(len(arr.List)))
+	}
+
+	valA, ok := a.ReadInt64()
+	if !ok {
+		ctx.Error = errors.New("第一个值类型错误")
+		return nil
+	}
+
+	valB, ok := b.ReadInt64()
+	if !ok {
+		ctx.Error = errors.New("第二个值类型错误")
+		return nil
+	}
+
+	return v.GetSlice(ctx, valA, valB, 1)
+}
+
+func (v *VMValue) SetSlice(ctx *Context, a int64, b int64, step int64, val *VMValue) bool {
+	arr, ok := v.ReadArray()
+	if !ok {
+		ctx.Error = errors.New("这个类型无法取得分片")
+		return false
+	}
+	arr2, ok := val.ReadArray()
+	if !ok {
+		ctx.Error = errors.New("val 的类型必须是一个列表")
+		return false
+	}
+	length := int64(len(arr.List))
+	_a := getClampRealIndex(ctx, a, length)
+	_b := getClampRealIndex(ctx, b, length)
+
+	if _a > _b {
+		_a = _b
+	}
+
+	offset := len(arr2.List) - int(_b-_a)
+	newArr := make([]*VMValue, len(arr.List)+offset)
+
+	for i := int64(0); i < _a; i++ {
+		newArr[i] = arr.List[i]
+	}
+
+	for i := 0; i < len(arr2.List); i++ {
+		newArr[int(_a)+i] = arr2.List[i]
+	}
+
+	for i := int(_a) + len(arr2.List); i < len(newArr); i++ {
+		newArr[i] = arr.List[i-len(arr2.List)]
+	}
+
+	arr.List = newArr
+	return true
+}
+
+func (v *VMValue) SetSliceEx(ctx *Context, a *VMValue, b *VMValue, val *VMValue) bool {
+	if a.TypeId == VMTypeUndefined {
+		a = VMValueNewInt64(0)
+	}
+
+	arr, ok := v.ReadArray()
+	if !ok {
+		ctx.Error = errors.New("这个类型无法取得分片")
+		return false
+	}
+
+	if b.TypeId == VMTypeUndefined {
+		b = VMValueNewInt64(int64(len(arr.List)))
+	}
+
+	valA, ok := a.ReadInt64()
+	if !ok {
+		ctx.Error = errors.New("第一个值类型错误")
+		return false
+	}
+
+	valB, ok := b.ReadInt64()
+	if !ok {
+		ctx.Error = errors.New("第二个值类型错误")
+		return false
+	}
+
+	return v.SetSlice(ctx, valA, valB, 1, val)
 }
 
 func (v *VMValue) GetTypeName() string {
@@ -853,7 +988,8 @@ func VMValueNewArray(values ...*VMValue) *VMValue {
 	for _, i := range values {
 		data = append(data, i)
 	}
-	return &VMValue{TypeId: VMTypeArray, Value: data}
+
+	return &VMValue{TypeId: VMTypeArray, Value: &ArrayData{data}}
 }
 
 func VMValueNewComputedRaw(computed *ComputedData) *VMValue {
