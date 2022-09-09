@@ -558,7 +558,7 @@ func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
 		if cd.Attrs == nil {
 			cd.Attrs = &ValueMap{}
 		}
-		cd.Attrs.Put(name, val)
+		cd.Attrs.Put(name, val.Clone())
 		return val
 	}
 
@@ -717,7 +717,7 @@ func (v *VMValue) ArraySetItem(ctx *Context, index int64, val *VMValue) bool {
 			ctx.Error = errors.New("无法获取此下标")
 			return false
 		}
-		arr[index] = val
+		arr[index] = val.Clone()
 		return true
 	}
 	ctx.Error = errors.New("此类型无法取下标")

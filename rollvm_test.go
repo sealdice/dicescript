@@ -333,6 +333,15 @@ func TestLineBreak(t *testing.T) {
 	}
 }
 
+func TestItemSetBug(t *testing.T) {
+	// 由于言诺在2022/9/9提交，此用例之前的输出内容为[3,3,3]
+	vm, _ := newVMWithStore(nil)
+	err := vm.Run("a = [0,0,0]; i=0; while i<3 { a[i] = i+1; i=i+1 }  a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+	}
+}
+
 func TestCompareExpr(t *testing.T) {
 	tests := []struct {
 		expr  string

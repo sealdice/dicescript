@@ -76,6 +76,7 @@ stmtFunc <- 'func' sp1 identifier { p.NamePush(text) } func_def_params '{' sp { 
 stmtAssign <- identifier { p.NamePush(text) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
             / '&' identifier { p.NamePush(text) } '=' sp { p.CodePush() } < exprRoot > { p.AddStoreComputed(p.NamePop(), string(text)) }
             / identifier { p.NamePush(text) } '.' sp identifier { p.NamePush(text) } '=' sp exprRoot { attr, objName := p.NamePop(), p.NamePop(); p.AddSetAttr(objName, attr) }
+            / exprRoot '[' sp exprRoot ':' exprRoot sp ']' sp '=' sp exprRoot { p.AddOp(TypeSetItem) }
             / exprRoot '[' sp exprRoot ']' sp '=' sp exprRoot { p.AddOp(TypeSetItem) }
 
 exprRoot <- exprTernary
