@@ -267,6 +267,13 @@ func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
 		case VMTypeArray:
 			arr, _ := v.ReadArray()
 			arr2, _ := v2.ReadArray()
+
+			length := len(arr.List) + len(arr2.List)
+			if length > 512 {
+				ctx.Error = errors.New("不能一次性创建过长的数组")
+				return nil
+			}
+
 			arrFinal := make([]*VMValue, len(arr.List)+len(arr2.List))
 			copy(arrFinal, arr.List)
 			for index, i := range arr2.List {
@@ -315,6 +322,8 @@ func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 		case VMTypeFloat64:
 			val := float64(v.Value.(int64)) * v2.Value.(float64)
 			return VMValueNewFloat64(val)
+		case VMTypeArray:
+			return v2.ArrayRepeatTimesEx(ctx, v)
 		}
 	case VMTypeFloat64:
 		switch v2.TypeId {
@@ -325,6 +334,8 @@ func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 			val := v.Value.(float64) * v2.Value.(float64)
 			return VMValueNewFloat64(val)
 		}
+	case VMTypeArray:
+		return v.ArrayRepeatTimesEx(ctx, v2)
 	}
 
 	return nil
@@ -885,6 +896,28 @@ func (v *VMValue) SetSliceEx(ctx *Context, a *VMValue, b *VMValue, val *VMValue)
 	}
 
 	return v.SetSlice(ctx, valA, valB, 1, val)
+}
+
+func (v *VMValue) ArrayRepeatTimesEx(ctx *Context, times *VMValue) *VMValue {
+	switch times.TypeId {
+	case VMTypeInt64:
+		times, _ := times.ReadInt64()
+		ad, _ := v.ReadArray()
+		length := int64(len(ad.List)) * times
+
+		if length > 512 {
+			ctx.Error = errors.New("不能一次性创建过长的数组")
+			return nil
+		}
+
+		arr := make([]*VMValue, length)
+
+		for i := int64(0); i < length; i++ {
+			arr[i] = ad.List[int(i)%len(ad.List)].Clone()
+		}
+		return VMValueNewArray(arr...)
+	}
+	return nil
 }
 
 func (v *VMValue) GetTypeName() string {

@@ -269,6 +269,10 @@ func TestAdditive(t *testing.T) {
 		{nf(3), ni(2), nf(6)}, // 3*2=6
 		// float, flaot
 		{nf(3), nf(2), nf(6)}, // 3*2=6
+		// arr int
+		{na(ni(1), ni(2)), ni(2), na(ni(1), ni(2), ni(1), ni(2))},
+		// int arr
+		{ni(2), na(ni(1), ni(2)), na(ni(1), ni(2), ni(1), ni(2))},
 	}
 
 	for _, i := range subMul {
