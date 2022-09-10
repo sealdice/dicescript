@@ -209,6 +209,38 @@ func (e *Parser) Evaluate() {
 			} else {
 				stackPush(VMValueNewUndefined())
 			}
+		case TypePushRange:
+			a, b := stackPop2()
+			_a, ok1 := a.ReadInt64()
+			_b, ok2 := b.ReadInt64()
+			if !(ok1 && ok2) {
+				ctx.Error = errors.New("左右两个区间必须都是数字类型")
+				return
+			}
+
+			step := int64(1)
+			length := _b - _a
+			if length < 0 {
+				step = -1
+				length = -length
+			}
+			length += 1
+
+			if length > 512 {
+				ctx.Error = errors.New("不能一次性创建过长的数组")
+				return
+			}
+
+			arr := make([]*VMValue, length)
+			index := 0
+			for i := _a; ; i += step {
+				arr[index] = VMValueNewInt64(i)
+				index++
+				if i == _b {
+					break
+				}
+			}
+			stackPush(VMValueNewArray(arr...))
 
 		case TypeInvoke:
 			paramsNum := code.Value.(int64)
@@ -269,7 +301,12 @@ func (e *Parser) Evaluate() {
 			}
 			stackPush(ret)
 		case TypeSliceGet:
-			_ = stackPop() // step
+			step := stackPop() // step
+			if step.TypeId != VMTypeUndefined {
+				ctx.Error = errors.New("尚不支持分片步长")
+				return
+			}
+
 			a, b := stackPop2()
 			obj := stackPop()
 			ret := obj.GetSliceEx(ctx, a, b)
@@ -279,7 +316,12 @@ func (e *Parser) Evaluate() {
 			stackPush(ret)
 		case TypeSliceSet:
 			val := stackPop()
-			_ = stackPop() // step
+			step := stackPop() // step
+			if step.TypeId != VMTypeUndefined {
+				ctx.Error = errors.New("尚不支持分片步长")
+				return
+			}
+
 			a, b := stackPop2()
 			obj := stackPop()
 			obj.SetSliceEx(ctx, a, b, val)

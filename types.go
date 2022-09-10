@@ -612,13 +612,13 @@ func (v *VMValue) CallFunc(ctx *Context, name string, values []*VMValue) *VMValu
 }
 
 func (v *VMValue) ArrayFuncKeepHigh(ctx *Context) *VMValue {
-	arr := v.Value.([]*VMValue)
+	arr, _ := v.ReadArray()
 
 	var maxFloat float64 // 次函数最大上限为flaot64上限
 	isFloat := false
 	isFirst := true
 
-	for _, i := range arr {
+	for _, i := range arr.List {
 		switch i.TypeId {
 		case VMTypeInt64:
 			if isFirst {
@@ -652,13 +652,13 @@ func (v *VMValue) ArrayFuncKeepHigh(ctx *Context) *VMValue {
 }
 
 func (v *VMValue) ArrayFuncKeepLow(ctx *Context) *VMValue {
-	arr := v.Value.([]*VMValue)
+	arr, _ := v.ReadArray()
 
 	var maxFloat float64 // 次函数最大上限为flaot64上限
 	isFloat := false
 	isFirst := true
 
-	for _, i := range arr {
+	for _, i := range arr.List {
 		switch i.TypeId {
 		case VMTypeInt64:
 			if isFirst {
@@ -745,20 +745,49 @@ func (v *VMValue) ArraySetItem(ctx *Context, index int64, val *VMValue) bool {
 }
 
 func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue {
-	arr, ok := v.ReadArray()
-	if !ok {
-		ctx.Error = errors.New("这个类型无法取得分片")
+	length := v.Length(ctx)
+	if ctx.Error != nil {
 		return nil
 	}
-	length := int64(len(arr.List))
+
 	_a := getClampRealIndex(ctx, a, length)
 	_b := getClampRealIndex(ctx, b, length)
 
 	if _a > _b {
 		_a = _b
 	}
-	newArr := arr.List[_a:_b]
-	return VMValueNewArray(newArr...)
+
+	switch v.TypeId {
+	case VMTypeString:
+		str, _ := v.ReadString()
+		newArr := str[_a:_b]
+		return VMValueNewStr(newArr)
+	case VMTypeArray:
+		arr, _ := v.ReadArray()
+		newArr := arr.List[_a:_b]
+		return VMValueNewArray(newArr...)
+	default:
+		ctx.Error = errors.New("这个类型无法取得分片")
+		return nil
+	}
+}
+
+func (v *VMValue) Length(ctx *Context) int64 {
+	var length int64
+
+	switch v.TypeId {
+	case VMTypeArray:
+		arr, _ := v.ReadArray()
+		length = int64(len(arr.List))
+	case VMTypeString:
+		str, _ := v.ReadString()
+		length = int64(len(str))
+	default:
+		ctx.Error = errors.New("这个类型无法取得分片")
+		return 0
+	}
+
+	return length
 }
 
 func (v *VMValue) GetSliceEx(ctx *Context, a *VMValue, b *VMValue) *VMValue {
@@ -766,14 +795,13 @@ func (v *VMValue) GetSliceEx(ctx *Context, a *VMValue, b *VMValue) *VMValue {
 		a = VMValueNewInt64(0)
 	}
 
-	arr, ok := v.ReadArray()
-	if !ok {
-		ctx.Error = errors.New("这个类型无法取得分片")
+	length := v.Length(ctx)
+	if ctx.Error != nil {
 		return nil
 	}
 
 	if b.TypeId == VMTypeUndefined {
-		b = VMValueNewInt64(int64(len(arr.List)))
+		b = VMValueNewInt64(length)
 	}
 
 	valA, ok := a.ReadInt64()
@@ -794,7 +822,7 @@ func (v *VMValue) GetSliceEx(ctx *Context, a *VMValue, b *VMValue) *VMValue {
 func (v *VMValue) SetSlice(ctx *Context, a int64, b int64, step int64, val *VMValue) bool {
 	arr, ok := v.ReadArray()
 	if !ok {
-		ctx.Error = errors.New("这个类型无法取得分片")
+		ctx.Error = errors.New("这个类型无法赋值分片")
 		return false
 	}
 	arr2, ok := val.ReadArray()
@@ -821,8 +849,8 @@ func (v *VMValue) SetSlice(ctx *Context, a int64, b int64, step int64, val *VMVa
 		newArr[int(_a)+i] = arr2.List[i]
 	}
 
-	for i := int(_a) + len(arr2.List); i < len(newArr); i++ {
-		newArr[i] = arr.List[i-len(arr2.List)]
+	for i := int(_b) + offset; i < len(newArr); i++ {
+		newArr[i] = arr.List[i-offset]
 	}
 
 	arr.List = newArr
@@ -836,7 +864,7 @@ func (v *VMValue) SetSliceEx(ctx *Context, a *VMValue, b *VMValue, val *VMValue)
 
 	arr, ok := v.ReadArray()
 	if !ok {
-		ctx.Error = errors.New("这个类型无法取得分片")
+		ctx.Error = errors.New("这个类型无法赋值分片")
 		return false
 	}
 

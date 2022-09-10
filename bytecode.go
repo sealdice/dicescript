@@ -17,6 +17,7 @@ const (
 	TypePushFloatNumber
 	TypePushString
 	TypePushArray
+	TypePushRange
 	TypePushComputed
 	TypePushUndefined
 	TypePushNone
@@ -106,6 +107,8 @@ func (code *ByteCode) CodeString() string {
 		return "push.flt " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
 	case TypePushString:
 		return "push.str " + code.Value.(string)
+	case TypePushRange:
+		return "push.range"
 	case TypePushArray:
 		return "push.arr " + strconv.FormatInt(code.Value.(int64), 10)
 	case TypePushComputed:
