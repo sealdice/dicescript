@@ -92,11 +92,8 @@ func (e *Context) Init(stackLength int) {
 	e.code = make([]ByteCode, stackLength)
 }
 
-func (e *Context) loadInnerVar(name string) func(name string) *VMValue {
-	switch name {
-	case "ceil":
-	}
-	return nil
+func (e *Context) loadInnerVar(name string) *VMValue {
+	return builtinValues[name]
 }
 
 type VMValue struct {
@@ -127,6 +124,14 @@ type FunctionData struct {
 	code      []ByteCode
 	codeIndex int
 	ctx       *Context
+}
+
+type NativeFunctionData struct {
+	Name   string
+	Params []string
+
+	/* 缓存数据 */
+	NativeFunc func(ctx *Context, params []*VMValue) *VMValue
 }
 
 func (v *VMValue) Clone() *VMValue {
@@ -161,7 +166,7 @@ func (v *VMValue) ToString() string {
 	case VMTypeInt64:
 		return strconv.FormatInt(v.Value.(int64), 10)
 	case VMTypeFloat64:
-		return strconv.FormatFloat(v.Value.(float64), 'f', 2, 64)
+		return strconv.FormatFloat(v.Value.(float64), 'f', -1, 64)
 	case VMTypeString:
 		return v.Value.(string)
 	case VMTypeUndefined:
@@ -189,6 +194,9 @@ func (v *VMValue) ToString() string {
 	case VMTypeFunction:
 		cd, _ := v.ReadFunctionData()
 		return "function " + cd.Name
+	case VMTypeNativeFunction:
+		cd, _ := v.ReadNativeFunctionData()
+		return "nfunction " + cd.Name
 	default:
 		return "a value"
 	}
@@ -232,6 +240,13 @@ func (v *VMValue) ReadComputed() (*ComputedData, bool) {
 func (v *VMValue) ReadFunctionData() (*FunctionData, bool) {
 	if v.TypeId == VMTypeFunction {
 		return v.Value.(*FunctionData), true
+	}
+	return nil, false
+}
+
+func (v *VMValue) ReadNativeFunctionData() (*NativeFunctionData, bool) {
+	if v.TypeId == VMTypeNativeFunction {
+		return v.Value.(*NativeFunctionData), true
 	}
 	return nil, false
 }
@@ -1023,6 +1038,27 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	return ret
 }
 
+func (v *VMValue) FuncInvokeNative(ctx *Context, params []*VMValue) *VMValue {
+	cd, _ := v.ReadNativeFunctionData()
+
+	// 设置参数
+	if len(cd.Params) != len(params) {
+		ctx.Error = errors.New("调用参数个数与函数定义不符")
+		return nil
+	}
+	ret := cd.NativeFunc(ctx, params)
+
+	if ctx.Error != nil {
+		ctx.Error = ctx.Error
+		return nil
+	}
+
+	if ret == nil {
+		ret = VMValueNewUndefined()
+	}
+	return ret
+}
+
 func VMValueNewInt64(i int64) *VMValue {
 	// TODO: 小整数可以处理为不可变对象，且一直停留在内存中，就像python那样。这可以避免很多内存申请
 	return &VMValue{TypeId: VMTypeInt64, Value: i}
@@ -1065,4 +1101,8 @@ func VMValueNewComputed(expr string) *VMValue {
 
 func VMValueNewFunctionRaw(computed *FunctionData) *VMValue {
 	return &VMValue{TypeId: VMTypeFunction, Value: computed}
+}
+
+func VMValueNewNativeFunction(data *NativeFunctionData) *VMValue {
+	return &VMValue{TypeId: VMTypeNativeFunction, Value: data}
 }

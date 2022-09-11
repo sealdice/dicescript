@@ -252,6 +252,12 @@ func (e *Parser) Evaluate() {
 					return
 				}
 				stackPush(ret)
+			} else if funcObj.TypeId == VMTypeNativeFunction {
+				ret := funcObj.FuncInvokeNative(ctx, arr)
+				if ctx.Error != nil {
+					return
+				}
+				stackPush(ret)
 			} else {
 				ctx.Error = errors.New("无法调用")
 			}
@@ -355,15 +361,19 @@ func (e *Parser) Evaluate() {
 			e.top++
 		case TypeLoadName:
 			name := code.Value.(string)
+			value := ctx.loadInnerVar(name)
 
 			var loadFunc func(name string) *VMValue
-			loadFunc = ctx.loadInnerVar(name)
 			if loadFunc == nil {
 				loadFunc = ctx.ValueLoadNameFunc
 			}
 
 			if loadFunc != nil {
 				val := loadFunc(name)
+				if val == nil {
+					// 内置变量/函数检查
+					val = value
+				}
 				if val == nil {
 					val = VMValueNewUndefined()
 				}

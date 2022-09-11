@@ -32,7 +32,7 @@ Simple script language for TRPG dice engine.
 - [x] 逻辑语法 if ... else ..
 - [x] 逻辑语法 while
 - [x] 函数支持
-- [ ] 内置函数
+- [x] 内置函数
 - [x] 分片语法
 - [x] 区间数组
 - [x] 变量支持
@@ -104,6 +104,11 @@ function roll(text) {
 ```
 
 ## 更新记录
+
+#### 2022.9.12
+
+* 内置函数: ceil floor round int float str
+
 
 #### 2022.9.10
 
