@@ -51,8 +51,8 @@ func valueEqual(a *VMValue, b *VMValue) bool {
 	return false
 }
 
-var ni = VMValueNewInt64
-var nf = VMValueNewFloat64
+var ni = VMValueNewInt
+var nf = VMValueNewFloat
 var ns = VMValueNewStr
 var na = VMValueNewArray
 

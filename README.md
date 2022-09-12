@@ -40,6 +40,8 @@ Simple script language for TRPG dice engine.
 - [ ] 计算过程显示
 - [ ] 报错信息优化
 - [x] 线程安全
+- [ ] 简易闭包
+- [ ] sourcemap
 - [ ] 测试覆盖率 74% / 90%
 
 测试页面:
@@ -108,7 +110,7 @@ function roll(text) {
 #### 2022.9.12
 
 * 内置函数: ceil floor round int float str
-
+* 序列化和反序列化: int float str undefined null computed function
 
 #### 2022.9.10
 
@@ -289,7 +291,7 @@ a // 获得结果 5[a.x] + d10
 
 #### Array 数组
 
-使用 [] 来代表数组
+有两种方式定义一个数组。一是\[1,2,3,4,5]，二是\[1..5]会生成一个包含12345的数组，也可以写\[5..1]生成出一个反的数组
 
 支持一个fvtt的特殊语法，如\[1d20, 10]kh，是为两者取高
 
@@ -486,9 +488,13 @@ while $t1 < 10 {
 
 ### 函数
 
-#### 内置函数\[未完成]
+#### 内置函数
 
-floor ceil round abs
+floor ceil round abs int float str
+
+### 注释
+
+使用 // 注释
 
 #### 脚本中定义函数
 

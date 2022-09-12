@@ -37,6 +37,24 @@ func NewVM() *Context {
 	return &p.Context
 }
 
+func NewVMWithStore(attrs *ValueMap) (*Context, *ValueMap) {
+	vm := NewVM()
+	if attrs == nil {
+		attrs = &ValueMap{}
+	}
+
+	vm.ValueStoreNameFunc = func(name string, v *VMValue) {
+		attrs.Put(name, v)
+	}
+	vm.ValueLoadNameFunc = func(name string) *VMValue {
+		if val, ok := attrs.Get(name); ok {
+			return val
+		}
+		return nil
+	}
+	return vm, attrs
+}
+
 func (ctx *Context) Run(value string) error {
 	var err error
 
@@ -83,7 +101,7 @@ func (ctx *Context) Run(value string) error {
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
 //}
 
-func DiceRoll64(dicePoints int64) int64 {
+func Roll(dicePoints int64) int64 {
 	if dicePoints == 0 {
 		return 0
 	}
@@ -179,11 +197,11 @@ func (e *Parser) Evaluate() {
 
 		switch code.T {
 		case TypePushIntNumber:
-			stack[e.top].TypeId = VMTypeInt64
+			stack[e.top].TypeId = VMTypeInt
 			stack[e.top].Value = code.Value
 			e.top++
 		case TypePushFloatNumber:
-			stack[e.top].TypeId = VMTypeFloat64
+			stack[e.top].TypeId = VMTypeFloat
 			stack[e.top].Value = code.Value
 			e.top++
 		case TypePushString:
@@ -211,8 +229,8 @@ func (e *Parser) Evaluate() {
 			}
 		case TypePushRange:
 			a, b := stackPop2()
-			_a, ok1 := a.ReadInt64()
-			_b, ok2 := b.ReadInt64()
+			_a, ok1 := a.ReadInt()
+			_b, ok2 := b.ReadInt()
 			if !(ok1 && ok2) {
 				ctx.Error = errors.New("左右两个区间必须都是数字类型")
 				return
@@ -234,7 +252,7 @@ func (e *Parser) Evaluate() {
 			arr := make([]*VMValue, length)
 			index := 0
 			for i := _a; ; i += step {
-				arr[index] = VMValueNewInt64(i)
+				arr[index] = VMValueNewInt(i)
 				index++
 				if i == _b {
 					break
@@ -263,11 +281,11 @@ func (e *Parser) Evaluate() {
 			}
 
 		case TypeInvokeSelf:
-			paramsNum, _ := stackPop().ReadInt64()
+			paramsNum, _ := stackPop().ReadInt()
 			arr := stackPopN(paramsNum)
 			stackPush(arr[0].CallFunc(ctx, code.Value.(string), arr[1:]))
 		case TypeGetItem:
-			itemIndex, _ := stackPop().ReadInt64() // 这有类型问题
+			itemIndex, _ := stackPop().ReadInt() // 这有类型问题
 			arr := stackPop()
 			v := arr.ArrayGetItem(ctx, itemIndex)
 			if ctx.Error != nil {
@@ -275,9 +293,9 @@ func (e *Parser) Evaluate() {
 			}
 			stackPush(v)
 		case TypeSetItem:
-			val := stackPop()                      // 右值
-			itemIndex, _ := stackPop().ReadInt64() // 下标
-			arr := stackPop()                      // 数组
+			val := stackPop()                    // 右值
+			itemIndex, _ := stackPop().ReadInt() // 下标
+			arr := stackPop()                    // 数组
 			arr.ArraySetItem(ctx, itemIndex, val)
 			if ctx.Error != nil {
 				return
@@ -460,36 +478,36 @@ func (e *Parser) Evaluate() {
 			diceInit()
 		case TypeDiceSetTimes:
 			v := stackPop()
-			diceStates[len(diceStates)-1].times, _ = v.ReadInt64()
+			diceStates[len(diceStates)-1].times, _ = v.ReadInt()
 		case TypeDiceSetKeepLowNum:
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 1
-			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt64()
+			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt()
 		case TypeDiceSetKeepHighNum:
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 2
-			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
+			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt()
 		case TypeDiceSetDropLowNum:
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 3
-			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt64()
+			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt()
 		case TypeDiceSetMin:
 			v := stackPop()
-			i, _ := v.ReadInt64()
+			i, _ := v.ReadInt()
 			diceStates[len(diceStates)-1].min = &i
 		case TypeDiceSetMax:
 			v := stackPop()
-			i, _ := v.ReadInt64()
+			i, _ := v.ReadInt()
 			diceStates[len(diceStates)-1].max = &i
 		case TypeDiceSetDropHighNum:
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 4
-			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt64()
+			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt()
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
 			var nums []int64
 			val := stackPop()
-			bInt, _ := val.ReadInt64()
+			bInt, _ := val.ReadInt()
 
 			numOpCountAdd(diceState.times)
 			if ctx.Error != nil {
@@ -497,7 +515,7 @@ func (e *Parser) Evaluate() {
 			}
 
 			for i := int64(0); i < diceState.times; i += 1 {
-				oneDice := DiceRoll64(bInt)
+				oneDice := Roll(bInt)
 				if diceState.max != nil {
 					if oneDice > *diceState.max {
 						oneDice = *diceState.max
@@ -535,7 +553,7 @@ func (e *Parser) Evaluate() {
 				num += nums[i]
 			}
 
-			stackPush(VMValueNewInt64(num))
+			stackPush(VMValueNewInt(num))
 		}
 	}
 }

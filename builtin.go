@@ -7,9 +7,9 @@ import (
 )
 
 func funcCeil(ctx *Context, params []*VMValue) *VMValue {
-	v, ok := params[0].ReadFloat64()
+	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt64(int64(math.Ceil(v)))
+		return VMValueNewInt(int64(math.Ceil(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -17,9 +17,9 @@ func funcCeil(ctx *Context, params []*VMValue) *VMValue {
 }
 
 func funcRound(ctx *Context, params []*VMValue) *VMValue {
-	v, ok := params[0].ReadFloat64()
+	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt64(int64(math.Round(v)))
+		return VMValueNewInt(int64(math.Round(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -27,9 +27,9 @@ func funcRound(ctx *Context, params []*VMValue) *VMValue {
 }
 
 func funcFloor(ctx *Context, params []*VMValue) *VMValue {
-	v, ok := params[0].ReadFloat64()
+	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt64(int64(math.Floor(v)))
+		return VMValueNewInt(int64(math.Floor(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -38,16 +38,16 @@ func funcFloor(ctx *Context, params []*VMValue) *VMValue {
 
 func funcInt(ctx *Context, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
-	case VMTypeInt64:
+	case VMTypeInt:
 		return params[0]
-	case VMTypeFloat64:
-		v, _ := params[0].ReadFloat64()
-		return VMValueNewInt64(int64(v))
+	case VMTypeFloat:
+		v, _ := params[0].ReadFloat()
+		return VMValueNewInt(int64(v))
 	case VMTypeString:
 		s, _ := params[0].ReadString()
 		val, err := strconv.ParseInt(s, 10, 64)
 		if err == nil {
-			return VMValueNewInt64(val)
+			return VMValueNewInt(val)
 		} else {
 			ctx.Error = errors.New("值错误: 无法进行 int() 转换: " + s)
 		}
@@ -59,16 +59,16 @@ func funcInt(ctx *Context, params []*VMValue) *VMValue {
 
 func funcFloat(ctx *Context, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
-	case VMTypeInt64:
-		v, _ := params[0].ReadInt64()
-		return VMValueNewFloat64(float64(v))
-	case VMTypeFloat64:
+	case VMTypeInt:
+		v, _ := params[0].ReadInt()
+		return VMValueNewFloat(float64(v))
+	case VMTypeFloat:
 		return params[0]
 	case VMTypeString:
 		s, _ := params[0].ReadString()
 		val, err := strconv.ParseFloat(s, 64)
 		if err == nil {
-			return VMValueNewFloat64(val)
+			return VMValueNewFloat(val)
 		} else {
 			ctx.Error = errors.New("值错误: 无法进行 float() 转换: " + s)
 		}

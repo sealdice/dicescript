@@ -384,21 +384,21 @@ func TestTernary(t *testing.T) {
 	}
 
 	vm, attrs := newVMWithStore(nil)
-	attrs["a"] = VMValueNewInt64(1)
+	attrs["a"] = VMValueNewInt(1)
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("A")))
 	}
 
 	vm, _ = newVMWithStore(attrs)
-	attrs["a"] = VMValueNewInt64(2)
+	attrs["a"] = VMValueNewInt(2)
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("B")))
 	}
 
 	vm, _ = newVMWithStore(attrs)
-	attrs["a"] = VMValueNewInt64(3)
+	attrs["a"] = VMValueNewInt(3)
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("C")))
