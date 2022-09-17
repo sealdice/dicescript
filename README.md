@@ -4,7 +4,7 @@
 ![Software License](https://img.shields.io/badge/license-Apache2-brightgreen.svg?style=flat-square)
 [![GoDoc](https://godoc.org/github.com/sealdice/dicescript?status.svg)](https://godoc.org/github.com/sealdice/dicescript)
 
-最符合国内跑团习惯的TRPG骰点脚本语言。
+通用TRPG骰点脚本语言。
 
 Simple script language for TRPG dice engine.
 
@@ -36,7 +36,7 @@ Simple script language for TRPG dice engine.
 - [x] 分片语法
 - [x] 区间数组
 - [x] 变量支持
-- [ ] 序列化和反序列化
+- [x] 序列化和反序列化
 - [ ] 计算过程显示
 - [ ] 报错信息优化
 - [x] 线程安全
@@ -106,6 +106,11 @@ function roll(text) {
 ```
 
 ## 更新记录
+
+#### 2022.9.17
+
+* 序列化和反序列化: array native_function，全类型完成
+
 
 #### 2022.9.12
 

@@ -1,11 +1,12 @@
 package dicescript
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 )
 
-func (v *VMValue) ToJSON() ([]byte, error) {
+func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 	if v == nil {
 		return nil, errors.New("nil pointer")
 	}
@@ -38,6 +39,30 @@ func (v *VMValue) ToJSON() ([]byte, error) {
 			}{cd.Expr},
 		})
 
+	case VMTypeArray:
+		if save == nil {
+			save = map[*VMValue]bool{}
+		}
+		if _, exists := save[v]; exists {
+			return nil, errors.New("值错误: 序列化时检测到循环引用")
+		}
+		save[v] = true
+		ad, _ := v.ReadArray()
+		lst := [][]byte{}
+		for _, i := range ad.List {
+			json_data, err := i.ToJSONRaw(save)
+			if err != nil {
+				return nil, err
+			}
+			lst = append(lst, json_data)
+		}
+
+		lst2 := [][]byte{[]byte(`{"typeId":6,"value":{"list":[`)}
+		lst2 = append(lst2, bytes.Join(lst, []byte(",")))
+		lst2 = append(lst2, []byte("]}}"))
+
+		return bytes.Join(lst2, []byte("")), nil
+
 	case VMTypeFunction:
 		cd, _ := v.ReadFunctionData()
 		return json.Marshal(struct {
@@ -56,81 +81,94 @@ func (v *VMValue) ToJSON() ([]byte, error) {
 			}{cd.Expr, cd.Name, cd.Params},
 		})
 
-		//case VMTypeArray:
-		//	s := "["
-		//	arr, _ := v.ReadArray()
-		//	for index, i := range arr.List {
-		//		if i.TypeId == VMTypeArray {
-		//			s += "[...]"
-		//		} else {
-		//			s += i.ToString()
-		//		}
-		//		if index != len(arr.List)-1 {
-		//			s += ", "
-		//		}
-		//	}
-		//	s += "]"
-		//	return s
-		//case VMTypeNativeFunction:
-		//	cd, _ := v.ReadNativeFunctionData()
-		//	return "nfunction " + cd.Name
+	case VMTypeNativeFunction:
+		fd, _ := v.ReadNativeFunctionData()
+		return json.Marshal(struct {
+			TypeId VMValueType `json:"typeId"`
+			Value  struct {
+				Name string `json:"name"`
+			} `json:"value"`
+		}{
+			v.TypeId,
+			struct {
+				Name string `json:"name"`
+			}{fd.Name},
+		})
 	}
 	return nil, nil
 }
 
-func ValueFromJSON(data []byte) (*VMValue, error) {
+func (v *VMValue) ToJSON() ([]byte, error) {
+	return v.ToJSONRaw(nil)
+}
+
+func (v *VMValue) UnmarshalJSON(input []byte) error {
 	var v0 struct {
 		TypeId VMValueType `json:"typeId"`
 	}
 
-	err := json.Unmarshal(data, &v0)
+	err := json.Unmarshal(input, &v0)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	v.TypeId = v0.TypeId
 
 	switch v0.TypeId {
 	case VMTypeInt:
 		var v1 struct {
 			Value int64 `json:"value"`
 		}
-		err := json.Unmarshal(data, &v1)
+		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			return VMValueNewInt(v1.Value), nil
+			// 这里浪费了一点性能，但是流程的一致性会更好
+			v.Value = VMValueNewInt(v1.Value).Value
 		}
-		return nil, err
+		return err
 	case VMTypeFloat:
 		var v1 struct {
 			Value float64 `json:"value"`
 		}
-		err := json.Unmarshal(data, &v1)
+		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			return VMValueNewFloat(v1.Value), nil
+			v.Value = VMValueNewFloat(v1.Value).Value
 		}
-		return nil, err
+		return err
 	case VMTypeString:
 		var v1 struct {
 			Value string `json:"value"`
 		}
-		err := json.Unmarshal(data, &v1)
+		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			return VMValueNewStr(v1.Value), nil
+			v.Value = VMValueNewStr(v1.Value).Value
 		}
-		return nil, err
+		return err
 	case VMTypeUndefined:
-		return VMValueNewUndefined(), nil
+		return nil
 	case VMTypeNull:
-		return VMValueNewNull(), nil
+		return nil
 	case VMTypeComputedValue:
 		var v1 struct {
 			Value struct {
 				Expr string `json:"expr"`
 			} `json:"value"`
 		}
-		err := json.Unmarshal(data, &v1)
+		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			return VMValueNewComputed(v1.Value.Expr), nil
+			v.Value = VMValueNewComputed(v1.Value.Expr).Value
 		}
-		return nil, err
+		return err
+	case VMTypeArray:
+		var v1 struct {
+			Value struct {
+				List []*VMValue `json:"list"`
+			} `json:"value"`
+		}
+		err := json.Unmarshal(input, &v1)
+		if err == nil {
+			v.Value = VMValueNewArrayRaw(v1.Value.List).Value
+		}
+		return err
+
 	case VMTypeFunction:
 		var v1 struct {
 			Value struct {
@@ -139,12 +177,34 @@ func ValueFromJSON(data []byte) (*VMValue, error) {
 				Params []string `json:"params"`
 			} `json:"value"`
 		}
-		err := json.Unmarshal(data, &v1)
+		err := json.Unmarshal(input, &v1)
 		if err == nil {
 			fd := &FunctionData{Expr: v1.Value.Expr, Name: v1.Value.Name, Params: v1.Value.Params}
-			return VMValueNewFunctionRaw(fd), nil
+			v.Value = fd
+			return nil
 		}
-		return nil, err
+		return err
+
+	case VMTypeNativeFunction:
+		var v1 struct {
+			Value struct {
+				Name string `json:"name"`
+			} `json:"value"`
+		}
+		err := json.Unmarshal(input, &v1)
+		if err == nil {
+			if val, ok := builtinValues[v1.Value.Name]; ok {
+				v.Value = val.Value
+			}
+			return nil
+		}
+		return err
 	}
-	return nil, nil
+	return nil
+}
+
+func VMValueFromJSON(data []byte) (*VMValue, error) {
+	var v VMValue
+	err := json.Unmarshal(data, &v)
+	return &v, err
 }

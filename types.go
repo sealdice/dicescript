@@ -1099,6 +1099,10 @@ func VMValueNewNull() *VMValue {
 	return &VMValue{TypeId: VMTypeNull}
 }
 
+func VMValueNewArrayRaw(data []*VMValue) *VMValue {
+	return &VMValue{TypeId: VMTypeArray, Value: &ArrayData{data}}
+}
+
 func VMValueNewArray(values ...*VMValue) *VMValue {
 	var data []*VMValue
 	for _, i := range values {

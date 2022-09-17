@@ -17,6 +17,22 @@ func main() {
 	line := liner.NewLiner()
 	defer line.Close()
 
+	a, b := dice.VMValueNewFloat(3.2).ToJSON()
+	fmt.Println("!!!", string(a), b)
+
+	//a, b = dice.VMValueNewComputed("1 + this.x + d10").ToJSON()
+	//fmt.Println("!!!", string(a), b)
+	v, _ := dice.NewVMWithStore(nil)
+	v.Run(`func a(x) { return 5 }; a`)
+	aa, _ := v.Ret.ToJSON()
+	fmt.Println("!!!!", string(aa), v.Ret)
+
+	v, _ = dice.NewVMWithStore(nil)
+	v.Run(`[1,2,3]`)
+	aa, _ = v.Ret.ToJSON()
+	fmt.Println("!!!!", string(aa), v.Ret)
+	dice.VMValueFromJSON(aa)
+
 	line.SetCtrlCAborts(true)
 	line.SetCompleter(func(line string) (c []string) {
 		return

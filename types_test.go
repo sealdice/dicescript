@@ -17,6 +17,7 @@
 package dicescript
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -44,6 +45,10 @@ func valueEqual(a *VMValue, b *VMValue) bool {
 				}
 			}
 			return true
+		case VMTypeNativeFunction:
+			fd1, _ := a.ReadNativeFunctionData()
+			fd2, _ := b.ReadNativeFunctionData()
+			return reflect.ValueOf(fd1.NativeFunc).Pointer() == reflect.ValueOf(fd2.NativeFunc).Pointer()
 		default:
 			return a.Value == b.Value
 		}
