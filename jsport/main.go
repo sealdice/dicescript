@@ -12,7 +12,7 @@ var scope = map[string]*dicescript.VMValue{}
 
 func newVM(name string) *js.Object {
 	player := dicescript.VMValueNewDict(nil)
-	scope["player"] = player
+	scope["player"] = player.V()
 
 	vm := dicescript.NewVM()
 	vm.ValueStoreFunc = func(name string, v *dicescript.VMValue) {
@@ -29,7 +29,7 @@ func newVM(name string) *js.Object {
 }
 
 func main() {
-	newDict := func() *dicescript.VMValue {
+	newDict := func() *dicescript.VMDictValue {
 		return dicescript.VMValueNewDict(nil)
 	}
 
