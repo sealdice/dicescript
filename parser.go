@@ -93,6 +93,10 @@ func (e *Parser) PushThis() {
 	e.WriteCode(TypePushThis, nil)
 }
 
+func (e *Parser) PushGlobal() {
+	e.WriteCode(TypePushGlobal, nil)
+}
+
 func (e *Parser) AddFormatString(value string, num int64) {
 	//e.PushStr(value)
 	e.WriteCode(TypeLoadFormatString, num) // num
@@ -105,6 +109,14 @@ func (e *Parser) PushFloatNumber(value string) {
 
 func (e *Parser) AddStore(text string) {
 	e.WriteCode(TypeStoreName, text)
+}
+
+func (e *Parser) AddStoreGlobal(text string) {
+	e.WriteCode(TypeStoreNameGlobal, text)
+}
+
+func (e *Parser) AddStoreLocal(text string) {
+	e.WriteCode(TypeStoreNameLocal, text)
 }
 
 func (e *Parser) NamePush(test string) {

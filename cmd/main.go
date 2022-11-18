@@ -17,17 +17,25 @@ func main() {
 	line := liner.NewLiner()
 	defer line.Close()
 
+	d := dice.VMValueNewDict(nil)
+	d.Store("aaa", dice.VMValueNewInt(10))
+	d.Store("bbb", dice.VMValueNewInt(120))
+	d.Store("s", dice.VMValueNewStr("str"))
+
+	d.Store("ccc", dice.VMValueNewDict(nil).V())
+	fmt.Println("ccccccc", d.ToString())
+
 	a, b := dice.VMValueNewFloat(3.2).ToJSON()
 	fmt.Println("!!!", string(a), b)
 
 	//a, b = dice.VMValueNewComputed("1 + this.x + d10").ToJSON()
 	//fmt.Println("!!!", string(a), b)
-	v, _ := dice.NewVMWithStore(nil)
+	v := dice.NewVM()
 	v.Run(`func a(x) { return 5 }; a`)
 	aa, _ := v.Ret.ToJSON()
 	fmt.Println("!!!!", string(aa), v.Ret)
 
-	v, _ = dice.NewVMWithStore(nil)
+	v = dice.NewVM()
 	v.Run(`[1,2,3]`)
 	aa, _ = v.Ret.ToJSON()
 	fmt.Println("!!!!", string(aa), v.Ret)
@@ -56,10 +64,10 @@ func main() {
 
 			vm := dice.NewVM()
 			vm.Flags.PrintBytecode = true
-			vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
-				attrs[name] = v
-			}
-			vm.ValueLoadNameFunc = func(name string) *dice.VMValue {
+			//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
+			//	attrs[name] = v
+			//}
+			vm.ValueLoadFunc = func(name string) *dice.VMValue {
 				if val, ok := attrs[name]; ok {
 					return val
 				}

@@ -22,12 +22,15 @@ const (
 	TypePushUndefined
 	TypePushNone
 	TypePushThis
+	TypePushGlobal
 	TypePushFuction
 
 	TypeLoadFormatString
 	TypeLoadName
 	TypeLoadNameRaw // 如遇到computed，这个版本不取出其内容
 	TypeStoreName
+	TypeStoreNameGlobal
+	TypeStoreNameLocal
 
 	TypeInvoke
 	TypeInvokeSelf
@@ -120,6 +123,8 @@ func (code *ByteCode) CodeString() string {
 		return "push.none"
 	case TypePushThis:
 		return "push.this"
+	case TypePushGlobal:
+		return "push.global"
 	case TypePushFuction:
 		computed, _ := code.Value.(*VMValue).ReadFunctionData()
 		return "push.func " + computed.Name
@@ -188,10 +193,6 @@ func (code *ByteCode) CodeString() string {
 		return "dice.penalty"
 	case TypeDiceBonus:
 		return "dice.bonus"
-	case TypeDiceSetK:
-		return "dice.setk"
-	case TypeDiceSetQ:
-		return "dice.setq"
 	case TypeDiceFate:
 		return "dice.fate"
 	case TypeWodSetInit:
@@ -222,6 +223,10 @@ func (code *ByteCode) CodeString() string {
 		return fmt.Sprintf("ld.fs %d", code.Value)
 	case TypeStoreName:
 		return fmt.Sprintf("store %s", code.Value)
+	case TypeStoreNameGlobal:
+		return fmt.Sprintf("store.global %s", code.Value)
+	case TypeStoreNameLocal:
+		return fmt.Sprintf("store.local %s", code.Value)
 	case TypeHalt:
 		return "halt"
 	case TypeSwap:

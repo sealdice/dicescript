@@ -40,7 +40,7 @@ Simple script language for TRPG dice engine.
 - [ ] 计算过程显示
 - [ ] 报错信息优化
 - [x] 线程安全
-- [ ] 简易闭包
+- [x] 变量作用域
 - [ ] sourcemap
 - [ ] 测试覆盖率 74% / 90%
 
@@ -333,6 +333,10 @@ break
 return
 
 undefined
+
+this
+
+global
 
 
 ### 运算符

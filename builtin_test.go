@@ -6,13 +6,13 @@ import (
 )
 
 func TestNativeFunctionCall(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("ceil(1.2)")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("ceil('')")
 	assert.Error(t, err)
 }

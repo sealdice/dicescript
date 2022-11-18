@@ -30,29 +30,10 @@ func NewVM() *Context {
 	// 创建parser
 	p := &Parser{}
 	p.ParserData.init()
-	// 初始化指令栈，默认指令长度512条
-	p.Context.Init(512)
+	p.Context.Init()
 	p.parser = p
 
 	return &p.Context
-}
-
-func NewVMWithStore(attrs *ValueMap) (*Context, *ValueMap) {
-	vm := NewVM()
-	if attrs == nil {
-		attrs = &ValueMap{}
-	}
-
-	vm.ValueStoreNameFunc = func(name string, v *VMValue) {
-		attrs.Put(name, v)
-	}
-	vm.ValueLoadNameFunc = func(name string) *VMValue {
-		if val, ok := attrs.Get(name); ok {
-			return val
-		}
-		return nil
-	}
-	return vm, attrs
 }
 
 func (ctx *Context) Run(value string) error {
@@ -62,6 +43,12 @@ func (ctx *Context) Run(value string) error {
 	p := ctx.parser
 	p.Buffer = value
 	err = p.Init()
+
+	// 初始化指令栈，默认指令长度512条，会自动增长
+	p.code = make([]ByteCode, 512)
+	p.codeIndex = 0
+	ctx.Error = nil
+	ctx.NumOpCount = 0
 
 	// 开始解析，编译字节码
 	err = p.Parse()
@@ -222,11 +209,14 @@ func (e *Parser) Evaluate() {
 		case TypePushUndefined:
 			stackPush(VMValueNewUndefined())
 		case TypePushThis:
-			if ctx.currentThis != nil {
-				stackPush(ctx.currentThis)
-			} else {
-				stackPush(VMValueNewUndefined())
-			}
+			//if ctx.currentThis != nil {
+			//	stackPush(ctx.currentThis)
+			//} else {
+			stackPush(vmValueNewLocal())
+			//}
+		case TypePushGlobal:
+			stackPush(vmValueNewGlobal())
+
 		case TypePushRange:
 			a, b := stackPop2()
 			_a, ok1 := a.ReadInt()
@@ -264,6 +254,7 @@ func (e *Parser) Evaluate() {
 			paramsNum := code.Value.(int64)
 			arr := stackPopN(paramsNum)
 			funcObj := stackPop()
+
 			if funcObj.TypeId == VMTypeFunction {
 				ret := funcObj.FuncInvoke(ctx, arr)
 				if ctx.Error != nil {
@@ -377,56 +368,20 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = outStr
 			e.top++
-		case TypeLoadName:
+		case TypeLoadName, TypeLoadNameRaw:
 			name := code.Value.(string)
-			value := ctx.loadInnerVar(name)
-
-			var loadFunc func(name string) *VMValue
-			if loadFunc == nil {
-				loadFunc = ctx.ValueLoadNameFunc
-			}
-
-			if loadFunc != nil {
-				val := loadFunc(name)
-				if val == nil {
-					// 内置变量/函数检查
-					val = value
-				}
-				if val == nil {
-					val = VMValueNewUndefined()
-				}
-				if val.TypeId == VMTypeComputedValue {
-					val = val.ComputedExecute(ctx)
-					if ctx.Error != nil {
-						return
-					}
-				}
-				stackPush(val)
-			} else {
-				ctx.Error = errors.New("未设置 ValueLoadNameFunc，无法获取变量")
+			val := ctx.LoadName(name, TypeLoadNameRaw == code.T)
+			if ctx.Error != nil {
 				return
 			}
-		case TypeLoadNameRaw:
-			name := code.Value.(string)
-			loadFunc := ctx.ValueLoadNameFunc
-			if loadFunc != nil {
-				val := loadFunc(name)
-				if val == nil {
-					val = VMValueNewUndefined()
-				}
-				stackPush(val)
-			} else {
-				ctx.Error = errors.New("未设置 ValueLoadNameFunc，无法获取变量")
-				return
-			}
+			stackPush(val)
+
 		case TypeStoreName:
 			v := stackPop()
 			name := code.Value.(string)
-			storeFunc := ctx.ValueStoreNameFunc
-			if storeFunc != nil {
-				storeFunc(name, v.Clone())
-			} else {
-				ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
+
+			ctx.StoreName(name, v)
+			if ctx.Error != nil {
 				return
 			}
 

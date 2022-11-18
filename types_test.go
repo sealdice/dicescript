@@ -17,6 +17,7 @@
 package dicescript
 
 import (
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
@@ -340,5 +341,14 @@ func TestAdditive(t *testing.T) {
 		if !valueEqual(r, i.excepted) {
 			t.Errorf("Power(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
 		}
+	}
+}
+
+func TestGetAtr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("&a = d + 1; a.d = 2; &a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret.GetAttr(vm, "d"), ni(2)))
+		assert.True(t, valueEqual(vm.Ret.GetAttr(vm, "a"), VMValueNewUndefined()))
 	}
 }

@@ -18,8 +18,10 @@ package dicescript
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"strconv"
+	"strings"
 )
 
 type VMValueType int
@@ -32,8 +34,14 @@ const (
 	VMTypeNull           VMValueType = 4
 	VMTypeComputedValue  VMValueType = 5
 	VMTypeArray          VMValueType = 6
+	VMTypeDict           VMValueType = 7
 	VMTypeFunction       VMValueType = 8
 	VMTypeNativeFunction VMValueType = 9
+	VMTypeNativeObject   VMValueType = 10
+
+	// 内部对象
+	vmTypeLocal  VMValueType = 20
+	vmTypeGlobal VMValueType = 21
 )
 
 var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
@@ -64,10 +72,13 @@ type RollExtraFlags struct {
 
 type Context struct {
 	parser         *Parser
-	currentThis    *VMValue
 	subThreadDepth int
 	attrs          *ValueMap
+	upCtx          *Context
 	//subThread      *Context // 用于执行子句
+
+	/** 全局变量 */
+	globalNames *ValueMap
 
 	code      []ByteCode
 	codeIndex int
@@ -89,16 +100,143 @@ type Context struct {
 	//lastDetailsLeft := []string{}
 	//calcDetail := ""
 
-	ValueStoreNameFunc func(name string, v *VMValue)
-	ValueLoadNameFunc  func(name string) *VMValue
+	/* 如果返回值为true，那么不作其他处理 */
+	ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
+
+	ValueStoreFunc func(name string, v *VMValue)
+	ValueLoadFunc  func(name string) *VMValue
 }
 
-func (e *Context) Init(stackLength int) {
-	e.code = make([]ByteCode, stackLength)
+func (e *Context) Init() {
+	e.attrs = &ValueMap{}
+	e.globalNames = &ValueMap{}
 }
 
 func (e *Context) loadInnerVar(name string) *VMValue {
 	return builtinValues[name]
+}
+
+func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
+	var loadFunc func(name string) *VMValue
+	if loadFunc == nil {
+		loadFunc = ctx.ValueLoadFunc
+	}
+
+	// 检测全局表
+	if loadFunc != nil {
+		val := loadFunc(name)
+		if val != nil {
+			if !isRaw && val.TypeId == VMTypeComputedValue {
+				val = val.ComputedExecute(ctx)
+				if ctx.Error != nil {
+					return nil
+				}
+			}
+			return val
+		}
+	}
+	//else {
+	//	ctx.Error = errors.New("未设置 ValueLoadFunc，无法获取变量")
+	//	return nil
+	//}
+
+	// 检测内置变量/函数检查
+	val := ctx.loadInnerVar(name)
+	if val == nil {
+		val = VMValueNewUndefined()
+	}
+	if !isRaw && val.TypeId == VMTypeComputedValue {
+		val = val.ComputedExecute(ctx)
+		if ctx.Error != nil {
+			return nil
+		}
+	}
+	return val
+}
+
+func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
+	//if ctx.currentThis != nil {
+	//	return ctx.currentThis.GetAttr(ctx, name)
+	//} else {
+	//if ctx.subThreadDepth >= 1 {
+	ret, exists := ctx.attrs.Load(name)
+	if !exists {
+		ret = VMValueNewUndefined()
+	}
+	if !isRaw && ret.TypeId == VMTypeComputedValue {
+		ret = ret.ComputedExecute(ctx)
+		if ctx.Error != nil {
+			return nil
+		}
+	}
+	return ret
+	//}
+	//}
+}
+
+func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
+	//fmt.Println("!!!!!!", name)
+	// 先local再global
+	curCtx := ctx
+	for {
+		ret := curCtx.LoadNameLocal(name, isRaw)
+
+		if curCtx.Error != nil {
+			ctx.Error = curCtx.Error
+			return nil
+		}
+		if ret.TypeId != VMTypeUndefined {
+			return ret
+		}
+		if curCtx.upCtx == nil {
+			break
+		} else {
+			curCtx = curCtx.upCtx
+		}
+	}
+
+	return ctx.LoadNameGlobal(name, isRaw)
+	//if ctx.ValueLoadFunc != nil {
+	//	ret := ctx.ValueLoadFunc(name)
+	//	if ctx.Error != nil {
+	//		return nil
+	//	}
+	//	if ret != nil {
+	//		if !isRaw && ret.TypeId == VMTypeComputedValue {
+	//			ret = ret.ComputedExecute(ctx)
+	//			if ctx.Error != nil {
+	//				return nil
+	//			}
+	//		}
+	//		return ret
+	//	}
+	//}
+	//return VMValueNewUndefined()
+}
+
+// StoreName 储存变量
+func (ctx *Context) StoreName(name string, v *VMValue) {
+	if _, ok := ctx.globalNames.Load(name); ok {
+		ctx.StoreNameGlobal(name, v)
+	} else {
+		ctx.StoreNameLocal(name, v)
+	}
+}
+
+func (ctx *Context) StoreNameLocal(name string, v *VMValue) {
+	//fmt.Println("XXXXXX", name, v)
+	ctx.attrs.Store(name, v.Clone())
+}
+
+func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
+	storeFunc := ctx.ValueStoreFunc
+	if storeFunc != nil {
+		storeFunc(name, v.Clone())
+	} else {
+		ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
+		return
+	}
+
 }
 
 type VMValue struct {
@@ -107,8 +245,14 @@ type VMValue struct {
 	//ExpiredTime int64       `json:"expiredTime"`
 }
 
+type VMDictValue VMValue
+
 type ArrayData struct {
 	List []*VMValue
+}
+
+type DictData struct {
+	Dict *ValueMap
 }
 
 type ComputedData struct {
@@ -128,7 +272,7 @@ type FunctionData struct {
 	/* 缓存数据 */
 	code      []ByteCode
 	codeIndex int
-	ctx       *Context
+	//ctx       *Context
 }
 
 type NativeFunctionData struct {
@@ -137,6 +281,14 @@ type NativeFunctionData struct {
 
 	/* 缓存数据 */
 	NativeFunc func(ctx *Context, params []*VMValue) *VMValue
+}
+
+type NativeObjectData interface {
+	SetAttr(name string, v *VMValue)
+	GetAttr(name string) *VMValue
+	SetItem(name string, v *VMValue)
+	GetItem(name string, v *VMValue) *VMValue
+	ToString() string
 }
 
 func (v *VMValue) Clone() *VMValue {
@@ -184,8 +336,10 @@ func (v *VMValue) ToString() string {
 		for index, i := range arr.List {
 			if i.TypeId == VMTypeArray {
 				s += "[...]"
+			} else if i.TypeId == VMTypeDict {
+				s += "{...}"
 			} else {
-				s += i.ToString()
+				s += i.ToRepr()
 			}
 			if index != len(arr.List)-1 {
 				s += ", "
@@ -196,6 +350,23 @@ func (v *VMValue) ToString() string {
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
 		return "&(" + cd.Expr + ")"
+	case VMTypeDict:
+		dd, _ := v.ReadDictData()
+		items := []string{}
+
+		dd.Dict.Range(func(key string, value *VMValue) bool {
+			txt := ""
+			if value.TypeId == VMTypeArray {
+				txt = "[...]"
+			} else if value.TypeId == VMTypeDict {
+				txt = "{...}"
+			} else {
+				txt = value.ToRepr()
+			}
+			items = append(items, fmt.Sprintf("'%s': %s", key, txt))
+			return true
+		})
+		return "{" + strings.Join(items, ", ") + "}"
 	case VMTypeFunction:
 		cd, _ := v.ReadFunctionData()
 		return "function " + cd.Name
@@ -204,6 +375,21 @@ func (v *VMValue) ToString() string {
 		return "nfunction " + cd.Name
 	default:
 		return "a value"
+	}
+}
+
+func (v *VMValue) ToRepr() string {
+	if v == nil {
+		return "NIL"
+	}
+	switch v.TypeId {
+	case VMTypeString:
+		// TODO: 检测其中是否有"
+		return "'" + v.ToString() + "'"
+	case VMTypeInt, VMTypeFloat, VMTypeUndefined, VMTypeNull, VMTypeArray, VMTypeComputedValue, VMTypeDict, VMTypeFunction, VMTypeNativeFunction:
+		return v.ToString()
+	default:
+		return "<a value>"
 	}
 }
 
@@ -240,6 +426,20 @@ func (v *VMValue) ReadComputed() (*ComputedData, bool) {
 		return v.Value.(*ComputedData), true
 	}
 	return nil, false
+}
+
+func (v *VMValue) ReadDictData() (*DictData, bool) {
+	if v.TypeId == VMTypeDict {
+		return v.Value.(*DictData), true
+	}
+	return nil, false
+}
+
+func (v *VMValue) MustReadDictData() *DictData {
+	if v.TypeId == VMTypeDict {
+		return v.Value.(*DictData)
+	}
+	panic("bad type")
 }
 
 func (v *VMValue) ReadFunctionData() (*FunctionData, bool) {
@@ -593,7 +793,7 @@ func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
 		if cd.Attrs == nil {
 			cd.Attrs = &ValueMap{}
 		}
-		cd.Attrs.Put(name, val.Clone())
+		cd.Attrs.Store(name, val.Clone())
 		return val
 	}
 
@@ -606,20 +806,34 @@ func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
 		cd, _ := v.ReadComputed()
 		var ret *VMValue
 		if cd.Attrs != nil {
-			ret, _ = cd.Attrs.Get(name)
+			ret, _ = cd.Attrs.Load(name)
 		}
 		if ret == nil {
 			ret = VMValueNewUndefined()
 		}
 		return ret
-	case VMTypeFunction:
-		//cd, _ := v.ReadFunctionData()
-		var ret *VMValue
-		//if cd.ctx != nil {
-		if ctx.attrs != nil {
-			ret, _ = ctx.attrs.Get(name)
+	case VMTypeDict:
+		//case VMTypeFunction:
+		//	cd, _ := v.ReadFunctionData()
+		//	var ret *VMValue
+		//	if cd.ctx != nil {
+		//		if cd.ctx.attrs != nil {
+		//			ret, _ = cd.ctx.attrs.Load(name)
+		//		}
+		//	}
+		//	if ret == nil {
+		//		ret = VMValueNewUndefined()
+		//	}
+		//return ret
+	case vmTypeGlobal:
+		// 加载全局变量
+		ret := ctx.LoadNameGlobal(name, false)
+		if ret == nil {
+			ret = VMValueNewUndefined()
 		}
-		//}
+		return ret
+	case vmTypeLocal:
+		ret := ctx.LoadNameLocal(name, false)
 		if ret == nil {
 			ret = VMValueNewUndefined()
 		}
@@ -964,19 +1178,25 @@ func (v *VMValue) GetTypeName() string {
 
 func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	cd, _ := v.ReadComputed()
-	//if cd.Attrs != nil {
-	//	for k, v := range cd.Attrs {
-	//		ctx.ValueStoreNameFunc(k, v)
-	//	}
-	//}
 
 	vm := NewVM()
 	vm.Flags = ctx.Flags
-	vm.ValueStoreNameFunc = ctx.ValueStoreNameFunc
-	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
+	if cd.Attrs == nil {
+		cd.Attrs = &ValueMap{}
+	}
+	vm.attrs = cd.Attrs
+
+	vm.ValueStoreFunc = ctx.ValueStoreFunc
+	vm.ValueLoadFunc = ctx.ValueLoadFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
-	vm.currentThis = v
-	vm.NumOpCount = ctx.NumOpCount + 200
+	vm.upCtx = ctx
+	vm.NumOpCount = ctx.NumOpCount + 100
+	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
+	if vm.NumOpCount > 30000 {
+		vm.Error = errors.New("允许算力上限")
+		ctx.Error = vm.Error
+		return nil
+	}
 
 	if cd.code == nil {
 		_ = vm.Run(cd.Expr)
@@ -1020,16 +1240,23 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 		//if index >= len(params) {
 		//	break
 		//}
-		vm.attrs.Put(i, params[index])
+		vm.attrs.Store(i, params[index])
 	}
 
 	vm.Flags = ctx.Flags
 	//vm.Flags.PrintBytecode = false
-	vm.ValueStoreNameFunc = ctx.ValueStoreNameFunc
-	vm.ValueLoadNameFunc = ctx.ValueLoadNameFunc
+	vm.ValueStoreFunc = ctx.ValueStoreFunc
+	vm.ValueLoadFunc = ctx.ValueLoadFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
-	vm.currentThis = v
+	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
+	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
+	if vm.NumOpCount > 30000 {
+		vm.Error = errors.New("允许算力上限")
+		ctx.Error = vm.Error
+		return nil
+	}
+
 	if cd.code == nil {
 		_ = vm.Run(cd.Expr)
 		cd.code = vm.code
@@ -1095,6 +1322,14 @@ func VMValueNewUndefined() *VMValue {
 	return &VMValue{TypeId: VMTypeUndefined}
 }
 
+func vmValueNewLocal() *VMValue {
+	return &VMValue{TypeId: vmTypeLocal}
+}
+
+func vmValueNewGlobal() *VMValue {
+	return &VMValue{TypeId: vmTypeGlobal}
+}
+
 func VMValueNewNull() *VMValue {
 	return &VMValue{TypeId: VMTypeNull}
 }
@@ -1110,6 +1345,13 @@ func VMValueNewArray(values ...*VMValue) *VMValue {
 	}
 
 	return &VMValue{TypeId: VMTypeArray, Value: &ArrayData{data}}
+}
+
+func VMValueNewDict(data *ValueMap) *VMDictValue {
+	if data == nil {
+		data = &ValueMap{}
+	}
+	return &VMDictValue{TypeId: VMTypeDict, Value: &DictData{data}}
 }
 
 func VMValueNewComputedRaw(computed *ComputedData) *VMValue {

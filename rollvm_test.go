@@ -6,22 +6,26 @@ import (
 	"testing"
 )
 
-func newVMWithStore(attrs map[string]*VMValue) (*Context, map[string]*VMValue) {
-	vm := NewVM()
-	if attrs == nil {
-		attrs = map[string]*VMValue{}
-	}
+//func newVMWithStore(attrs map[string]*VMValue) (*Context, *ValueMap) {
+//	vm := NewVM()
+//	if attrs == nil {
+//		attrs = map[string]*VMValue{}
+//	}
+//
+//	//vm.ValueStoreNameFunc = func(name string, v *VMValue) {
+//	//	attrs[name] = v
+//	//}
+//	vm.ValueLoadFunc = func(name string) *VMValue {
+//		if val, ok := attrs[name]; ok {
+//			return val
+//		}
+//		return nil
+//	}
+//	return vm, vm.attrs
+//}
 
-	vm.ValueStoreNameFunc = func(name string, v *VMValue) {
-		attrs[name] = v
-	}
-	vm.ValueLoadNameFunc = func(name string) *VMValue {
-		if val, ok := attrs[name]; ok {
-			return val
-		}
-		return nil
-	}
-	return vm, attrs
+func vmValueEqual(vm *Context, aKey string, bValue *VMValue) bool {
+	return valueEqual(vm.attrs.MustLoad(aKey), bValue)
 }
 
 func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
@@ -143,50 +147,59 @@ func TestDice(t *testing.T) {
 	simpleExecute(t, "4d1k5", ni(4))
 }
 
+func TestDiceNoSpaceForModifier(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("3d1 k2")
+	if assert.NoError(t, err) {
+		// 注: 如果读取为3d1k2，值为2为错，读取3d1剩余文本k2为对
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+}
+
 func TestUnsupportedOperandType(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("2 % 3.1")
-	if err == nil {
-		t.Errorf("VM Error: %s", err.Error())
+	if assert.Error(t, err) {
+		// VM Error: 这两种类型无法使用 mod 算符连接: int64, float64
+		assert.Equal(t, err.Error(), "这两种类型无法使用 mod 算符连接: int64, float64")
 	}
 }
 
 func TestValueStore1(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("a=1")
-	if err == nil {
+	if err != nil {
 		// 未设置 ValueStoreNameFunc，无法储存变量
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
 	vm = NewVM()
 	err = vm.Run("bbb")
-	if err == nil {
+	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 }
 
 func TestValueStore(t *testing.T) {
-	attrs := map[string]*VMValue{}
-	vm, _ := newVMWithStore(attrs)
+	vm := NewVM()
 	err := vm.Run("测试=1")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("测试   =   1")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("测试")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("CC")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
@@ -194,58 +207,58 @@ func TestValueStore(t *testing.T) {
 	assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
 
 	// 栈指针bug(两个变量实际都指向了栈的某一个位置，导致值相同)
-	attrs = map[string]*VMValue{}
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("b=1;d=2")
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
-	assert.True(t, valueEqual(attrs["b"], ni(1)))
-	assert.True(t, valueEqual(attrs["d"], ni(2)))
+	assert.True(t, vmValueEqual(vm, "b", ni(1)))
+	assert.True(t, vmValueEqual(vm, "d", ni(2)))
 }
 
 func TestIf(t *testing.T) {
-	attrs := map[string]*VMValue{}
-	vm, _ := newVMWithStore(attrs)
+	vm := NewVM()
 	err := vm.Run("if 0 { a = 2 } else if 2 { b = 1 } c= 1; ;;;;; d= 2;b")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["b"], ni(1)), attrs["b"])
-	assert.True(t, valueEqual(attrs["c"], ni(1)), attrs["c"])
-	assert.True(t, valueEqual(attrs["d"], ni(2)), attrs["d"])
-	assert.True(t, attrs["a"] == nil)
+	assert.True(t, vmValueEqual(vm, "b", ni(1)))
+	assert.True(t, vmValueEqual(vm, "c", ni(1)))
+	assert.True(t, vmValueEqual(vm, "d", ni(2)))
+
+	_, exists := vm.attrs.Load("a")
+	assert.True(t, !exists)
 }
 
 //
 
 func TestStatementLines(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("i = 0 ;; i = 3")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["i"], ni(3)))
+	assert.True(t, vmValueEqual(vm, "i", ni(3)))
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0 ;    ;  ; i = 3")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["i"], ni(3)))
+	assert.True(t, vmValueEqual(vm, "i", ni(3)))
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0 if 1 { i = 3 }")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["i"], ni(3)))
+	assert.True(t, vmValueEqual(vm, "i", ni(3)))
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0   ;if 1 { i = 3 }")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["i"], ni(3)))
+	assert.True(t, vmValueEqual(vm, "i", ni(3)))
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0;  if 1 { i = 3 }")
 	assert.NoError(t, err)
-	assert.True(t, valueEqual(attrs["i"], ni(3)))
+	assert.True(t, vmValueEqual(vm, "i", ni(3)))
 }
 
 func TestKeywords(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("while123")
 	assert.NoError(t, err)
 	assert.True(t, vm.RestInput == "")
@@ -261,7 +274,7 @@ func TestKeywords(t *testing.T) {
 
 	for _, i := range keywords {
 		for _, j := range suffixBad {
-			vm, _ = newVMWithStore(attrs)
+			vm := NewVM()
 			err = vm.Run(i + j)
 			assert.Error(t, err)
 		}
@@ -269,44 +282,44 @@ func TestKeywords(t *testing.T) {
 }
 
 func TestWhile(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("i = 0; while i<5 { i=i+1 }")
 	assert.NoError(t, err)
 	assert.True(t, vm.NumOpCount < 100)
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0; while 1 {  }")
 	assert.Error(t, err) // 算力上限
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0; while 1 {}")
 	assert.Error(t, err) // 算力上限
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("i = 0; while1 {}")
 	assert.True(t, vm.RestInput == "{}", vm.RestInput)
 }
 
 func TestWhileContinueBreak(t *testing.T) {
-	vm, _ := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("a = 0; while a < 5 { a = a+1; continue; a=a+10 }; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(5)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("a = 0; while a < 5 { a = a+1; a=a+10; continue }; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(11)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("a = 1; while a < 5 { break; a = a+1; a=a+10 }; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("a = 1; while a < 5 { a = a+1; break; a=a+10 }; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
@@ -314,19 +327,19 @@ func TestWhileContinueBreak(t *testing.T) {
 }
 
 func TestLineBreak(t *testing.T) {
-	vm, _ := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("if 1 {} 2")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("1; if 1 {} 2")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("1; if 1 {}; 2")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
@@ -335,7 +348,7 @@ func TestLineBreak(t *testing.T) {
 
 func TestItemSetBug(t *testing.T) {
 	// 由于言诺在2022/9/9提交，此用例之前的输出内容为[3,3,3]
-	vm, _ := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("a = [0,0,0]; i=0; while i<3 { a[i] = i+1; i=i+1 }  a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
@@ -383,22 +396,22 @@ func TestTernary(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ni(3)))
 	}
 
-	vm, attrs := newVMWithStore(nil)
-	attrs["a"] = VMValueNewInt(1)
+	vm = NewVM()
+	vm.attrs.Store("a", ni(1))
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("A")))
 	}
 
-	vm, _ = newVMWithStore(attrs)
-	attrs["a"] = VMValueNewInt(2)
+	vm = NewVM()
+	vm.attrs.Store("a", ni(2))
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("B")))
 	}
 
-	vm, _ = newVMWithStore(attrs)
-	attrs["a"] = VMValueNewInt(3)
+	vm = NewVM()
+	vm.attrs.Store("a", ni(3))
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("C")))
@@ -451,11 +464,10 @@ func TestRest(t *testing.T) {
 }
 
 func TestRecursion(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("&a = a + 1")
 	assert.NoError(t, err)
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a")
 	assert.Error(t, err) // 算力上限
 }
@@ -529,45 +541,45 @@ func TestArray(t *testing.T) {
 	err = vm.Run("[1,2,3][4]")
 	assert.Error(t, err)
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("a = [1,2,3]; a[1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("b[1]")
 	assert.Error(t, err)
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("b[0][0]")
 	assert.Error(t, err)
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("[[1]][0][0]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("([[2]])[0][0]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("a = [0,0,0]; a[0] = 1; a[0]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("a[0] = 1")
 	assert.Error(t, err)
 }
 
 func TestReturn(t *testing.T) {
-	vm, _ := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("func test(n) { return 1; 2 }; test(11)")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
@@ -575,37 +587,37 @@ func TestReturn(t *testing.T) {
 }
 
 func TestComputed(t *testing.T) {
-	vm, _ := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("&a = d1+2; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(3)))
 	}
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("&a = []+2; a")
 	assert.Error(t, err)
 
-	vm, _ = newVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run("&a = undefined; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
 	}
+}
 
-	vm, attrs := newVMWithStore(nil)
-	err = vm.Run("&a = d1 + this.x")
+func TestComputed2(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("&a = d1 + this.x")
 	assert.NoError(t, err)
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a.x = 2")
 	assert.NoError(t, err)
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(3)))
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	//vm = NewVM()
 	err = vm.Run("&a.x")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
@@ -613,33 +625,49 @@ func TestComputed(t *testing.T) {
 }
 
 func TestFunction(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("func a() { 123 }; a()")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(123)))
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("func a(d,b,c) { return this.b }; a(1,2,3)")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("func a(d,b,c) { this.b }; a(1,2)")
 	assert.Error(t, err)
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("func a(d,b,c) { this.b }; a(1,2,3,4,5)")
 	assert.Error(t, err)
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("func a() { 2 / 0 }; a()")
 	assert.Error(t, err)
 }
 
+func TestFunctionRecursion(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run(`
+func foo(n) {
+	if (n < 2) {
+		return foo(n + 1)
+	}
+	return 123
+}
+foo(1)
+`)
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(123)))
+	}
+}
+
 func TestFunctionFib(t *testing.T) {
-	vm, _ := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run(`func fib(n) {
   this.n == 0 ? 0,
   this.n == 1 ? 1,
@@ -700,6 +728,7 @@ func TestBytecodeToString(t *testing.T) {
 
 func TestWriteCodeOverflow(t *testing.T) {
 	vm := NewVM()
+	vm.Run("")
 	for i := 0; i < 8193; i++ {
 		vm.parser.WriteCode(TypeNop, nil)
 	}
@@ -715,54 +744,48 @@ func TestGetASM(t *testing.T) {
 }
 
 func TestSliceGet(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("a = [1,2,3,4]")
 	assert.NoError(t, err)
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a[:]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3), ni(4))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a[:2]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a[0:-1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a[-3:-1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a[-3:-1:1]")
 	assert.Error(t, err)
+	// 尚不支持分片步长
 	//if assert.NoError(t, err) {
 	//	assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
 	//}
 
-	vm, _ = newVMWithStore(attrs)
-	err = vm.Run("a[-3:-1:]")
+	err = vm.Run("a[-3:-1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
-	err = vm.Run("b = a[-3:-1:]; b[0] = 9; a[-3:-1]")
+	err = vm.Run("b = a[-3:-1]; b[0] = 9; a[-3:-1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("'12345'[2:3]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("3")))
@@ -770,23 +793,20 @@ func TestSliceGet(t *testing.T) {
 }
 
 func TestSliceSet(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("a = [1,2,3,4]")
 	assert.NoError(t, err)
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a[:] = [1,2,3]; a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a = [1,2,3]; a[:1] = [4,5];a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(4), ni(5), ni(2), ni(3))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
 	err = vm.Run("a = [1,2,3]; a[2:] = [4,5];a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(4), ni(5))))
@@ -794,13 +814,13 @@ func TestSliceSet(t *testing.T) {
 }
 
 func TestRange(t *testing.T) {
-	vm, attrs := newVMWithStore(nil)
+	vm := NewVM()
 	err := vm.Run("[1..4]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3), ni(4))))
 	}
 
-	vm, _ = newVMWithStore(attrs)
+	vm = NewVM()
 	err = vm.Run("[4..1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(4), ni(3), ni(2), ni(1))))

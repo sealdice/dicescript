@@ -100,10 +100,10 @@ func newEntryValueMap(i *VMValue) *entryValueMap {
 	return &entryValueMap{p: unsafe.Pointer(&i)}
 }
 
-// Get returns the value stored in the map for a key, or nil if no
+// Load returns the value stored in the map for a key, or nil if no
 // value is present.
 // The ok result indicates whether value was found in the map.
-func (m *ValueMap) Get(key string) (value *VMValue, ok bool) {
+func (m *ValueMap) Load(key string) (value *VMValue, ok bool) {
 	read, _ := m.read.Load().(readOnlyValueMap)
 	e, ok := read.m[key]
 	if !ok && read.amended {
@@ -128,6 +128,11 @@ func (m *ValueMap) Get(key string) (value *VMValue, ok bool) {
 	return e.load()
 }
 
+func (m *ValueMap) MustLoad(key string) *VMValue {
+	v, _ := m.Load(key)
+	return v
+}
+
 func (e *entryValueMap) load() (value *VMValue, ok bool) {
 	p := atomic.LoadPointer(&e.p)
 	if p == nil || p == expungedValueMap {
@@ -136,8 +141,8 @@ func (e *entryValueMap) load() (value *VMValue, ok bool) {
 	return *(**VMValue)(p), true
 }
 
-// Put sets the value for a key.
-func (m *ValueMap) Put(key string, value *VMValue) {
+// Store sets the value for a key.
+func (m *ValueMap) Store(key string, value *VMValue) {
 	read, _ := m.read.Load().(readOnlyValueMap)
 	if e, ok := read.m[key]; ok && e.tryStore(&value) {
 		return
@@ -267,9 +272,9 @@ func (e *entryValueMap) tryLoadOrStore(i *VMValue) (actual *VMValue, loaded, ok 
 	}
 }
 
-// GetAndDelete deletes the value for a key, returning the previous value if any.
+// LoadAndDelete deletes the value for a key, returning the previous value if any.
 // The loaded result reports whether the key was present.
-func (m *ValueMap) GetAndDelete(key string) (value *VMValue, loaded bool) {
+func (m *ValueMap) LoadAndDelete(key string) (value *VMValue, loaded bool) {
 	read, _ := m.read.Load().(readOnlyValueMap)
 	e, ok := read.m[key]
 	if !ok && read.amended {
@@ -294,7 +299,7 @@ func (m *ValueMap) GetAndDelete(key string) (value *VMValue, loaded bool) {
 
 // Delete deletes the value for a key.
 func (m *ValueMap) Delete(key string) {
-	m.GetAndDelete(key)
+	m.LoadAndDelete(key)
 }
 
 func (e *entryValueMap) delete() (value *VMValue, ok bool) {

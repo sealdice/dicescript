@@ -20,13 +20,13 @@ jobs:
 
     - name: Install peg
       run: |
-        go get -u github.com/pointlander/peg
-        go install github.com/pointlander/peg
+        go get -u github.com/pointlander/peg@v1.0.1
+        go install github.com/pointlander/peg@v1.0.1
 
     - name: Install gopherjs
       run: |
-        go get -u github.com/gopherjs/gopherjs@v1.18.0-beta1+go1.18.5
-        go install github.com/gopherjs/gopherjs@v1.18.0-beta1+go1.18.5
+        go get -u github.com/gopherjs/gopherjs@v1.18.0-beta1
+        go install github.com/gopherjs/gopherjs@v1.18.0-beta1
 
     - name: Code gen
       run: peg -switch -inline roll.peg

@@ -75,11 +75,13 @@ stmtFunc <- 'func' sp1 identifier { p.NamePush(text) } func_def_params '{' sp { 
 // 赋值
 stmtAssign <- identifier { p.NamePush(text) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
             / '&' identifier { p.NamePush(text) } '=' sp { p.CodePush() } < exprRoot > { p.AddStoreComputed(p.NamePop(), string(text)) }
+            / 'this' '.' sp identifier { p.NamePush(text) } '=' sp exprRoot { p.AddStoreLocal(p.NamePop()) }
+//            / 'global' '.' sp identifier { p.NamePush(text) } '=' sp exprRoot { p.AddStoreGlobal(p.NamePop()) }
             / identifier { p.NamePush(text) } '.' sp identifier { p.NamePush(text) } '=' sp exprRoot { attr, objName := p.NamePop(), p.NamePop(); p.AddSetAttr(objName, attr) }
             / exprRoot '[' sp exprRoot ']' sp '=' sp exprRoot { p.AddOp(TypeSetItem) }
             / exprRoot _sliceSuffix '=' sp exprRoot { p.AddOp(TypeSliceSet) }
 
-exprRoot <- exprSlice
+exprRoot <- exprSlice sp
 
 _step <- (':' sp (exprRoot / sp { p.PushUndefined() }) / sp { p.PushUndefined() })
 _sliceSuffix <- '[' sp (exprRoot / sp { p.PushUndefined() }) ':' sp (exprRoot / sp { p.PushUndefined() }) _step ']' sp
@@ -87,8 +89,8 @@ exprSlice <- exprTernary _sliceSuffix (!'=') { p.AddOp(TypeSliceGet) }
            / exprTernary
 
 // 三元算符 ? :
-exprValueIfExists <- exprBitwise '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwise { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); } // 这里的Pop对应的是jne，所有jmp将攒到最后
-exprTernary <- exprBitwise '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwise ':' sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush() } exprBitwise { p.OffsetPopAndSet() }
+exprValueIfExists <- exprBitwise sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwise sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); } // 这里的Pop对应的是jne，所有jmp将攒到最后
+exprTernary <- exprBitwise sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwise sp ':' sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush() } exprBitwise sp { p.OffsetPopAndSet() }
         / exprValueIfExists { p.CounterPush() } ( ',' sp exprValueIfExists {p.CounterAdd(1)} )*  { p.PushStr(""); limit:=p.CounterPop()+1; for i:=int64(0); i<limit; i++ { p.OffsetPopAndSet() } }
         / exprBitwise
 
@@ -106,12 +108,12 @@ exprTernary <- exprBitwise '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwi
 
 
 // 位运算
-exprBitwise <- exprCompare ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseOr) }
+exprBitwise <- exprCompare sp ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseOr) }
                  / (logicAnd / bitwiseAnd) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseAnd) } )*
 
 
 // 比较
-exprCompare <- exprAdditive (
+exprCompare <- exprAdditive sp (
                  lt { p.LMark() } exprAdditive { p.AddOp(TypeCompLT) }
                / le { p.LMark() } exprAdditive { p.AddOp(TypeCompLE) }
                / eq { p.LMark() } exprAdditive { p.AddOp(TypeCompEQ) }
@@ -121,20 +123,20 @@ exprCompare <- exprAdditive (
              )*
 
 // 加减
-exprAdditive <- exprMultiplicative (
+exprAdditive <- exprMultiplicative sp (
                   add { p.LMark() } exprMultiplicative { p.AddOp(TypeAdd) }
                 / minus { p.LMark() } exprMultiplicative { p.AddOp(TypeSubtract) }
               )*
 
 // 乘除余
-exprMultiplicative <- exprExp (
+exprMultiplicative <- exprExp sp (
                         multiply { p.LMark() } exprExp { p.AddOp(TypeMultiply) }
                       / divide { p.LMark() } exprExp { p.AddOp(TypeDivide) }
                       / modulus { p.LMark() } exprExp { p.AddOp(TypeModulus) }
                     )*
 
 // 平方
-exprExp <- exprUnaryNeg (
+exprExp <- exprUnaryNeg sp (
              exponentiation { p.LMark() } exprUnaryNeg { p.AddOp(TypeExponentiation) }
          )*
 
@@ -184,6 +186,7 @@ value <- float
        / 'false' sp { p.PushIntNumber("0") }
        / 'undefined' sp { p.PushUndefined() }
        / 'this' sp { p.PushThis() } get_item get_attr
+       / 'global' sp { p.PushGlobal() } get_item get_attr
        / '&' identifier { p.WriteCode(TypeLoadNameRaw, string(text)) } get_attr
        / identifier { p.AddLoadName(string(text)) } func_invoke? get_item get_attr
        / fstring
@@ -193,8 +196,8 @@ value <- float
        / '[' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ']' sp { p.PushArray(p.CounterPop()) } array_call?
 
 // 数字
-number <- < [0-9]+ > sp { p.PushIntNumber(string(text)) }
-float <- < [0-9]* '.' [0-9]+ > sp { p.PushFloatNumber(string(text)) }
+number <- < [0-9]+ > { p.PushIntNumber(string(text)) }
+float <- < [0-9]* '.' [0-9]+ > { p.PushFloatNumber(string(text)) }
 
 // 字符串
 strPart <- < (escape / (![{`\\].))+ > { p.PushStr(string(text)); p.CounterAdd(1) }

@@ -39,7 +39,7 @@ func TestDumps(t *testing.T) {
 		assert.Equal(t, string(v), `{"typeId":5,"value":{"expr":"1 + this.x + d10"}}`)
 	}
 
-	vm, _ := NewVMWithStore(nil)
+	vm := NewVM()
 	err = vm.Run(`func a(x) { return 5 }; a`)
 	if assert.NoError(t, err) {
 		ret := vm.Ret
@@ -59,7 +59,7 @@ func TestDumps(t *testing.T) {
 	v, err = v1.ToJSON()
 	assert.Error(t, err)
 
-	vm, _ = NewVMWithStore(nil)
+	vm = NewVM()
 	err = vm.Run(`ceil`)
 	if assert.NoError(t, err) {
 		ret := vm.Ret
