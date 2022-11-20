@@ -27,7 +27,7 @@ Simple script language for TRPG dice engine.
 - [ ] 骰点运算 - 自定义算符
 - [ ] 骰点运算 - Fate / WOD / Double Cross
 - [x] 高级类型 数组array
-- [ ] 高级类型 字典dict
+- [x] 高级类型 字典dict
 - [x] 高级类型 计算数值computed
 - [x] 逻辑语法 if ... else ..
 - [x] 逻辑语法 while
@@ -61,29 +61,10 @@ import (
 
 func main() {
 	vm := dice.NewVM()
-
-	// 如果需要使用变量，那么接入一下ValueStoreNameFunc和ValueLoadNameFunc
-	// 不需要就跳过
-	attrs := map[string]*dice.VMValue{}
-
-	vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
-		attrs[name] = v
-	}
-	vm.ValueLoadNameFunc = func(name string) *dice.VMValue {
-		if val, ok := attrs[name]; ok {
-			return val
-		}
-		return nil
-	}
-
-	// 可以运算了
-	err := vm.Run(`d20`)
-
-	// 打印结果
-	if err != nil {
-		fmt.Printf("错误: %s\n", err.Error())
-	} else {
+	if err := vm.Run(`d20`); err == nil {
 		fmt.Printf("结果: %s\n", vm.Ret.ToString())
+	} else {
+		fmt.Printf("错误: %s\n", err.Error())
 	}
 }
 ```
@@ -107,6 +88,15 @@ function roll(text) {
 
 ## 更新记录
 
+#### 2022.11.20
+
+* 字典类型
+
+#### 2022.11.18
+
+* 变量作用域
+
+
 #### 2022.9.17
 
 * 序列化和反序列化: array native_function，全类型完成
@@ -116,6 +106,7 @@ function roll(text) {
 
 * 内置函数: ceil floor round int float str
 * 序列化和反序列化: int float str undefined null computed function
+
 
 #### 2022.9.10
 

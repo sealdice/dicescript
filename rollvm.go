@@ -203,6 +203,15 @@ func (e *Parser) Evaluate() {
 		case TypePushArray:
 			num := code.Value.(int64)
 			stackPush(VMValueNewArray(stackPopN(num)...))
+		case TypePushDict:
+			num := code.Value.(int64)
+			items := stackPopN(num * 2)
+			dict, err := VMValueNewDictWithArray(items)
+			if err != nil {
+				e.Error = err
+				return
+			}
+			stackPush(dict.V())
 		case TypePushComputed, TypePushFuction:
 			val := code.Value.(*VMValue)
 			stackPush(val)
@@ -275,28 +284,30 @@ func (e *Parser) Evaluate() {
 			paramsNum, _ := stackPop().ReadInt()
 			arr := stackPopN(paramsNum)
 			stackPush(arr[0].CallFunc(ctx, code.Value.(string), arr[1:]))
-		case TypeGetItem:
-			itemIndex, _ := stackPop().ReadInt() // 这有类型问题
-			arr := stackPop()
-			v := arr.ArrayGetItem(ctx, itemIndex)
+		case TypeItemGet:
+			itemIndex := stackPop()
+			obj := stackPop()
+			ret := obj.ItemGet(ctx, itemIndex)
 			if ctx.Error != nil {
 				return
 			}
-			stackPush(v)
-		case TypeSetItem:
-			val := stackPop()                    // 右值
-			itemIndex, _ := stackPop().ReadInt() // 下标
-			arr := stackPop()                    // 数组
-			arr.ArraySetItem(ctx, itemIndex, val)
+			if ret == nil {
+				ret = VMValueNewUndefined()
+			}
+			stackPush(ret)
+		case TypeItemSet:
+			val := stackPop()       // 右值
+			itemIndex := stackPop() // 下标
+			obj := stackPop()       // 数组 / 对象
+			obj.ItemSet(ctx, itemIndex, val)
 			if ctx.Error != nil {
 				return
 			}
-
-		case TypeSetAttr:
+		case TypeAttrSet:
 			attrVal, obj := stackPop2()
 			attrName := code.Value.(string)
 
-			ret := obj.SetAttr(attrName, attrVal)
+			ret := obj.AttrSet(attrName, attrVal)
 			if ctx.Error == nil && ret == nil {
 				ctx.Error = errors.New("不支持的类型：当前变量无法用.来设置属性")
 			}
@@ -306,7 +317,7 @@ func (e *Parser) Evaluate() {
 		case TypeGetAttr:
 			obj := stackPop()
 			attrName := code.Value.(string)
-			ret := obj.GetAttr(ctx, attrName)
+			ret := obj.AttrGet(ctx, attrName)
 			if ctx.Error != nil {
 				return
 			}

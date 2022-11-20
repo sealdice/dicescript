@@ -173,6 +173,11 @@ func TestValueStore1(t *testing.T) {
 		t.Errorf("VM Error: %s", err.Error())
 	}
 
+	err = vm.Run("a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
 	vm = NewVM()
 	err = vm.Run("bbb")
 	if err != nil {
@@ -609,7 +614,7 @@ func TestComputed2(t *testing.T) {
 	err := vm.Run("&a = d1 + this.x")
 	assert.NoError(t, err)
 
-	err = vm.Run("a.x = 2")
+	err = vm.Run("&a.x = 2")
 	assert.NoError(t, err)
 
 	err = vm.Run("a")
@@ -824,5 +829,59 @@ func TestRange(t *testing.T) {
 	err = vm.Run("[4..1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(4), ni(3), ni(2), ni(1))))
+	}
+}
+
+func TestDictExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("a = {'a': 1}")
+	if assert.NoError(t, err) {
+	}
+
+	err = vm.Run("a.a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	err = vm.Run("a['a']")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+}
+
+func TestDictExpr2(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("a = {'a': 1,}")
+	if assert.NoError(t, err) {
+	}
+	err = vm.Run("a.a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("c = 'c'; a = {c:1,'b':3}")
+	if assert.NoError(t, err) {
+	}
+	err = vm.Run("a.c")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+}
+
+func TestIdExpr(t *testing.T) {
+	vm := NewVM()
+	vm.attrs.Store("a:b", ni(3))
+	err := vm.Run("a:b") // 如果读到a 余下a:b即为错误
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+}
+
+func TestStringExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("\x1e xxx \x1e")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns(" xxx ")))
 	}
 }

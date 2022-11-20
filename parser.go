@@ -85,6 +85,10 @@ func (e *Parser) PushArray(value int64) {
 	e.WriteCode(TypePushArray, value)
 }
 
+func (e *Parser) PushDict(value int64) {
+	e.WriteCode(TypePushDict, value)
+}
+
 func (e *Parser) PushUndefined() {
 	e.WriteCode(TypePushUndefined, nil)
 }
@@ -256,9 +260,13 @@ func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text str
 	p.WriteCode(TypeStoreName, name)
 }
 
-func (p *Parser) AddSetAttr(objName string, attr string) {
-	p.WriteCode(TypeLoadNameRaw, objName)
-	p.WriteCode(TypeSetAttr, attr)
+func (p *Parser) AddAttrSet(objName string, attr string, isRaw bool) {
+	if isRaw {
+		p.WriteCode(TypeLoadNameRaw, objName)
+	} else {
+		p.WriteCode(TypeLoadName, objName)
+	}
+	p.WriteCode(TypeAttrSet, attr)
 }
 
 func (p *Parser) CodePush() {

@@ -17,6 +17,7 @@ const (
 	TypePushFloatNumber
 	TypePushString
 	TypePushArray
+	TypePushDict
 	TypePushRange
 	TypePushComputed
 	TypePushUndefined
@@ -34,9 +35,9 @@ const (
 
 	TypeInvoke
 	TypeInvokeSelf
-	TypeGetItem
-	TypeSetItem
-	TypeSetAttr
+	TypeItemGet
+	TypeItemSet
+	TypeAttrSet
 	TypeGetAttr
 	TypeSliceGet
 	TypeSliceSet
@@ -114,6 +115,8 @@ func (code *ByteCode) CodeString() string {
 		return "push.range"
 	case TypePushArray:
 		return "push.arr " + strconv.FormatInt(code.Value.(int64), 10)
+	case TypePushDict:
+		return "push.dict " + strconv.FormatInt(code.Value.(int64), 10)
 	case TypePushComputed:
 		computed, _ := code.Value.(*VMValue).ReadComputed()
 		return "push.computed " + computed.Expr
@@ -134,11 +137,11 @@ func (code *ByteCode) CodeString() string {
 
 	case TypeInvokeSelf:
 		return "invoke.self " + code.Value.(string)
-	case TypeGetItem:
+	case TypeItemGet:
 		return "item.get"
-	case TypeSetItem:
+	case TypeItemSet:
 		return "item.set"
-	case TypeSetAttr:
+	case TypeAttrSet:
 		return "attr.set " + code.Value.(string)
 	case TypeGetAttr:
 		return "attr.get " + code.Value.(string)

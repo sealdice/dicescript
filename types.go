@@ -156,7 +156,7 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 
 func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 	//if ctx.currentThis != nil {
-	//	return ctx.currentThis.GetAttr(ctx, name)
+	//	return ctx.currentThis.AttrGet(ctx, name)
 	//} else {
 	//if ctx.subThreadDepth >= 1 {
 	ret, exists := ctx.attrs.Load(name)
@@ -284,10 +284,10 @@ type NativeFunctionData struct {
 }
 
 type NativeObjectData interface {
-	SetAttr(name string, v *VMValue)
-	GetAttr(name string) *VMValue
-	SetItem(name string, v *VMValue)
-	GetItem(name string, v *VMValue) *VMValue
+	AttrSet(name string, v *VMValue)
+	AttrGet(name string) *VMValue
+	ItemSet(name string, v *VMValue)
+	ItemGet(name string, v *VMValue) *VMValue
 	ToString() string
 }
 
@@ -438,6 +438,14 @@ func (v *VMValue) ReadDictData() (*DictData, bool) {
 func (v *VMValue) MustReadDictData() *DictData {
 	if v.TypeId == VMTypeDict {
 		return v.Value.(*DictData)
+	}
+	panic("bad type")
+}
+
+func (v *VMValue) MustReadInt() int64 {
+	val, ok := v.ReadInt()
+	if ok {
+		return val
 	}
 	panic("bad type")
 }
@@ -786,7 +794,7 @@ func (v *VMValue) OpNegation() *VMValue {
 	return nil
 }
 
-func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
+func (v *VMValue) AttrSet(name string, val *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
@@ -795,12 +803,16 @@ func (v *VMValue) SetAttr(name string, val *VMValue) *VMValue {
 		}
 		cd.Attrs.Store(name, val.Clone())
 		return val
+	case VMTypeDict:
+		d := (*VMDictValue)(v)
+		d.Store(name, val)
+		return val
 	}
 
 	return nil
 }
 
-func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
+func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 	switch v.TypeId {
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
@@ -813,18 +825,12 @@ func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
 		}
 		return ret
 	case VMTypeDict:
-		//case VMTypeFunction:
-		//	cd, _ := v.ReadFunctionData()
-		//	var ret *VMValue
-		//	if cd.ctx != nil {
-		//		if cd.ctx.attrs != nil {
-		//			ret, _ = cd.ctx.attrs.Load(name)
-		//		}
-		//	}
-		//	if ret == nil {
-		//		ret = VMValueNewUndefined()
-		//	}
-		//return ret
+		a := (*VMDictValue)(v)
+		ret, _ := a.Load(name)
+		if ret == nil {
+			ret = VMValueNewUndefined()
+		}
+		return ret
 	case vmTypeGlobal:
 		// 加载全局变量
 		ret := ctx.LoadNameGlobal(name, false)
@@ -841,6 +847,48 @@ func (v *VMValue) GetAttr(ctx *Context, name string) *VMValue {
 	}
 
 	return nil
+}
+
+func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
+	switch v.TypeId {
+	case VMTypeArray:
+		if index.TypeId != VMTypeInt {
+			ctx.Error = errors.New(fmt.Sprintf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName()))
+		} else {
+			return v.ArrayItemGet(ctx, index.MustReadInt())
+		}
+	case VMTypeDict:
+		if key, err := index.AsDictKey(); err != nil {
+			ctx.Error = err
+		} else {
+			val, _ := (*VMDictValue)(v).Load(key)
+			return val
+		}
+	case VMTypeUndefined, VMTypeNull:
+		ctx.Error = errors.New("此类型无法取下标")
+	}
+	return nil
+}
+
+func (v *VMValue) ItemSet(ctx *Context, index *VMValue, val *VMValue) bool {
+	switch v.TypeId {
+	case VMTypeArray:
+		if index.TypeId != VMTypeInt {
+			ctx.Error = errors.New(fmt.Sprintf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName()))
+		} else {
+			return v.ArrayItemSet(ctx, index.MustReadInt(), val)
+		}
+	case VMTypeDict:
+		if key, err := index.AsDictKey(); err != nil {
+			ctx.Error = err
+		} else {
+			(*VMDictValue)(v).Store(key, val)
+			return true
+		}
+	default:
+		ctx.Error = errors.New("此类型无法赋值下标")
+	}
+	return false
 }
 
 func (v *VMValue) CallFunc(ctx *Context, name string, values []*VMValue) *VMValue {
@@ -960,33 +1008,6 @@ func getRealIndex(ctx *Context, index int64, length int64) int64 {
 		ctx.Error = errors.New("无法获取此下标")
 	}
 	return index
-}
-
-func (v *VMValue) ArrayGetItem(ctx *Context, index int64) *VMValue {
-	if v.TypeId == VMTypeArray {
-		arr, _ := v.ReadArray()
-		index = getRealIndex(ctx, index, int64(len(arr.List)))
-		if ctx.Error != nil {
-			return nil
-		}
-		return arr.List[index]
-	}
-	ctx.Error = errors.New("此类型无法取下标")
-	return nil
-}
-
-func (v *VMValue) ArraySetItem(ctx *Context, index int64, val *VMValue) bool {
-	if v.TypeId == VMTypeArray {
-		arr, _ := v.ReadArray()
-		index = getRealIndex(ctx, index, int64(len(arr.List)))
-		if ctx.Error != nil {
-			return false
-		}
-		arr.List[index] = val.Clone()
-		return true
-	}
-	ctx.Error = errors.New("此类型无法取下标")
-	return false
 }
 
 func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue {
@@ -1305,6 +1326,14 @@ func (v *VMValue) FuncInvokeNative(ctx *Context, params []*VMValue) *VMValue {
 	return ret
 }
 
+func (v *VMValue) AsDictKey() (string, error) {
+	if v.TypeId == VMTypeString || v.TypeId == VMTypeInt || v.TypeId == VMTypeFloat {
+		return v.ToString(), nil
+	} else {
+		return "", errors.New(fmt.Sprintf("类型错误: 字典键只能为字符串或数字，不支持 %s", v.GetTypeName()))
+	}
+}
+
 func VMValueNewInt(i int64) *VMValue {
 	// TODO: 小整数可以处理为不可变对象，且一直停留在内存中，就像python那样。这可以避免很多内存申请
 	return &VMValue{TypeId: VMTypeInt, Value: i}
@@ -1352,6 +1381,18 @@ func VMValueNewDict(data *ValueMap) *VMDictValue {
 		data = &ValueMap{}
 	}
 	return &VMDictValue{TypeId: VMTypeDict, Value: &DictData{data}}
+}
+
+func VMValueNewDictWithArray(arr []*VMValue) (*VMDictValue, error) {
+	data := &ValueMap{}
+	for i := 0; i < len(arr); i += 2 {
+		kName, err := arr[0].AsDictKey()
+		if err != nil {
+			return nil, err
+		}
+		data.Store(kName, arr[1])
+	}
+	return &VMDictValue{TypeId: VMTypeDict, Value: &DictData{data}}, nil
 }
 
 func VMValueNewComputedRaw(computed *ComputedData) *VMValue {

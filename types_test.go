@@ -344,11 +344,20 @@ func TestAdditive(t *testing.T) {
 	}
 }
 
-func TestGetAtr(t *testing.T) {
+func TestAttrGet(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("&a = d + 1; a.d = 2; &a")
+	err := vm.Run("&a = d + 1; &a.d = 2; &a")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret.GetAttr(vm, "d"), ni(2)))
-		assert.True(t, valueEqual(vm.Ret.GetAttr(vm, "a"), VMValueNewUndefined()))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "d"), ni(2)))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), VMValueNewUndefined()))
+	}
+}
+
+func TestDict(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("&a = d + 1; &a.d = 2; &a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "d"), ni(2)))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), VMValueNewUndefined()))
 	}
 }

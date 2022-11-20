@@ -55,6 +55,9 @@ func main() {
 
 	fmt.Println("DiceScript Shell v0.0.0")
 	ccTimes := 0
+	vm := dice.NewVM()
+	vm.Flags.PrintBytecode = true
+
 	for true {
 		if text, err := line.Prompt(">>> "); err == nil {
 			if strings.TrimSpace(text) == "" {
@@ -62,8 +65,6 @@ func main() {
 			}
 			line.AppendHistory(text)
 
-			vm := dice.NewVM()
-			vm.Flags.PrintBytecode = true
 			//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
 			//	attrs[name] = v
 			//}
