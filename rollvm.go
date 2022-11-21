@@ -206,7 +206,7 @@ func (e *Parser) Evaluate() {
 		case TypePushDict:
 			num := code.Value.(int64)
 			items := stackPopN(num * 2)
-			dict, err := VMValueNewDictWithArray(items)
+			dict, err := VMValueNewDictWithArray(items...)
 			if err != nil {
 				e.Error = err
 				return
@@ -218,13 +218,9 @@ func (e *Parser) Evaluate() {
 		case TypePushUndefined:
 			stackPush(VMValueNewUndefined())
 		case TypePushThis:
-			//if ctx.currentThis != nil {
-			//	stackPush(ctx.currentThis)
-			//} else {
 			stackPush(vmValueNewLocal())
-			//}
-		case TypePushGlobal:
-			stackPush(vmValueNewGlobal())
+		//case TypePushGlobal:
+		//	stackPush(vmValueNewGlobal())
 
 		case TypePushRange:
 			a, b := stackPop2()

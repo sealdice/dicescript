@@ -110,36 +110,36 @@ exprTernary <- exprBitwise sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBi
 
 
 // 位运算
-exprBitwise <- exprCompare sp ((logicOr / bitwiseOr) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseOr) }
-                 / (logicAnd / bitwiseAnd) { p.LMark() } exprCompare { p.AddOp(TypeBitwiseAnd) } )*
+exprBitwise <- exprCompare sp ((logicOr / bitwiseOr) exprCompare { p.AddOp(TypeBitwiseOr) }
+                 / (logicAnd / bitwiseAnd) exprCompare { p.AddOp(TypeBitwiseAnd) } )*
 
 
 // 比较
 exprCompare <- exprAdditive sp (
-                 lt { p.LMark() } exprAdditive { p.AddOp(TypeCompLT) }
-               / le { p.LMark() } exprAdditive { p.AddOp(TypeCompLE) }
-               / eq { p.LMark() } exprAdditive { p.AddOp(TypeCompEQ) }
-               / ne { p.LMark() } exprAdditive { p.AddOp(TypeCompNE) }
-               / ge { p.LMark() } exprAdditive { p.AddOp(TypeCompGE) }
-               / gt { p.LMark() } exprAdditive { p.AddOp(TypeCompGT) }
+                 lt exprAdditive { p.AddOp(TypeCompLT) }
+               / le exprAdditive { p.AddOp(TypeCompLE) }
+               / eq exprAdditive { p.AddOp(TypeCompEQ) }
+               / ne exprAdditive { p.AddOp(TypeCompNE) }
+               / ge exprAdditive { p.AddOp(TypeCompGE) }
+               / gt exprAdditive { p.AddOp(TypeCompGT) }
              )*
 
 // 加减
 exprAdditive <- exprMultiplicative sp (
-                  add { p.LMark() } exprMultiplicative { p.AddOp(TypeAdd) }
-                / minus { p.LMark() } exprMultiplicative { p.AddOp(TypeSubtract) }
+                  add exprMultiplicative { p.AddOp(TypeAdd) }
+                / minus exprMultiplicative { p.AddOp(TypeSubtract) }
               )*
 
 // 乘除余
 exprMultiplicative <- exprExp sp (
-                        multiply { p.LMark() } exprExp { p.AddOp(TypeMultiply) }
-                      / divide { p.LMark() } exprExp { p.AddOp(TypeDivide) }
-                      / modulus { p.LMark() } exprExp { p.AddOp(TypeModulus) }
+                        multiply exprExp { p.AddOp(TypeMultiply) }
+                      / divide exprExp { p.AddOp(TypeDivide) }
+                      / modulus exprExp { p.AddOp(TypeModulus) }
                     )*
 
 // 平方
 exprExp <- exprUnaryNeg sp (
-             exponentiation { p.LMark() } exprUnaryNeg { p.AddOp(TypeExponentiation) }
+             exponentiation exprUnaryNeg { p.AddOp(TypeExponentiation) }
          )*
 
 
@@ -163,20 +163,28 @@ _diceMod <- (('kl' / [qQ]) (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  
 _diceMod2 <- ('min' (number / sub) { p.AddOp(TypeDiceSetMin) })?
              ('max' (number / sub) { p.AddOp(TypeDiceSetMax) })?
 
+_diceModX <- {} _diceMod {}
+_diceModX2 <- {} _diceMod2 {}
+
 _dicePearMod <- '优势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
               / '劣势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
 
-exprDice <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); p.LMark() } [dD] (number / sub)) _diceMod? _diceMod2 { p.AddOp(TypeDice) } sp // 3d20
-          / [dD] { p.AddOp(TypeDiceInit); p.LMark() } (number / sub) (_dicePearMod / _diceMod)? _diceMod2 { p.AddOp(TypeDice) } sp  // d100
+// XdY 形式的文法和 dXdY 不太一样，故而如此，读起来很晦涩，我也不太满意
+_diceExpr1 <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } [dD] (number / sub)) _diceModX? _diceModX2 { p.AddOp(TypeDice) }
+_diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } (number / sub) (_dicePearMod / _diceModX)? _diceModX2 { p.AddOp(TypeDice) }
+
+exprDice <- _diceExpr1 _diceExpr2* sp // 3d20, 3d20d2, 2d20优势
+          / _diceExpr2+ sp  // d100
           / value
 
-item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) })*
+item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) } func_invoke? )*
 
 array_call <- 'kh' { p.AddInvokeMethod("kh", 1) }
             / 'kl' { p.AddInvokeMethod("kl", 1) }
             / ('[' sp exprRoot ']' sp { p.AddOp(TypeItemGet) })+
 
-get_attr <- ('.' sp identifier sp { p.WriteCode(TypeGetAttr, string(text)) })*
+// TODO: value 中的 item_get attr_get 连写这种形式处理的很烂，之后改掉
+attr_get <- ('.' sp identifier sp { p.WriteCode(TypeGetAttr, string(text)) } func_invoke? )*
 
 func_invoke <- '(' sp ')' sp { p.AddInvoke(0) }
              / '(' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ')' sp { p.AddInvoke(p.CounterPop()) }
@@ -184,24 +192,27 @@ func_invoke <- '(' sp ')' sp { p.AddInvoke(0) }
 dict_item <- { p.CounterAdd(1) } ((value_id_without_colon / exprRoot) sp ':' sp exprRoot) sp
 
 // 右值
-value_id_without_colon <- identifierWithoutColon sp { p.AddLoadName(string(text)) } func_invoke? item_get get_attr
+value_id_without_colon <- identifierWithoutColon sp { p.AddLoadName(string(text)) } func_invoke? item_get attr_get
 
 value <- float
        / number
        / 'true' sp { p.PushIntNumber("1") }
        / 'false' sp { p.PushIntNumber("0") }
        / 'undefined' sp { p.PushUndefined() }
-       / 'this' sp { p.PushThis() } item_get get_attr
-       / 'global' sp { p.PushGlobal() } item_get get_attr
-       / '&' identifier sp { p.WriteCode(TypeLoadNameRaw, string(text)) } get_attr
-       / identifier sp { p.AddLoadName(string(text)) } func_invoke? item_get get_attr
+       / 'this' sp { p.PushThis() } item_get attr_get
+//       / 'global' sp { p.PushGlobal() } item_get attr_get
+       / '&' identifier sp { p.WriteCode(TypeLoadNameRaw, string(text)) } attr_get
+       / identifier sp { p.AddLoadName(string(text)) } func_invoke? item_get attr_get
        / fstring
-       / sub item_get get_attr
+       / sub item_get attr_get
        / '[' sp ']' sp { p.PushArray(0) } array_call?
        / '[' sp exprRoot '..' sp exprRoot ']' sp { p.AddOp(TypePushRange) } array_call?
        / '[' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ']' sp { p.PushArray(p.CounterPop()) } array_call?
        / '{' sp '}' sp { p.PushDict(0) }
        / '{' sp { p.CounterPush() } dict_item (',' sp dict_item )* ','? '}' sp { p.PushDict(p.CounterPop()) }
+       / 'func' sp func_def_params '{' sp { p.CodePush() } < stmtRoot? > '}' sp
+          {  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction("", arr, string(text)) }
+
 
 // 数字
 number <- < [0-9]+ > { p.PushIntNumber(string(text)) }
@@ -229,9 +240,13 @@ keywords <- 'while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func'
 identifier_ch0 <- [^!"#$%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ \t\n\r\36]
 identifier_ch <- identifier_ch0 / [0-9:]
 
-identifier <- !((keywords) (sp1 / [!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~\36])) < identifier_ch0 identifier_ch* > // not (punctuation+number)
+no_keywords <- !(keywords (sp1 / !identifier_ch0 .))
+identifier <- no_keywords < identifier_ch0 identifier_ch* > // not (punctuation+number)
 // 不含冒号的 identifier 用于字典，因为a:b是合法变量名，所以 {a:b} 会被误判
-identifierWithoutColon <- !((keywords) (sp1 / [!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~\36])) < identifier_ch0 (identifier_ch0 / [0-9])* > // not (punctuation+number)
+identifierWithoutColon <- no_keywords < identifier_ch0 (identifier_ch0 / [0-9])* > // not (punctuation+number)
+
+// 旧版留档
+// identifier <- !(keywords (sp1 / [!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~\36])) < identifier_ch0 identifier_ch* > // not (punctuation+number)
 
 // 括号
 sub <- parenOpen exprRoot parenClose

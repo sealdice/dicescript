@@ -18,7 +18,6 @@ package dicescript
 
 import (
 	"github.com/stretchr/testify/assert"
-	"reflect"
 	"testing"
 )
 
@@ -29,38 +28,14 @@ type compareTestData []struct {
 }
 
 func valueEqual(a *VMValue, b *VMValue) bool {
-	if a == b {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	if a.TypeId == b.TypeId {
-		switch a.TypeId {
-		case VMTypeArray:
-			arr1, _ := a.ReadArray()
-			arr2, _ := b.ReadArray()
-			for index, i := range arr1.List {
-				if !valueEqual(i, arr2.List[index]) {
-					return false
-				}
-			}
-			return true
-		case VMTypeNativeFunction:
-			fd1, _ := a.ReadNativeFunctionData()
-			fd2, _ := b.ReadNativeFunctionData()
-			return reflect.ValueOf(fd1.NativeFunc).Pointer() == reflect.ValueOf(fd2.NativeFunc).Pointer()
-		default:
-			return a.Value == b.Value
-		}
-	}
-	return false
+	return ValueEqual(a, b, false)
 }
 
 var ni = VMValueNewInt
 var nf = VMValueNewFloat
 var ns = VMValueNewStr
 var na = VMValueNewArray
+var nd = VMValueMustNewDictWithArray
 
 func TestCompare(t *testing.T) {
 	ctx := NewVM()
@@ -219,6 +194,23 @@ func TestCompare(t *testing.T) {
 		}
 	}
 
+	var compEQTest2 = compareTestData{
+		{na(ni(1), ni(2), ni(3)), na(ni(1), ni(2), ni(3)), ni(1)},        // [1,2,3] == [1,2,3] true
+		{na(ni(1), ni(2)), na(ni(1), ni(2), ni(3)), ni(0)},               // [1,2] == [1,2,3] false
+		{na(ni(1), ni(2), ni(3)), na(ni(1), ni(2), ni(3), ni(4)), ni(0)}, // [1,2,3] == [1,2,3,4] false
+		{na(ni(1), ni(2), ni(3)), na(ni(1), ni(2), ni(4)), ni(0)},        // [1,2,3] == [1,2,4] false
+
+		{nd(ns("a"), ni(1)).V(), nd(ns("a"), ni(1)).V(), ni(1)},                 // {'a':1} == {'a':1} true
+		{nd(ns("a"), ni(1)).V(), nd(ns("a"), ni(2)).V(), ni(0)},                 // {'a':1} == {'a':2} false
+		{nd(ns("a"), ni(1)).V(), nd(ns("a"), ni(1), ns("b"), ni(2)).V(), ni(0)}, // {'a':1} == {'a':1,'b':2} false
+	}
+
+	for _, i := range compEQTest2 {
+		r := (*VMValue).OpCompEQ(i.v1, ctx, i.v2)
+		if !valueEqual(r, i.excepted) {
+			t.Errorf("CompareEQ2(%s, %s) = %s; expected %s", i.v1.ToString(), i.v2.ToString(), r.ToString(), i.excepted.ToString())
+		}
+	}
 }
 
 func TestAdditive(t *testing.T) {

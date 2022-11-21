@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -292,11 +293,12 @@ type NativeObjectData interface {
 }
 
 func (v *VMValue) Clone() *VMValue {
-	vNew := &VMValue{TypeId: v.TypeId, Value: v.Value}
-	// TODO: 针对特定类型，进行Value的处理，不过大多数时候应该够用
-	switch v.TypeId {
-	}
-	return vNew
+	//switch v.TypeId {
+	//case VMTypeDict, VMTypeArray:
+	//	return v
+	//default:
+	return &VMValue{TypeId: v.TypeId, Value: v.Value}
+	//}
 }
 
 func (v *VMValue) AsBool() bool {
@@ -315,7 +317,16 @@ func (v *VMValue) AsBool() bool {
 	}
 }
 
+type recursionInfo struct {
+	exists map[interface{}]bool
+}
+
 func (v *VMValue) ToString() string {
+	ri := &recursionInfo{exists: map[interface{}]bool{}}
+	return v.toStringRaw(ri)
+}
+
+func (v *VMValue) toStringRaw(ri *recursionInfo) string {
 	if v == nil {
 		return "NIL"
 	}
@@ -331,16 +342,17 @@ func (v *VMValue) ToString() string {
 	case VMTypeNull:
 		return "null"
 	case VMTypeArray:
+		// 避免循环重复
+		if _, exists := ri.exists[v.Value]; exists {
+			return "[...]"
+		}
+		ri.exists[v.Value] = true
+
 		s := "["
 		arr, _ := v.ReadArray()
 		for index, i := range arr.List {
-			if i.TypeId == VMTypeArray {
-				s += "[...]"
-			} else if i.TypeId == VMTypeDict {
-				s += "{...}"
-			} else {
-				s += i.ToRepr()
-			}
+			x := i.toReprRaw(ri)
+			s += x
 			if index != len(arr.List)-1 {
 				s += ", "
 			}
@@ -351,18 +363,24 @@ func (v *VMValue) ToString() string {
 		cd, _ := v.ReadComputed()
 		return "&(" + cd.Expr + ")"
 	case VMTypeDict:
-		dd, _ := v.ReadDictData()
-		items := []string{}
+		// 避免循环重复
+		if _, exists := ri.exists[v.Value]; exists {
+			return "{...}"
+		}
+		ri.exists[v.Value] = true
 
+		var items []string
+		dd, _ := v.ReadDictData()
 		dd.Dict.Range(func(key string, value *VMValue) bool {
-			txt := ""
-			if value.TypeId == VMTypeArray {
-				txt = "[...]"
-			} else if value.TypeId == VMTypeDict {
-				txt = "{...}"
-			} else {
-				txt = value.ToRepr()
-			}
+			txt := value.toReprRaw(ri)
+			//txt := ""
+			//if value.TypeId == VMTypeArray {
+			//	txt = "[...]"
+			//} else if value.TypeId == VMTypeDict {
+			//	txt = "{...}"
+			//} else {
+			//	txt = value.ToRepr()
+			//}
 			items = append(items, fmt.Sprintf("'%s': %s", key, txt))
 			return true
 		})
@@ -378,19 +396,24 @@ func (v *VMValue) ToString() string {
 	}
 }
 
-func (v *VMValue) ToRepr() string {
+func (v *VMValue) toReprRaw(ri *recursionInfo) string {
 	if v == nil {
 		return "NIL"
 	}
 	switch v.TypeId {
 	case VMTypeString:
 		// TODO: 检测其中是否有"
-		return "'" + v.ToString() + "'"
+		return "'" + v.toStringRaw(ri) + "'"
 	case VMTypeInt, VMTypeFloat, VMTypeUndefined, VMTypeNull, VMTypeArray, VMTypeComputedValue, VMTypeDict, VMTypeFunction, VMTypeNativeFunction:
-		return v.ToString()
+		return v.toStringRaw(ri)
 	default:
 		return "<a value>"
 	}
+}
+
+func (v *VMValue) ToRepr() string {
+	ri := &recursionInfo{exists: map[interface{}]bool{}}
+	return v.toReprRaw(ri)
 }
 
 func (v *VMValue) ReadInt() (int64, bool) {
@@ -438,6 +461,13 @@ func (v *VMValue) ReadDictData() (*DictData, bool) {
 func (v *VMValue) MustReadDictData() *DictData {
 	if v.TypeId == VMTypeDict {
 		return v.Value.(*DictData)
+	}
+	panic("bad type")
+}
+
+func (v *VMValue) MustReadArray() *ArrayData {
+	if ad, ok := v.ReadArray(); ok {
+		return ad
 	}
 	panic("bad type")
 }
@@ -704,27 +734,7 @@ func (v *VMValue) OpCompLE(ctx *Context, v2 *VMValue) *VMValue {
 }
 
 func (v *VMValue) OpCompEQ(ctx *Context, v2 *VMValue) *VMValue {
-	if v == v2 {
-		return VMValueNewInt(1)
-	}
-	if v.TypeId == v2.TypeId {
-		return boolToVMValue(v.Value == v2.Value)
-	}
-
-	switch v.TypeId {
-	case VMTypeInt:
-		switch v2.TypeId {
-		case VMTypeFloat:
-			return boolToVMValue(float64(v.Value.(int64)) == v2.Value.(float64))
-		}
-	case VMTypeFloat:
-		switch v2.TypeId {
-		case VMTypeInt:
-			return boolToVMValue(v.Value.(float64) == float64(v2.Value.(int64)))
-		}
-	}
-
-	return VMValueNewInt(0)
+	return boolToVMValue(ValueEqual(v, v2, true))
 }
 
 func (v *VMValue) OpCompNE(ctx *Context, v2 *VMValue) *VMValue {
@@ -904,84 +914,15 @@ func (v *VMValue) CallFunc(ctx *Context, name string, values []*VMValue) *VMValu
 	return VMValueNewUndefined()
 }
 
-func (v *VMValue) ArrayFuncKeepHigh(ctx *Context) *VMValue {
-	arr, _ := v.ReadArray()
-
-	var maxFloat float64 // 次函数最大上限为flaot64上限
-	isFloat := false
-	isFirst := true
-
-	for _, i := range arr.List {
-		switch i.TypeId {
-		case VMTypeInt:
-			if isFirst {
-				isFirst = false
-				maxFloat = float64(i.Value.(int64))
-			} else {
-				val := float64(i.Value.(int64))
-				if val > maxFloat {
-					maxFloat = val
-				}
-			}
-		case VMTypeFloat:
-			isFloat = true
-			if isFirst {
-				isFirst = false
-				maxFloat = i.Value.(float64)
-			} else {
-				val := i.Value.(float64)
-				if val > maxFloat {
-					maxFloat = val
-				}
-			}
-		}
+func getRealIndex(ctx *Context, index int64, length int64) int64 {
+	if index < 0 {
+		// 负数下标支持
+		index = length + index
 	}
-
-	if isFloat {
-		return VMValueNewFloat(maxFloat)
-	} else {
-		return VMValueNewInt(int64(maxFloat))
+	if index >= length || index < 0 {
+		ctx.Error = errors.New("无法获取此下标")
 	}
-}
-
-func (v *VMValue) ArrayFuncKeepLow(ctx *Context) *VMValue {
-	arr, _ := v.ReadArray()
-
-	var maxFloat float64 // 次函数最大上限为flaot64上限
-	isFloat := false
-	isFirst := true
-
-	for _, i := range arr.List {
-		switch i.TypeId {
-		case VMTypeInt:
-			if isFirst {
-				isFirst = false
-				maxFloat = float64(i.Value.(int64))
-			} else {
-				val := float64(i.Value.(int64))
-				if val < maxFloat {
-					maxFloat = val
-				}
-			}
-		case VMTypeFloat:
-			isFloat = true
-			if isFirst {
-				isFirst = false
-				maxFloat = i.Value.(float64)
-			} else {
-				val := i.Value.(float64)
-				if val < maxFloat {
-					maxFloat = val
-				}
-			}
-		}
-	}
-
-	if isFloat {
-		return VMValueNewFloat(maxFloat)
-	} else {
-		return VMValueNewInt(int64(maxFloat))
-	}
+	return index
 }
 
 func getClampRealIndex(ctx *Context, index int64, length int64) int64 {
@@ -995,17 +936,6 @@ func getClampRealIndex(ctx *Context, index int64, length int64) int64 {
 
 	if index > length {
 		index = length
-	}
-	return index
-}
-
-func getRealIndex(ctx *Context, index int64, length int64) int64 {
-	if index < 0 {
-		// 负数下标支持
-		index = length + index
-	}
-	if index >= length || index < 0 {
-		ctx.Error = errors.New("无法获取此下标")
 	}
 	return index
 }
@@ -1334,6 +1264,70 @@ func (v *VMValue) AsDictKey() (string, error) {
 	}
 }
 
+func ValueEqual(a *VMValue, b *VMValue, autoConvert bool) bool {
+	if a == b {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+
+	if a.TypeId == b.TypeId {
+		switch a.TypeId {
+		case VMTypeArray:
+			arr1, _ := a.ReadArray()
+			arr2, _ := b.ReadArray()
+			if len(arr1.List) != len(arr2.List) {
+				return false
+			}
+			for index, i := range arr1.List {
+				if !ValueEqual(i, arr2.List[index], autoConvert) {
+					return false
+				}
+			}
+			return true
+		case VMTypeDict:
+			d1 := a.MustReadDictData()
+			d2 := b.MustReadDictData()
+			if len(d1.Dict.dirty) != len(d2.Dict.dirty) {
+				return false
+			}
+			isSame := true
+			d1.Dict.Range(func(key string, value *VMValue) bool {
+				isEqual := ValueEqual(value, d2.Dict.MustLoad(key), autoConvert)
+				if !isEqual {
+					isSame = false
+					return false
+				}
+				return true
+			})
+			return isSame
+		case VMTypeNativeFunction:
+			fd1, _ := a.ReadNativeFunctionData()
+			fd2, _ := b.ReadNativeFunctionData()
+			return reflect.ValueOf(fd1.NativeFunc).Pointer() == reflect.ValueOf(fd2.NativeFunc).Pointer()
+		default:
+			return a.Value == b.Value
+		}
+	} else {
+		if autoConvert {
+			switch a.TypeId {
+			case VMTypeInt:
+				switch b.TypeId {
+				case VMTypeFloat:
+					return float64(a.Value.(int64)) == b.Value.(float64)
+				}
+			case VMTypeFloat:
+				switch b.TypeId {
+				case VMTypeInt:
+					return a.Value.(float64) == float64(b.Value.(int64))
+				}
+			}
+		}
+	}
+	return false
+}
+
 func VMValueNewInt(i int64) *VMValue {
 	// TODO: 小整数可以处理为不可变对象，且一直停留在内存中，就像python那样。这可以避免很多内存申请
 	return &VMValue{TypeId: VMTypeInt, Value: i}
@@ -1355,9 +1349,9 @@ func vmValueNewLocal() *VMValue {
 	return &VMValue{TypeId: vmTypeLocal}
 }
 
-func vmValueNewGlobal() *VMValue {
-	return &VMValue{TypeId: vmTypeGlobal}
-}
+//func vmValueNewGlobal() *VMValue {
+//	return &VMValue{TypeId: vmTypeGlobal}
+//}
 
 func VMValueNewNull() *VMValue {
 	return &VMValue{TypeId: VMTypeNull}
@@ -1383,16 +1377,24 @@ func VMValueNewDict(data *ValueMap) *VMDictValue {
 	return &VMDictValue{TypeId: VMTypeDict, Value: &DictData{data}}
 }
 
-func VMValueNewDictWithArray(arr []*VMValue) (*VMDictValue, error) {
+func VMValueNewDictWithArray(arr ...*VMValue) (*VMDictValue, error) {
 	data := &ValueMap{}
 	for i := 0; i < len(arr); i += 2 {
-		kName, err := arr[0].AsDictKey()
+		kName, err := arr[i].AsDictKey()
 		if err != nil {
 			return nil, err
 		}
-		data.Store(kName, arr[1])
+		data.Store(kName, arr[i+1])
 	}
 	return &VMDictValue{TypeId: VMTypeDict, Value: &DictData{data}}, nil
+}
+
+func VMValueMustNewDictWithArray(arr ...*VMValue) *VMDictValue {
+	d, err := VMValueNewDictWithArray(arr...)
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 func VMValueNewComputedRaw(computed *ComputedData) *VMValue {

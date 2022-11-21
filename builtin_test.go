@@ -63,5 +63,5 @@ func TestNativeFunctionConvert(t *testing.T) {
 	// str
 	assert.True(t, valueEqual(funcStr(vm, []*VMValue{nf(1.1)}), ns("1.1")))
 	assert.True(t, valueEqual(funcStr(vm, []*VMValue{na(ni(1), ni(2))}), ns("[1, 2]")))
-	assert.True(t, valueEqual(funcStr(vm, []*VMValue{na(na(), ni(2))}), ns("[[...], 2]")))
+	assert.True(t, valueEqual(funcStr(vm, []*VMValue{na(na(), ni(2))}), ns("[[], 2]")))
 }

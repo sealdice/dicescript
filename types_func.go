@@ -1,6 +1,8 @@
 package dicescript
 
-import "errors"
+import (
+	"errors"
+)
 
 func (d *VMDictValue) V() *VMValue {
 	return (*VMValue)(d)
@@ -49,4 +51,84 @@ func (v *VMValue) ArrayItemSet(ctx *Context, index int64, val *VMValue) bool {
 	}
 	ctx.Error = errors.New("此类型无法赋值下标")
 	return false
+}
+
+func (v *VMValue) ArrayFuncKeepHigh(ctx *Context) *VMValue {
+	arr, _ := v.ReadArray()
+
+	var maxFloat float64 // 次函数最大上限为flaot64上限
+	isFloat := false
+	isFirst := true
+
+	for _, i := range arr.List {
+		switch i.TypeId {
+		case VMTypeInt:
+			if isFirst {
+				isFirst = false
+				maxFloat = float64(i.Value.(int64))
+			} else {
+				val := float64(i.Value.(int64))
+				if val > maxFloat {
+					maxFloat = val
+				}
+			}
+		case VMTypeFloat:
+			isFloat = true
+			if isFirst {
+				isFirst = false
+				maxFloat = i.Value.(float64)
+			} else {
+				val := i.Value.(float64)
+				if val > maxFloat {
+					maxFloat = val
+				}
+			}
+		}
+	}
+
+	if isFloat {
+		return VMValueNewFloat(maxFloat)
+	} else {
+		return VMValueNewInt(int64(maxFloat))
+	}
+}
+
+func (v *VMValue) ArrayFuncKeepLow(ctx *Context) *VMValue {
+	arr, _ := v.ReadArray()
+
+	var maxFloat float64 // 次函数最大上限为flaot64上限
+	isFloat := false
+	isFirst := true
+
+	for _, i := range arr.List {
+		switch i.TypeId {
+		case VMTypeInt:
+			if isFirst {
+				isFirst = false
+				maxFloat = float64(i.Value.(int64))
+			} else {
+				val := float64(i.Value.(int64))
+				if val < maxFloat {
+					maxFloat = val
+				}
+			}
+		case VMTypeFloat:
+			isFloat = true
+			if isFirst {
+				isFirst = false
+				maxFloat = i.Value.(float64)
+			} else {
+				val := i.Value.(float64)
+				if val < maxFloat {
+					maxFloat = val
+				}
+			}
+		}
+	}
+
+	if isFloat {
+		return VMValueNewFloat(maxFloat)
+	} else {
+		return VMValueNewInt(int64(maxFloat))
+	}
 }

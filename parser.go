@@ -257,7 +257,9 @@ func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text str
 	})
 
 	p.WriteCode(TypePushFuction, val)
-	p.WriteCode(TypeStoreName, name)
+	if name != "" {
+		p.WriteCode(TypeStoreName, name)
+	}
 }
 
 func (p *Parser) AddAttrSet(objName string, attr string, isRaw bool) {
