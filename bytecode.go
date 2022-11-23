@@ -24,7 +24,7 @@ const (
 	TypePushNone
 	TypePushThis
 	TypePushGlobal
-	TypePushFuction
+	TypePushFunction
 
 	TypeLoadFormatString
 	TypeLoadName
@@ -89,9 +89,9 @@ const (
 	TypeDCSetPoints // 面数
 	TypeHalt
 	TypeSwap
-	TypeLeftValueMark
 	TypeDiceSetK
 	TypeDiceSetQ
+	TypeDetailMark
 	TypeClearDetail
 
 	TypePop
@@ -128,7 +128,7 @@ func (code *ByteCode) CodeString() string {
 		return "push.this"
 	case TypePushGlobal:
 		return "push.global"
-	case TypePushFuction:
+	case TypePushFunction:
 		computed, _ := code.Value.(*VMValue).ReadFunctionData()
 		return "push.func " + computed.Name
 
@@ -234,8 +234,9 @@ func (code *ByteCode) CodeString() string {
 		return "halt"
 	case TypeSwap:
 		return "swap"
-	case TypeLeftValueMark:
-		return "mark.left"
+	case TypeDetailMark:
+		v := code.Value.(BufferSpan)
+		return fmt.Sprintf("mark.detail %d, %d", v.begin, v.end)
 	case TypeJmp:
 		return fmt.Sprintf("jmp %d", code.Value)
 	case TypeJe:

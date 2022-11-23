@@ -885,3 +885,11 @@ func TestStringExpr(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ns(" xxx ")))
 	}
 }
+
+func TestContinuousDiceExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("10d1d1")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(10)))
+	}
+}

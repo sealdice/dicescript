@@ -17,6 +17,12 @@ type ParserData struct {
 	}
 }
 
+type BufferSpan struct {
+	begin int64
+	end   int64
+	ret   *VMValue
+}
+
 func (pd *ParserData) init() {
 	pd.counterStack = []int64{}
 	pd.varnameStack = []string{}
@@ -56,8 +62,8 @@ func (e *Parser) WriteCode(T CodeType, value interface{}) {
 	e.codeIndex += 1
 }
 
-func (e *Parser) LMark() {
-	e.WriteCode(TypeLeftValueMark, nil)
+func (p *Parser) AddDiceDetail(begin int64, end int64) {
+	p.WriteCode(TypeDetailMark, BufferSpan{begin: begin, end: end})
 }
 
 func (e *Parser) AddOp(operator CodeType) {
@@ -256,7 +262,7 @@ func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text str
 		codeIndex: length,
 	})
 
-	p.WriteCode(TypePushFuction, val)
+	p.WriteCode(TypePushFunction, val)
 	if name != "" {
 		p.WriteCode(TypeStoreName, name)
 	}

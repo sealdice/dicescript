@@ -84,6 +84,18 @@ func (ctx *Context) Run(value string) error {
 	return err
 }
 
+type spanByBegin []BufferSpan
+
+func (a spanByBegin) Len() int           { return len(a) }
+func (a spanByBegin) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a spanByBegin) Less(i, j int) bool { return a[i].begin < a[j].begin }
+
+type spanByEnd []BufferSpan
+
+func (a spanByEnd) Len() int           { return len(a) }
+func (a spanByEnd) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a spanByEnd) Less(i, j int) bool { return a[i].end < a[j].end }
+
 //getE5 := func() error {
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
 //}
@@ -102,9 +114,7 @@ func (e *Parser) Evaluate() {
 	stack := e.stack
 
 	ctx := &e.Context
-	//lastDetails := []string{}
-	//lastDetailsLeft := []string{}
-	//
+	var details []BufferSpan
 	numOpCountAdd := func(count int64) bool {
 		e.NumOpCount += count
 		if e.NumOpCount > 30000 {
@@ -136,6 +146,68 @@ func (e *Parser) Evaluate() {
 		}{
 			times: 1,
 		})
+	}
+
+	solveDetail := func() {
+		var m []struct {
+			begin int64
+			end   int64
+			spans []BufferSpan
+		}
+		curPoint := int64(-1)
+		lastEnd := int64(-1)
+		sort.Sort(spanByBegin(details))
+
+		for _, i := range details {
+			//fmt.Println("?", i, lastEnd)
+			if i.begin > lastEnd {
+				curPoint = i.begin
+				m = append(m, struct {
+					begin int64
+					end   int64
+					spans []BufferSpan
+				}{begin: curPoint, end: i.end, spans: []BufferSpan{i}})
+			} else {
+				m[len(m)-1].spans = append(m[len(m)-1].spans, i)
+				if i.end > m[len(m)-1].end {
+					m[len(m)-1].end = i.end
+				}
+			}
+
+			if i.end > lastEnd {
+				lastEnd = i.end
+			}
+		}
+
+		runeBuffer := []rune(e.Buffer)
+		detailResult := runeBuffer
+
+		for i := len(m) - 1; i >= 0; i-- {
+			//for i := 0; i < len(m); i++ {
+			text := ""
+			item := m[i]
+			size := len(item.spans)
+			sort.Sort(spanByEnd(item.spans))
+			last := item.spans[size-1]
+			//text = last.ret.ToString()
+			if size > 1 {
+				for j := 0; j < len(item.spans)-1; j++ {
+					span := item.spans[j]
+					text += "," + string(runeBuffer[span.begin:span.end]) + "=" + span.ret.ToString()
+				}
+			}
+
+			exprText := string(runeBuffer[item.begin:item.end])
+
+			var r []rune
+			r = append(r, detailResult[:item.begin]...)
+			r = append(r, ([]rune)(last.ret.ToString()+"["+exprText+"="+last.ret.ToString()+text+"]")...)
+			r = append(r, detailResult[item.end:]...)
+			detailResult = r
+			//fmt.Println("CCC", text, item)
+		}
+
+		fmt.Println("TEST", string(detailResult))
 	}
 
 	stackPop := func() *VMValue {
@@ -212,7 +284,7 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(dict.V())
-		case TypePushComputed, TypePushFuction:
+		case TypePushComputed, TypePushFunction:
 			val := code.Value.(*VMValue)
 			stackPush(val)
 		case TypePushUndefined:
@@ -352,8 +424,10 @@ func (e *Parser) Evaluate() {
 			}
 
 		case TypeReturn:
+			solveDetail()
 			return
 		case TypeHalt:
+			solveDetail()
 			return
 
 		case TypeLoadFormatString:
@@ -465,6 +539,9 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			diceStates[len(diceStates)-1].isKeepLH = 4
 			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt()
+		case TypeDetailMark:
+			span := code.Value.(BufferSpan)
+			details = append(details, span)
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
 			var nums []int64
@@ -515,7 +592,9 @@ func (e *Parser) Evaluate() {
 				num += nums[i]
 			}
 
-			stackPush(VMValueNewInt(num))
+			ret := VMValueNewInt(num)
+			details[len(details)-1].ret = ret
+			stackPush(ret)
 		}
 	}
 }

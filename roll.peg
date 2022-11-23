@@ -163,18 +163,28 @@ _diceMod <- (('kl' / [qQ]) (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  
 _diceMod2 <- ('min' (number / sub) { p.AddOp(TypeDiceSetMin) })?
              ('max' (number / sub) { p.AddOp(TypeDiceSetMax) })?
 
-_diceModX <- {} _diceMod {}
-_diceModX2 <- {} _diceMod2 {}
 
 _dicePearMod <- '优势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
               / '劣势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
 
-// XdY 形式的文法和 dXdY 不太一样，故而如此，读起来很晦涩，我也不太满意
-_diceExpr1 <- ((number / sub) { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } [dD] (number / sub)) _diceModX? _diceModX2 { p.AddOp(TypeDice) }
-_diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } (number / sub) (_dicePearMod / _diceModX)? _diceModX2 { p.AddOp(TypeDice) }
+detailStart <- { p.CounterPush(); p.CounterAdd(int64(token.begin)) }
+detailEnd <- { p.AddDiceDetail(p.CounterPop(), int64(token.end)) }
 
-exprDice <- _diceExpr1 _diceExpr2* sp // 3d20, 3d20d2, 2d20优势
-          / _diceExpr2+ sp  // d100
+// 3d20, 3d20d2, 2d20优势
+_diceType1 <- (number / sub) [dD] (number / sub)
+// d20
+_diceType2 <- [dD] (number / sub)
+
+
+// XdY 中的 dy 部分
+_diceExpr1 <- [dD] { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } (number / sub) _diceMod? _diceMod2?
+_diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } (number / sub) (_dicePearMod / _diceMod)? _diceMod2?
+
+// 多重式子 d4d6d8
+_diceExprX <- &_diceType2 detailStart _diceExpr1 detailEnd { p.AddOp(TypeDice) }
+
+exprDice <- &_diceType1 detailStart (number / sub) _diceExpr1 detailEnd { p.AddOp(TypeDice) } _diceExprX*
+          / &_diceType2 detailStart _diceExpr2 detailEnd { p.AddOp(TypeDice) } _diceExprX*
           / value
 
 item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) } func_invoke? )*
