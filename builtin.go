@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func funcCeil(ctx *Context, params []*VMValue) *VMValue {
+func funcCeil(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
 		return VMValueNewInt(int64(math.Ceil(v)))
@@ -16,7 +16,7 @@ func funcCeil(ctx *Context, params []*VMValue) *VMValue {
 	return nil
 }
 
-func funcRound(ctx *Context, params []*VMValue) *VMValue {
+func funcRound(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
 		return VMValueNewInt(int64(math.Round(v)))
@@ -26,7 +26,7 @@ func funcRound(ctx *Context, params []*VMValue) *VMValue {
 	return nil
 }
 
-func funcFloor(ctx *Context, params []*VMValue) *VMValue {
+func funcFloor(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
 		return VMValueNewInt(int64(math.Floor(v)))
@@ -36,7 +36,7 @@ func funcFloor(ctx *Context, params []*VMValue) *VMValue {
 	return nil
 }
 
-func funcInt(ctx *Context, params []*VMValue) *VMValue {
+func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
 		return params[0]
@@ -57,7 +57,7 @@ func funcInt(ctx *Context, params []*VMValue) *VMValue {
 	return nil
 }
 
-func funcFloat(ctx *Context, params []*VMValue) *VMValue {
+func funcFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
 		v, _ := params[0].ReadInt()
@@ -78,16 +78,60 @@ func funcFloat(ctx *Context, params []*VMValue) *VMValue {
 	return nil
 }
 
-func funcStr(ctx *Context, params []*VMValue) *VMValue {
+func funcStr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	return VMValueNewStr(params[0].ToString())
+}
+
+func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return VMValueNewStr(params[0].ToString())
 }
 
 var nnf = VMValueNewNativeFunction
+
+type ndf = NativeFunctionData
+
 var builtinValues = map[string]*VMValue{
-	"ceil":  nnf(&NativeFunctionData{"ceil", []string{"value"}, funcCeil}),
-	"floor": nnf(&NativeFunctionData{"floor", []string{"value"}, funcFloor}),
-	"round": nnf(&NativeFunctionData{"round", []string{"value"}, funcRound}),
-	"int":   nnf(&NativeFunctionData{"int", []string{"value"}, funcInt}),
-	"float": nnf(&NativeFunctionData{"float", []string{"value"}, funcFloat}),
-	"str":   nnf(&NativeFunctionData{"str", []string{"value"}, funcStr}),
+	"ceil":  nnf(&ndf{"ceil", []string{"value"}, nil, nil, funcCeil}),
+	"floor": nnf(&ndf{"floor", []string{"value"}, nil, nil, funcFloor}),
+	"round": nnf(&ndf{"round", []string{"value"}, nil, nil, funcRound}),
+	"int":   nnf(&ndf{"int", []string{"value"}, nil, nil, funcInt}),
+	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
+	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
 }
+
+//
+
+var builtinProto = map[VMValueType]*VMDictValue{
+	VMTypeArray: VMValueMustNewDictWithArray(
+		VMValueNewStr("kh"), nnf(&ndf{"Array.kh", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepHigh}),
+		VMValueNewStr("kl"), nnf(&ndf{"Array.kl", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepLow}),
+	),
+}
+
+func getBindMethod(v *VMValue, funcDef *VMValue) *VMValue {
+	switch funcDef.TypeId {
+	case VMTypeFunction:
+		fd, _ := funcDef.ReadFunctionData()
+
+		// 完成clone
+		_fd := *fd
+		fd2 := &_fd
+
+		fd2.Self = v.Clone()
+		return VMValueNewFunctionRaw(fd2)
+	case VMTypeNativeFunction:
+		fd, _ := funcDef.ReadNativeFunctionData()
+
+		// 完成clone
+		_fd := *fd
+		fd2 := &_fd
+
+		fd2.Self = v.Clone()
+		return VMValueNewNativeFunction(fd2)
+	}
+	return nil
+}
+
+//func getBindMethod(name string, v *VMValue, params []string, nativeFunc NativeFunctionDef) *VMValue {
+//	return nnf(&NativeFunctionData{name, params, v.Clone(), nativeFunc})
+//}

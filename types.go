@@ -266,22 +266,28 @@ type ComputedData struct {
 }
 
 type FunctionData struct {
-	Expr   string
-	Name   string
-	Params []string
+	Expr     string
+	Name     string
+	Params   []string
+	Defaults []*VMValue
 
 	/* 缓存数据 */
+	Self      *VMValue // 若存在self，即为bound method
 	code      []ByteCode
 	codeIndex int
 	//ctx       *Context
 }
 
+type NativeFunctionDef func(ctx *Context, this *VMValue, params []*VMValue) *VMValue
+
 type NativeFunctionData struct {
-	Name   string
-	Params []string
+	Name     string
+	Params   []string
+	Defaults []*VMValue
 
 	/* 缓存数据 */
-	NativeFunc func(ctx *Context, params []*VMValue) *VMValue
+	Self       *VMValue // 若存在self，即为bound method
+	NativeFunc NativeFunctionDef
 }
 
 type NativeObjectData interface {
@@ -474,6 +480,14 @@ func (v *VMValue) MustReadArray() *ArrayData {
 
 func (v *VMValue) MustReadInt() int64 {
 	val, ok := v.ReadInt()
+	if ok {
+		return val
+	}
+	panic("bad type")
+}
+
+func (v *VMValue) MustReadFloat() float64 {
+	val, ok := v.ReadFloat()
 	if ok {
 		return val
 	}
@@ -841,6 +855,9 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 			ret = VMValueNewUndefined()
 		}
 		return ret
+	case VMTypeArray:
+		method, _ := builtinProto[VMTypeArray].Load(name)
+		return getBindMethod(v, method)
 	case vmTypeGlobal:
 		// 加载全局变量
 		ret := ctx.LoadNameGlobal(name, false)
@@ -899,19 +916,6 @@ func (v *VMValue) ItemSet(ctx *Context, index *VMValue, val *VMValue) bool {
 		ctx.Error = errors.New("此类型无法赋值下标")
 	}
 	return false
-}
-
-func (v *VMValue) CallFunc(ctx *Context, name string, values []*VMValue) *VMValue {
-	switch v.TypeId {
-	case VMTypeArray:
-		switch name {
-		case "kh":
-			return v.ArrayFuncKeepHigh(ctx)
-		case "kl":
-			return v.ArrayFuncKeepLow(ctx)
-		}
-	}
-	return VMValueNewUndefined()
 }
 
 func getRealIndex(ctx *Context, index int64, length int64) int64 {
@@ -1184,7 +1188,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 
 	// 设置参数
 	if len(cd.Params) != len(params) {
-		ctx.Error = errors.New("调用参数个数与函数定义不符")
+		ctx.Error = errors.New(fmt.Sprintf("调用参数个数与函数定义不符，需求%d，传入%d", len(cd.Params), len(params)))
 		return nil
 	}
 	for index, i := range cd.Params {
@@ -1239,11 +1243,22 @@ func (v *VMValue) FuncInvokeNative(ctx *Context, params []*VMValue) *VMValue {
 	cd, _ := v.ReadNativeFunctionData()
 
 	// 设置参数
+	if cd.Defaults != nil {
+		// 参数填充
+		for i := 0; i < len(cd.Defaults); i++ {
+			if cd.Defaults[i] != nil {
+				if len(params) <= i {
+					params = append(params, cd.Defaults[i])
+				}
+			}
+		}
+	}
+
 	if len(cd.Params) != len(params) {
-		ctx.Error = errors.New("调用参数个数与函数定义不符")
+		ctx.Error = errors.New(fmt.Sprintf("调用参数个数与函数定义不符，需求%d，传入%d", len(cd.Params), len(params)))
 		return nil
 	}
-	ret := cd.NativeFunc(ctx, params)
+	ret := cd.NativeFunc(ctx, cd.Self, params)
 
 	if ctx.Error != nil {
 		ctx.Error = ctx.Error

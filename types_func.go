@@ -2,6 +2,7 @@ package dicescript
 
 import (
 	"errors"
+	"sort"
 )
 
 func (d *VMDictValue) V() *VMValue {
@@ -53,82 +54,61 @@ func (v *VMValue) ArrayItemSet(ctx *Context, index int64, val *VMValue) bool {
 	return false
 }
 
-func (v *VMValue) ArrayFuncKeepHigh(ctx *Context) *VMValue {
+func (v *VMValue) ArrayFuncKeepBase(ctx *Context, pickNum int64, orderType int) (isAllInt bool, ret float64) {
 	arr, _ := v.ReadArray()
+	var nums []float64
 
-	var maxFloat float64 // 次函数最大上限为flaot64上限
-	isFloat := false
-	isFirst := true
-
+	isAllInt = true
 	for _, i := range arr.List {
 		switch i.TypeId {
 		case VMTypeInt:
-			if isFirst {
-				isFirst = false
-				maxFloat = float64(i.Value.(int64))
-			} else {
-				val := float64(i.Value.(int64))
-				if val > maxFloat {
-					maxFloat = val
-				}
-			}
+			nums = append(nums, float64(i.MustReadInt()))
 		case VMTypeFloat:
-			isFloat = true
-			if isFirst {
-				isFirst = false
-				maxFloat = i.Value.(float64)
-			} else {
-				val := i.Value.(float64)
-				if val > maxFloat {
-					maxFloat = val
-				}
-			}
+			isAllInt = false
+			nums = append(nums, i.MustReadFloat())
 		}
 	}
 
-	if isFloat {
-		return VMValueNewFloat(maxFloat)
+	if orderType == 0 {
+		sort.Slice(nums, func(i, j int) bool { return nums[i] > nums[j] }) // 从大到小
+	} else if orderType == 1 {
+		sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] }) // 从小到大
+	}
+
+	num := float64(0)
+	for i := int64(0); i < pickNum; i++ {
+		// 当取数大于上限 跳过
+		if i >= int64(len(nums)) {
+			continue
+		}
+		num += nums[i]
+	}
+
+	return isAllInt, num
+}
+
+func (v *VMValue) ArrayFuncKeepHigh(ctx *Context, pickNum int64) (isAllInt bool, ret float64) {
+	return v.ArrayFuncKeepBase(ctx, pickNum, 0)
+}
+
+func (v *VMValue) ArrayFuncKeepLow(ctx *Context, pickNum int64) (isAllInt bool, ret float64) {
+	return v.ArrayFuncKeepBase(ctx, pickNum, 1)
+}
+
+func funcArrayKeepLow(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	isAllInt, ret := this.ArrayFuncKeepLow(ctx, params[0].MustReadInt())
+	if isAllInt {
+		return VMValueNewInt(int64(ret))
 	} else {
-		return VMValueNewInt(int64(maxFloat))
+		return VMValueNewFloat(ret)
 	}
 }
 
-func (v *VMValue) ArrayFuncKeepLow(ctx *Context) *VMValue {
-	arr, _ := v.ReadArray()
-
-	var maxFloat float64 // 次函数最大上限为flaot64上限
-	isFloat := false
-	isFirst := true
-
-	for _, i := range arr.List {
-		switch i.TypeId {
-		case VMTypeInt:
-			if isFirst {
-				isFirst = false
-				maxFloat = float64(i.Value.(int64))
-			} else {
-				val := float64(i.Value.(int64))
-				if val < maxFloat {
-					maxFloat = val
-				}
-			}
-		case VMTypeFloat:
-			isFloat = true
-			if isFirst {
-				isFirst = false
-				maxFloat = i.Value.(float64)
-			} else {
-				val := i.Value.(float64)
-				if val < maxFloat {
-					maxFloat = val
-				}
-			}
-		}
-	}
-
-	if isFloat {
-		return VMValueNewFloat(maxFloat)
+func funcArrayKeepHigh(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	isAllInt, ret := this.ArrayFuncKeepHigh(ctx, params[0].MustReadInt())
+	if isAllInt {
+		return VMValueNewInt(int64(ret))
 	} else {
-		return VMValueNewInt(int64(maxFloat))
+		return VMValueNewFloat(ret)
 	}
 }

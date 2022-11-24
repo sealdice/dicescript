@@ -189,8 +189,8 @@ exprDice <- &_diceType1 detailStart (number / sub) _diceExpr1 detailEnd { p.AddO
 
 item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) } func_invoke? )*
 
-array_call <- 'kh' { p.AddInvokeMethod("kh", 1) }
-            / 'kl' { p.AddInvokeMethod("kl", 1) }
+array_call <- 'kh' { p.WriteCode(TypeGetAttr, string("kh")) } (number { p.AddInvoke(1) } / {p.AddInvoke(0)})
+            / 'kl' { p.WriteCode(TypeGetAttr, string("kl")) } (number { p.AddInvoke(1) } / {p.AddInvoke(0)})
             / ('[' sp exprRoot ']' sp { p.AddOp(TypeItemGet) })+
 
 // TODO: value 中的 item_get attr_get 连写这种形式处理的很烂，之后改掉

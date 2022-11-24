@@ -348,10 +348,6 @@ func (e *Parser) Evaluate() {
 				ctx.Error = errors.New("无法调用")
 			}
 
-		case TypeInvokeSelf:
-			paramsNum, _ := stackPop().ReadInt()
-			arr := stackPopN(paramsNum)
-			stackPush(arr[0].CallFunc(ctx, code.Value.(string), arr[1:]))
 		case TypeItemGet:
 			itemIndex := stackPop()
 			obj := stackPop()
@@ -554,18 +550,18 @@ func (e *Parser) Evaluate() {
 			}
 
 			for i := int64(0); i < diceState.times; i += 1 {
-				oneDice := Roll(bInt)
+				die := Roll(bInt)
 				if diceState.max != nil {
-					if oneDice > *diceState.max {
-						oneDice = *diceState.max
+					if die > *diceState.max {
+						die = *diceState.max
 					}
 				}
 				if diceState.min != nil {
-					if oneDice < *diceState.min {
-						oneDice = *diceState.min
+					if die < *diceState.min {
+						die = *diceState.min
 					}
 				}
-				nums = append(nums, oneDice)
+				nums = append(nums, die)
 			}
 
 			pickNum := diceState.times
