@@ -101,10 +101,51 @@ var builtinValues = map[string]*VMValue{
 
 //
 
+func funcArrayKeepLow(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	isAllInt, ret := this.ArrayFuncKeepLow(ctx, params[0].MustReadInt())
+	if isAllInt {
+		return VMValueNewInt(int64(ret))
+	} else {
+		return VMValueNewFloat(ret)
+	}
+}
+
+func funcArrayKeepHigh(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	isAllInt, ret := this.ArrayFuncKeepHigh(ctx, params[0].MustReadInt())
+	if isAllInt {
+		return VMValueNewInt(int64(ret))
+	} else {
+		return VMValueNewFloat(ret)
+	}
+}
+
+func funcArraySum(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+
+	isAllInt := true
+	sumNum := float64(0)
+	for _, i := range arr.List {
+		switch i.TypeId {
+		case VMTypeInt:
+			sumNum += float64(i.MustReadInt())
+		case VMTypeFloat:
+			isAllInt = false
+			sumNum += i.MustReadFloat()
+		}
+	}
+
+	if isAllInt {
+		return VMValueNewInt(int64(sumNum))
+	} else {
+		return VMValueNewFloat(sumNum)
+	}
+}
+
 var builtinProto = map[VMValueType]*VMDictValue{
 	VMTypeArray: VMValueMustNewDictWithArray(
 		VMValueNewStr("kh"), nnf(&ndf{"Array.kh", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepHigh}),
 		VMValueNewStr("kl"), nnf(&ndf{"Array.kl", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepLow}),
+		VMValueNewStr("sum"), nnf(&ndf{"Array.sum", []string{}, nil, nil, funcArraySum}),
 	),
 }
 

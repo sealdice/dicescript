@@ -94,21 +94,3 @@ func (v *VMValue) ArrayFuncKeepHigh(ctx *Context, pickNum int64) (isAllInt bool,
 func (v *VMValue) ArrayFuncKeepLow(ctx *Context, pickNum int64) (isAllInt bool, ret float64) {
 	return v.ArrayFuncKeepBase(ctx, pickNum, 1)
 }
-
-func funcArrayKeepLow(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
-	isAllInt, ret := this.ArrayFuncKeepLow(ctx, params[0].MustReadInt())
-	if isAllInt {
-		return VMValueNewInt(int64(ret))
-	} else {
-		return VMValueNewFloat(ret)
-	}
-}
-
-func funcArrayKeepHigh(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
-	isAllInt, ret := this.ArrayFuncKeepHigh(ctx, params[0].MustReadInt())
-	if isAllInt {
-		return VMValueNewInt(int64(ret))
-	} else {
-		return VMValueNewFloat(ret)
-	}
-}

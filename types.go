@@ -852,12 +852,29 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 		a := (*VMDictValue)(v)
 		ret, _ := a.Load(name)
 		if ret == nil {
-			ret = VMValueNewUndefined()
+			var ok bool
+			p1 := v
+			p1x := a
+
+			for {
+				if p1, ok = p1x.Load("__proto__"); ok && p1.TypeId == VMTypeDict {
+					var exists bool
+					p1x = (*VMDictValue)(p1)
+					ret, exists = p1x.Load(name)
+
+					if exists {
+						break
+					}
+				} else {
+					break
+				}
+			}
+
+			if ret == nil {
+				ret = VMValueNewUndefined()
+			}
 		}
 		return ret
-	case VMTypeArray:
-		method, _ := builtinProto[VMTypeArray].Load(name)
-		return getBindMethod(v, method)
 	case vmTypeGlobal:
 		// 加载全局变量
 		ret := ctx.LoadNameGlobal(name, false)
@@ -871,6 +888,13 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 			ret = VMValueNewUndefined()
 		}
 		return ret
+	}
+
+	proto := builtinProto[v.TypeId]
+	if proto != nil {
+		if method, ok := proto.Load(name); ok {
+			return getBindMethod(v, method)
+		}
 	}
 
 	return nil

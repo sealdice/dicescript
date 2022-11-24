@@ -215,11 +215,11 @@ value <- float
        / identifier sp { p.AddLoadName(string(text)) } func_invoke? item_get attr_get
        / fstring
        / sub item_get attr_get
-       / '[' sp ']' sp { p.PushArray(0) } array_call?
-       / '[' sp exprRoot '..' sp exprRoot ']' sp { p.AddOp(TypePushRange) } array_call?
-       / '[' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ']' sp { p.PushArray(p.CounterPop()) } array_call?
-       / '{' sp '}' sp { p.PushDict(0) }
-       / '{' sp { p.CounterPush() } dict_item (',' sp dict_item )* ','? '}' sp { p.PushDict(p.CounterPop()) }
+       / '[' sp ']' sp { p.PushArray(0) } array_call? attr_get
+       / '[' sp exprRoot '..' sp exprRoot ']' sp { p.AddOp(TypePushRange) } array_call? attr_get
+       / '[' sp { p.CounterPush(); p.CounterAdd(1) } exprRoot (',' sp exprRoot {p.CounterAdd(1)} )* ']' sp { p.PushArray(p.CounterPop()) } array_call? attr_get
+       / '{' sp '}' sp { p.PushDict(0) } item_get attr_get
+       / '{' sp { p.CounterPush() } dict_item (',' sp dict_item )* ','? '}' sp { p.PushDict(p.CounterPop()) } item_get attr_get
        / 'func' sp func_def_params '{' sp { p.CodePush() } < stmtRoot? > '}' sp
           {  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction("", arr, string(text)) }
 

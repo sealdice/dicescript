@@ -149,6 +149,9 @@ func (e *Parser) Evaluate() {
 	}
 
 	solveDetail := func() {
+		if ctx.subThreadDepth != 0 {
+			return
+		}
 		var m []struct {
 			begin int64
 			end   int64
