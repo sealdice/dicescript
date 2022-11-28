@@ -110,6 +110,7 @@ type Context struct {
 	Ret       *VMValue // 返回值
 	RestInput string   // 剩余字符串
 	Matched   string   // 匹配的字符串
+	Detail    string   // 计算过程
 
 	//lastDetails := []string{}
 	//lastDetailsLeft := []string{}

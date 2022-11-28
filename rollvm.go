@@ -235,6 +235,7 @@ func (e *Parser) Evaluate() {
 			detailResult = r
 		}
 
+		ctx.Detail = string(detailResult)
 		fmt.Println("TEST", string(detailResult))
 	}
 
