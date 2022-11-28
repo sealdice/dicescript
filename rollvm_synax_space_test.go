@@ -1,6 +1,7 @@
 package dicescript
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -9,6 +10,7 @@ func TestAssignSpace(t *testing.T) {
 	// stmtAssign
 	vm := NewVM()
 	err := vm.Run("a = 1")
+	fmt.Println("xxx", vm.GetAsmText())
 	if assert.NoError(t, err) {
 		assert.True(t, vmValueEqual(vm, "a", ni(1)))
 	}

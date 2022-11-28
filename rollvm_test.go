@@ -3,6 +3,7 @@ package dicescript
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
@@ -891,5 +892,17 @@ func TestContinuousDiceExpr(t *testing.T) {
 	err := vm.Run("10d1d1")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(10)))
+	}
+}
+
+func TestCrash1(t *testing.T) {
+	// 一种崩溃，崩溃条件是第二次调用vm.Run且第二次的tokens少于第一次的
+	vm := NewVM()
+	err := vm.Run("aa + 2//asd")
+	if assert.Error(t, err) {
+		err := vm.Run("/")
+		if assert.Error(t, err) {
+			assert.True(t, strings.Index(err.Error(), "parse error near") != -1)
+		}
 	}
 }

@@ -28,6 +28,7 @@ const (
 
 	TypeLoadFormatString
 	TypeLoadName
+	TypeLoadNameWithDetail
 	TypeLoadNameRaw // 如遇到computed，这个版本不取出其内容
 	TypeStoreName
 	TypeStoreNameGlobal
@@ -74,8 +75,8 @@ const (
 	TypeDiceSetMax
 	TypeDice
 
-	TypeDicePenalty
-	TypeDiceBonus
+	TypeDiceCocPenalty
+	TypeDiceCocBonus
 	TypeDiceFate
 	TypeDiceWod
 	TypeWodSetInit       // 重置参数
@@ -88,11 +89,7 @@ const (
 	TypeDCSetPool   // 骰池
 	TypeDCSetPoints // 面数
 	TypeHalt
-	TypeSwap
-	TypeDiceSetK
-	TypeDiceSetQ
 	TypeDetailMark
-	TypeClearDetail
 
 	TypePop
 	TypeNop
@@ -192,10 +189,10 @@ func (code *ByteCode) CodeString() string {
 	case TypeDice:
 		return "dice"
 
-	case TypeDicePenalty:
-		return "dice.penalty"
-	case TypeDiceBonus:
-		return "dice.bonus"
+	case TypeDiceCocPenalty:
+		return "coc.penalty"
+	case TypeDiceCocBonus:
+		return "coc.bonus"
 	case TypeDiceFate:
 		return "dice.fate"
 	case TypeWodSetInit:
@@ -211,15 +208,17 @@ func (code *ByteCode) CodeString() string {
 	case TypeDiceDC:
 		return "dice.dc"
 	case TypeDCSetInit:
-		return "dice.setInit"
+		return "dc.setInit"
 	case TypeDCSetPool:
-		return "dice.setPool"
+		return "dc.setPool"
 	case TypeDCSetPoints:
-		return "dice.setPoints"
+		return "dc.setPoints"
 	case TypeDiceWod:
 		return "dice.wod"
 	case TypeLoadName:
 		return "ld " + code.Value.(string)
+	case TypeLoadNameWithDetail:
+		return "ld.d " + code.Value.(string)
 	case TypeLoadNameRaw:
 		return "ld.raw " + code.Value.(string)
 	case TypeLoadFormatString:
@@ -232,8 +231,6 @@ func (code *ByteCode) CodeString() string {
 		return fmt.Sprintf("store.local %s", code.Value)
 	case TypeHalt:
 		return "halt"
-	case TypeSwap:
-		return "swap"
 	case TypeDetailMark:
 		v := code.Value.(BufferSpan)
 		return fmt.Sprintf("mark.detail %d, %d", v.begin, v.end)
@@ -261,8 +258,6 @@ func (code *ByteCode) CodeString() string {
 		return "pop"
 	case TypeReturn:
 		return "ret"
-	case TypeClearDetail:
-		return "reset"
 	}
 	return ""
 }

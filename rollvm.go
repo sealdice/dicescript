@@ -19,7 +19,6 @@ package dicescript
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,6 +41,7 @@ func (ctx *Context) Run(value string) error {
 	// 初始化Parser，这里是分词过程
 	p := ctx.parser
 	p.Buffer = value
+	p.Trim(0) // 移动到下一行会报错
 	err = p.Init()
 
 	// 初始化指令栈，默认指令长度512条，会自动增长
@@ -100,14 +100,6 @@ func (a spanByEnd) Less(i, j int) bool { return a[i].end < a[j].end }
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
 //}
 
-func Roll(dicePoints int64) int64 {
-	if dicePoints == 0 {
-		return 0
-	}
-	val := rand.Int63()%dicePoints + 1
-	return val
-}
-
 func (e *Parser) Evaluate() {
 	e.top = 0
 	e.stack = make([]VMValue, 1000)
@@ -127,7 +119,7 @@ func (e *Parser) Evaluate() {
 	diceStateIndex := -1
 	var diceStates []struct {
 		times    int64 // 次数，如 2d10，times为2
-		isKeepLH int64 // 为1对应取低个数，为2对应取高个数
+		isKeepLH int64 // 为1对应取低个数，为2对应取高个数，3为丢弃低个数，4为丢弃高个数
 		lowNum   int64
 		highNum  int64
 		min      *int64
@@ -146,6 +138,30 @@ func (e *Parser) Evaluate() {
 		}{
 			times: 1,
 		})
+	}
+
+	var wodState struct {
+		pool      int64
+		points    int64
+		threshold int64
+		isGE      bool
+	}
+
+	wodInit := func() {
+		wodState.pool = 1
+		wodState.points = 10   // 面数，默认d10
+		wodState.threshold = 8 // 成功线，默认9
+		wodState.isGE = true
+	}
+
+	var dcState struct {
+		pool   int64
+		points int64
+	}
+
+	dcInit := func() {
+		dcState.pool = 1    // 骰数，默认1
+		dcState.points = 10 // 面数，默认d10
 	}
 
 	solveDetail := func() {
@@ -187,16 +203,18 @@ func (e *Parser) Evaluate() {
 
 		for i := len(m) - 1; i >= 0; i-- {
 			//for i := 0; i < len(m); i++ {
-			text := ""
 			item := m[i]
 			size := len(item.spans)
 			sort.Sort(spanByEnd(item.spans))
 			last := item.spans[size-1]
-			//text = last.ret.ToString()
+
+			subDetailsText := ""
 			if size > 1 {
+				// 次级结果，如 (10d3)d5 中，此处为10d3的结果
+				// 例如 (10d3)d5=63[(10d3)d5=...,10d3=19]
 				for j := 0; j < len(item.spans)-1; j++ {
 					span := item.spans[j]
-					text += "," + string(runeBuffer[span.begin:span.end]) + "=" + span.ret.ToString()
+					subDetailsText += "," + string(runeBuffer[span.begin:span.end]) + "=" + span.ret.ToString()
 				}
 			}
 
@@ -204,10 +222,17 @@ func (e *Parser) Evaluate() {
 
 			var r []rune
 			r = append(r, detailResult[:item.begin]...)
-			r = append(r, ([]rune)(last.ret.ToString()+"["+exprText+"="+last.ret.ToString()+text+"]")...)
+
+			// 主体结果部分，如 (10d3)d5=63[(10d3)d5=63=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
+			detail := "[" + exprText + "=" + last.ret.ToString()
+			if last.text != "" {
+				detail += "=" + last.text
+			}
+			detail += subDetailsText + "]"
+
+			r = append(r, ([]rune)(last.ret.ToString()+detail)...)
 			r = append(r, detailResult[item.end:]...)
 			detailResult = r
-			//fmt.Println("CCC", text, item)
 		}
 
 		fmt.Println("TEST", string(detailResult))
@@ -448,11 +473,15 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = outStr
 			e.top++
-		case TypeLoadName, TypeLoadNameRaw:
+		case TypeLoadName, TypeLoadNameRaw, TypeLoadNameWithDetail:
 			name := code.Value.(string)
 			val := ctx.LoadName(name, TypeLoadNameRaw == code.T)
 			if ctx.Error != nil {
 				return
+			}
+			if TypeLoadNameWithDetail == code.T {
+				details[len(details)-1].ret = val
+				details[len(details)-1].text = ""
 			}
 			stackPush(val)
 
@@ -543,56 +572,89 @@ func (e *Parser) Evaluate() {
 			details = append(details, span)
 		case TypeDice:
 			diceState := diceStates[len(diceStates)-1]
-			var nums []int64
+
 			val := stackPop()
 			bInt, _ := val.ReadInt()
+			// TODO: 类型检查
 
 			numOpCountAdd(diceState.times)
 			if ctx.Error != nil {
 				return
 			}
 
-			for i := int64(0); i < diceState.times; i += 1 {
-				die := Roll(bInt)
-				if diceState.max != nil {
-					if die > *diceState.max {
-						die = *diceState.max
-					}
-				}
-				if diceState.min != nil {
-					if die < *diceState.min {
-						die = *diceState.min
-					}
-				}
-				nums = append(nums, die)
-			}
-
-			pickNum := diceState.times
-
-			if diceState.isKeepLH != 0 {
-				if diceState.isKeepLH == 1 || diceState.isKeepLH == 3 {
-					pickNum = diceState.lowNum
-					sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] }) // 从小到大
-				} else {
-					pickNum = diceState.highNum
-					sort.Slice(nums, func(i, j int) bool { return nums[i] > nums[j] }) // 从大到小
-				}
-				if diceState.isKeepLH > 2 {
-					pickNum = diceState.times - pickNum
-				}
-			}
-
-			num := int64(0)
-			for i := int64(0); i < pickNum; i++ {
-				// 当取数大于上限 跳过
-				if i >= int64(len(nums)) {
-					continue
-				}
-				num += nums[i]
-			}
+			num, detail := RollCommon(diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
 
 			ret := VMValueNewInt(num)
 			details[len(details)-1].ret = ret
+			details[len(details)-1].text = detail
+			stackPush(ret)
+
+		case TypeDiceCocBonus, TypeDiceCocPenalty:
+			t := stackPop()
+			diceNum := t.MustReadInt()
+
+			if numOpCountAdd(diceNum) {
+				return
+			}
+
+			r, detailText := RollCoC(code.T == TypeDiceCocBonus, diceNum)
+			ret := VMValueNewInt(r)
+			details[len(details)-1].ret = ret
+			details[len(details)-1].text = detailText
+			stackPush(ret)
+
+		case TypeWodSetInit:
+			// WOD 系列
+			wodInit()
+		case TypeWodSetPoints:
+			v := stackPop()
+			if v.TypeId != VMTypeInt {
+				// ...
+			}
+			wodState.points = v.MustReadInt()
+		case TypeWodSetThreshold:
+			v := stackPop()
+			wodState.threshold = v.MustReadInt()
+			wodState.isGE = true
+		case TypeWodSetThresholdQ:
+			v := stackPop()
+			wodState.threshold = v.MustReadInt()
+			wodState.isGE = false
+		case TypeWodSetPool:
+			v := stackPop()
+			wodState.pool = v.MustReadInt()
+		case TypeDiceWod:
+			v := stackPop() // 加骰线
+
+			// 变量检查
+			if !wodCheck(ctx, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold) {
+				return
+			}
+
+			num, _, _, detailText := RollWoD(v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE)
+			ret := VMValueNewInt(num)
+			details[len(details)-1].ret = ret
+			details[len(details)-1].text = detailText
+			stackPush(ret)
+
+		case TypeDCSetInit:
+			// Double Cross
+			dcInit()
+		case TypeDCSetPool:
+			v := stackPop()
+			dcState.pool = v.MustReadInt()
+		case TypeDCSetPoints:
+			v := stackPop()
+			dcState.points = v.MustReadInt()
+		case TypeDiceDC:
+			v := stackPop() // 暴击值 / 也可以理解为加骰线
+			if !doubleCrossCheck(ctx, v.MustReadInt(), dcState.pool, dcState.points) {
+				return
+			}
+			success, _, _, detailText := RollDoubleCross(v.MustReadInt(), dcState.pool, dcState.points)
+			ret := VMValueNewInt(success)
+			details[len(details)-1].ret = ret
+			details[len(details)-1].text = detailText
 			stackPush(ret)
 		}
 	}

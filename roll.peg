@@ -21,18 +21,28 @@ type Parser Peg {
 
 // 出口
 dicescript <- sp stmtRoot { p.AddOp(TypeHalt) }
-stmtRoot <- stmtLines
+stmtRoot <- stmtLines sp // stmtLines
 stmtRootInLoop <- stmtLinesInLoop
 
 stmtLines <- stmtWithBlock stmtLines*
+           / flagsSwitch stmtLines*
+           / comment stmtLines*
            / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* stmtWithBlock stmtLines*)*
            / (';' sp)+
 
 stmtLinesInLoop <- (stmtWithBlock / stmtBreak / stmtContinue) stmtLinesInLoop*
+                 / flagsSwitch stmtLinesInLoop*
+                 / comment stmtLinesInLoop*
                  / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* (stmtWithBlock stmtLinesInLoop* / stmtBreak / stmtContinue))*
                  / (';' sp)+
 
-stmtWithSemicolon <- stmtAssign / exprRoot
+flagsSwitch <- '//' sp? '#EnableDiceWoD' sp1 ('true' sp1 !{p.Flags.EnableDiceWoD = true} / 'false' sp1 !{p.Flags.EnableDiceWoD = false})  [^\n]*
+             / '//' sp? '#EnableDiceCoC' sp1 ('true' sp1 !{p.Flags.EnableDiceCoC = true} / 'false' sp1 !{p.Flags.EnableDiceCoC = false})  [^\n]*
+             / '//' sp? '#EnableDiceFate' sp1 ('true' sp1 !{p.Flags.EnableDiceFate = true} / 'false' sp1 !{p.Flags.EnableDiceFate = false})  [^\n]*
+             / '//' sp? '#EnableDiceDoubleCross' sp1 ('true' sp1 !{p.Flags.EnableDiceDoubleCross = true} / 'false' sp1 !{p.Flags.EnableDiceDoubleCross = false})  [^\n]*
+
+
+stmtWithSemicolon <- flagsSwitch / stmtAssign / exprRoot
 
 stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtReturn
 
@@ -150,18 +160,21 @@ exprUnaryNeg <- minus exprRoot { p.AddOp(TypeNegation) }
 exprUnaryPos <- add exprRoot { p.AddOp(TypePositive) }
               / exprDice
 
+// number or sub, 这样能省200行
+nos <- (number / sub)
+
 // 骰子算符，注: 越靠下的算符优先级越高
-_diceMod <- (('kl' / [qQ]) (number / sub) { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
+_diceMod <- (('kl' / [qQ]) nos { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
           / (('kl' / [qQ]) { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
-          / (('kh' / [kK]) (number / sub) { p.AddOp(TypeDiceSetKeepHighNum) })  // 这里fvtt与国内骰一致
+          / (('kh' / [kK]) nos { p.AddOp(TypeDiceSetKeepHighNum) })  // 这里fvtt与国内骰一致
           / (('kh' / [kK]) { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) })
-          / (('dh') (number / sub) { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
+          / (('dh') nos { p.AddOp(TypeDiceSetDropHighNum) } ) // drop highest，需要在下一个之前，因为有2d20d1语法
           / (('dh') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropHighNum) } )
-          / (('dl') (number / sub) { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest, 这里故意去掉了3d20d1 的支持，需要写成3d20dl1
+          / (('dl') nos { p.AddOp(TypeDiceSetDropLowNum) } )  // drop lowest, 这里故意去掉了3d20d1 的支持，需要写成3d20dl1
           / (('dl') { p.PushIntNumber("1"); p.AddOp(TypeDiceSetDropLowNum) } )
 
-_diceMod2 <- ('min' (number / sub) { p.AddOp(TypeDiceSetMin) })?
-             ('max' (number / sub) { p.AddOp(TypeDiceSetMax) })?
+_diceMod2 <- ('min' nos { p.AddOp(TypeDiceSetMin) })?
+             ('max' nos { p.AddOp(TypeDiceSetMax) })?
 
 
 _dicePearMod <- '优势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
@@ -171,20 +184,37 @@ detailStart <- { p.CounterPush(); p.CounterAdd(int64(token.begin)) }
 detailEnd <- { p.AddDiceDetail(p.CounterPop(), int64(token.end)) }
 
 // 3d20, 3d20d2, 2d20优势
-_diceType1 <- (number / sub) [dD] (number / sub)
+_diceType1 <- nos [dD] nos
 // d20
-_diceType2 <- [dD] (number / sub)
-
+_diceType2 <- [dD] nos
 
 // XdY 中的 dy 部分
-_diceExpr1 <- [dD] { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } (number / sub) _diceMod? _diceMod2?
-_diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } (number / sub) (_dicePearMod / _diceMod)? _diceMod2?
+_diceExpr1 <- [dD] { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } nos _diceMod? _diceMod2?
+_diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } nos (_dicePearMod / _diceMod)? _diceMod2?
 
 // 多重式子 d4d6d8
 _diceExprX <- &_diceType2 detailStart _diceExpr1 detailEnd { p.AddOp(TypeDice) }
 
-exprDice <- &_diceType1 detailStart (number / sub) _diceExpr1 detailEnd { p.AddOp(TypeDice) } _diceExprX*
+// WOD规则，左侧个数，a加骰线，m面数，k阈值
+_wodDiceType <- nos? [aA] nos (([mM] nos) / ([kK] nos) / ([qQ] nos))*
+
+// COC规则，b奖励骰，p惩罚骰
+_cocDiceType <- [pPbB] (nos / sp1)
+_diceCocBonus <- [bB] (nos / sp1 {p.PushIntNumber("1")}) detailEnd { p.AddOp(TypeDiceCocBonus) }
+_diceCocPenalty <- [pP] (nos / sp1 {p.PushIntNumber("1")}) detailEnd { p.AddOp(TypeDiceCocPenalty) }
+
+// 双十字规则
+_dcDiceType <- nos [cC] nos ([mM] nos)*
+
+// Fate规则
+_fateDiceType <- [fF] sp1
+
+exprDice <- &_diceType1 detailStart nos _diceExpr1 detailEnd { p.AddOp(TypeDice) } _diceExprX*
           / &_diceType2 detailStart _diceExpr2 detailEnd { p.AddOp(TypeDice) } _diceExprX*
+          / &{p.Flags.EnableDiceCoC} &_cocDiceType detailStart (_diceCocBonus / _diceCocPenalty)
+          / &{p.Flags.EnableDiceWoD} &_wodDiceType detailStart { p.AddOp(TypeWodSetInit) } (nos { p.AddOp(TypeWodSetPool) })? [aA] nos (([mM] nos { p.AddOp(TypeWodSetPoints) }) / ([kK] nos { p.AddOp(TypeWodSetThreshold) }) / ([qQ] nos { p.AddOp(TypeWodSetThresholdQ) }))* detailEnd { p.AddOp(TypeDiceWod) }
+          / &{p.Flags.EnableDiceDoubleCross} &_dcDiceType detailStart { p.AddOp(TypeDCSetInit) } nos { p.AddOp(TypeDCSetPool) } [cC] nos (([mM] nos { p.AddOp(TypeDCSetPoints) }) )* detailEnd { p.AddOp(TypeDiceDC) }
+          / &{p.Flags.EnableDiceFate} &_fateDiceType detailStart [fF] sp1 detailEnd { p.AddOp(TypeDiceFate) }
           / value
 
 item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) } func_invoke? )*
@@ -202,17 +232,23 @@ func_invoke <- '(' sp ')' sp { p.AddInvoke(0) }
 dict_item <- { p.CounterAdd(1) } ((value_id_without_colon / exprRoot) sp ':' sp exprRoot) sp
 
 // 右值
-value_id_without_colon <- identifierWithoutColon sp { p.AddLoadName(string(text)) } func_invoke? item_get attr_get
+value_id_without_colon <- identifierWithoutColon sp { p.WriteCode(TypeLoadName, string(text)) } func_invoke? item_get attr_get
 
-value <- float
-       / number
-       / 'true' sp { p.PushIntNumber("1") }
+value <- 'true' sp { p.PushIntNumber("1") }
        / 'false' sp { p.PushIntNumber("0") }
        / 'undefined' sp { p.PushUndefined() }
        / 'this' sp { p.PushThis() } item_get attr_get
 //       / 'global' sp { p.PushGlobal() } item_get attr_get
        / '&' identifier sp { p.WriteCode(TypeLoadNameRaw, string(text)) } attr_get
-       / identifier sp { p.AddLoadName(string(text)) } func_invoke? item_get attr_get
+
+       / !{_matched := false} &{_matched} 'cafebabe'
+
+       / float
+       / number
+
+       // 变量
+       / &(identifier sp) detailStart identifier sp detailEnd { p.WriteCode(TypeLoadNameWithDetail, string(text)) } func_invoke? item_get attr_get
+
        / fstring
        / sub item_get attr_get
        / '[' sp ']' sp { p.PushArray(0) } array_call? attr_get
@@ -247,13 +283,14 @@ fstring <- (
 
 // 变量名
 keywords <- 'while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func'
-identifier_ch0 <- [^!"#$%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ \t\n\r\36]
+identifier_ch0 <- [^!"#$%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ 0-9\t\n\r\36]
 identifier_ch <- identifier_ch0 / [0-9:]
 
-no_keywords <- !(keywords (sp1 / !identifier_ch0 .))
+no_keywords <- !(keywords (sp1 / !(identifier_ch0 / [0-9]) .))
 identifier <- no_keywords < identifier_ch0 identifier_ch* > // not (punctuation+number)
 // 不含冒号的 identifier 用于字典，因为a:b是合法变量名，所以 {a:b} 会被误判
 identifierWithoutColon <- no_keywords < identifier_ch0 (identifier_ch0 / [0-9])* > // not (punctuation+number)
+// customDiceExpr <- no_keywords <(identifier_ch0 / [0-9])+>
 
 // 旧版留档
 // identifier <- !(keywords (sp1 / [!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~\36])) < identifier_ch0 identifier_ch* > // not (punctuation+number)
@@ -288,6 +325,7 @@ eq <- ('==' / '＝＝') sp
 ne <- ('!=' / '！＝') sp
 
 // 其他
-sp <- ( ' ' / '\t' / '\n' / '\r' / ('//' [^\n]*) )*
-sp1 <- ( ' ' / '\t' / '\n' / '\r' / ('//' [^\n]*)) sp / !.
+sp <- ( ' ' / '\t' / '\n' / '\r' )*
+sp1 <- ( ' ' / '\t' / '\n' / '\r') sp / !.
 escape <- '\\' ([btnfr"'\\])  //  / OctalEscape / UnicodeEscape
+comment <- '//' (!'\n' .)* sp1

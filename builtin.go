@@ -3,6 +3,7 @@ package dicescript
 import (
 	"errors"
 	"math"
+	"math/rand"
 	"strconv"
 )
 
@@ -97,6 +98,7 @@ var builtinValues = map[string]*VMValue{
 	"int":   nnf(&ndf{"int", []string{"value"}, nil, nil, funcInt}),
 	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
 	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
+	// TODO: roll()
 }
 
 //
@@ -141,11 +143,80 @@ func funcArraySum(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	}
 }
 
+func funcArrayLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+	return VMValueNewInt(int64(len(arr.List)))
+}
+
+func funcArrayShuttle(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+
+	lst := arr.List
+	for i := len(lst) - 1; i > 0; i-- { // Fisher–Yates shuffle
+		j := rand.Intn(i + 1)
+		lst[i], lst[j] = lst[j], lst[i]
+	}
+	return this
+}
+
+func funcArrayRand(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+	return arr.List[rand.Intn(len(arr.List))]
+}
+
+func funcArrayRandSize(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+	newArr := VMValueNewArray(arr.List...)
+	funcArrayShuttle(ctx, newArr, []*VMValue{})
+	arr, _ = newArr.ReadArray()
+
+	if val, ok := params[0].ReadInt(); ok {
+		arr.List = arr.List[:val]
+		return newArr
+	} else {
+		ctx.Error = errors.New("类型不符")
+		return nil
+	}
+}
+
+func funcArrayPop(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+	if len(arr.List) > 1 {
+		val := arr.List[len(arr.List)-1]
+		arr.List = arr.List[:len(arr.List)-1]
+		return val
+	}
+	return VMValueNewUndefined()
+}
+
+func funcArrayShift(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+	if len(arr.List) > 1 {
+		val := arr.List[0]
+		arr.List = arr.List[1:]
+		return val
+	}
+	return VMValueNewUndefined()
+}
+
+func funcArrayPush(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	arr, _ := this.ReadArray()
+	arr.List = append(arr.List, params[0])
+	return this
+}
+
 var builtinProto = map[VMValueType]*VMDictValue{
 	VMTypeArray: VMValueMustNewDictWithArray(
 		VMValueNewStr("kh"), nnf(&ndf{"Array.kh", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepHigh}),
 		VMValueNewStr("kl"), nnf(&ndf{"Array.kl", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepLow}),
 		VMValueNewStr("sum"), nnf(&ndf{"Array.sum", []string{}, nil, nil, funcArraySum}),
+		VMValueNewStr("len"), nnf(&ndf{"Array.len", []string{}, nil, nil, funcArrayLen}),
+		VMValueNewStr("shuffle"), nnf(&ndf{"Array.shuffle", []string{}, nil, nil, funcArrayShuttle}),
+		VMValueNewStr("rand"), nnf(&ndf{"Array.rand", []string{}, nil, nil, funcArrayRand}),
+		VMValueNewStr("randSize"), nnf(&ndf{"Array.rand", []string{"num"}, nil, nil, funcArrayRandSize}),
+		VMValueNewStr("pop"), nnf(&ndf{"Array.pop", []string{}, nil, nil, funcArrayPop}),
+		VMValueNewStr("shift"), nnf(&ndf{"Array.shift", []string{}, nil, nil, funcArrayShift}),
+		VMValueNewStr("push"), nnf(&ndf{"Array.shift", []string{"value"}, nil, nil, funcArrayPush}),
 	),
 }
 

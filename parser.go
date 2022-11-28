@@ -21,6 +21,7 @@ type BufferSpan struct {
 	begin int64
 	end   int64
 	ret   *VMValue
+	text  string
 }
 
 func (pd *ParserData) init() {

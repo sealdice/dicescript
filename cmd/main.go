@@ -31,6 +31,7 @@ func main() {
 	//a, b = dice.VMValueNewComputed("1 + this.x + d10").ToJSON()
 	//fmt.Println("!!!", string(a), b)
 	v := dice.NewVM()
+
 	v.Run(`func a(x) { return 5 }; a`)
 	aa, _ := v.Ret.ToJSON()
 	fmt.Println("!!!!", string(aa), v.Ret)
@@ -53,10 +54,33 @@ func main() {
 
 	attrs := map[string]*dice.VMValue{}
 
-	fmt.Println("DiceScript Shell v0.0.0")
+	fmt.Println("DiceScript Shell v0.0.1")
 	ccTimes := 0
 	vm := dice.NewVM()
+	vm.Flags.EnableDiceWoD = true
+	vm.Flags.EnableDiceCoC = true
+	vm.Flags.EnableDiceFate = true
+	vm.Flags.EnableDiceDoubleCross = true
 	vm.Flags.PrintBytecode = true
+
+	//cc := regexp.MustCompile(`E(\d+)`)
+	//fmt.Println(cc.FindStringSubmatch("1111E333"))
+
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *dice.Context, groups []string) *dice.VMValue {
+		return dice.VMValueNewInt(2)
+	})
+
+	//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
+	//	attrs[name] = v
+	//}
+
+	vm.ValueLoadFunc = func(name string) *dice.VMValue {
+		//fmt.Println("XXXXXXXXX", name)
+		if val, ok := attrs[name]; ok {
+			return val
+		}
+		return nil
+	}
 
 	for true {
 		if text, err := line.Prompt(">>> "); err == nil {
@@ -64,16 +88,6 @@ func main() {
 				continue
 			}
 			line.AppendHistory(text)
-
-			//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
-			//	attrs[name] = v
-			//}
-			vm.ValueLoadFunc = func(name string) *dice.VMValue {
-				if val, ok := attrs[name]; ok {
-					return val
-				}
-				return nil
-			}
 
 			err := vm.Run(text)
 			if err != nil {

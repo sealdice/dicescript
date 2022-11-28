@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -62,13 +63,26 @@ var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
 }
 
 type RollExtraFlags struct {
+	PrintBytecode         bool // 执行时打印字节码
+	EnableDiceWoD         bool // 启用WOD骰子语法，即XaYmZkNqM，X个数，Y加骰线，Z面数，N阈值(>=)，M阈值(<=)
+	EnableDiceCoC         bool // 启用COC骰子语法，即bX/pX奖惩骰
+	EnableDiceFate        bool
+	EnableDiceDoubleCross bool
+
+	// 以下尚未实现
+	disableStmts bool // 禁用语句语法(如if while等)，仅允许表达式
+
 	DiceMinMode         bool   // 骰子以最小值结算，用于获取下界
 	DiceMaxMode         bool   // 以最大值结算 获取上界
 	DisableLoadVarname  bool   // 不允许加载变量，这是为了防止遇到 .r XXX 被当做属性读取，而不是“由于XXX，骰出了”
 	IgnoreDiv0          bool   // 当div0时暂不报错
 	DefaultDiceSideNum  int64  // 默认骰子面数
 	DefaultDiceSideExpr string // 默认骰子面数
-	PrintBytecode       bool   // 执行时打印字节码
+}
+
+type customDiceItem struct {
+	re       *regexp.Regexp
+	callback func(ctx *Context, groups []string) *VMValue
 }
 
 type Context struct {
@@ -100,6 +114,8 @@ type Context struct {
 	//lastDetails := []string{}
 	//lastDetailsLeft := []string{}
 	//calcDetail := ""
+
+	CustomDiceInfo []*customDiceItem
 
 	/* 如果返回值为true，那么不作其他处理 */
 	ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
@@ -238,6 +254,15 @@ func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
 		return
 	}
 
+}
+
+func (ctx *Context) RegCustomDice(s string, callback func(ctx *Context, groups []string) *VMValue) error {
+	re, err := regexp.Compile(s)
+	if err != nil {
+		return err
+	}
+	ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, &customDiceItem{re, callback})
+	return nil
 }
 
 type VMValue struct {
@@ -468,14 +493,14 @@ func (v *VMValue) MustReadDictData() *DictData {
 	if v.TypeId == VMTypeDict {
 		return v.Value.(*DictData)
 	}
-	panic("bad type")
+	panic("错误: 不正确的类型")
 }
 
 func (v *VMValue) MustReadArray() *ArrayData {
 	if ad, ok := v.ReadArray(); ok {
 		return ad
 	}
-	panic("bad type")
+	panic("错误: 不正确的类型")
 }
 
 func (v *VMValue) MustReadInt() int64 {
@@ -483,7 +508,7 @@ func (v *VMValue) MustReadInt() int64 {
 	if ok {
 		return val
 	}
-	panic("bad type")
+	panic("错误: 不正确的类型")
 }
 
 func (v *VMValue) MustReadFloat() float64 {
@@ -491,7 +516,7 @@ func (v *VMValue) MustReadFloat() float64 {
 	if ok {
 		return val
 	}
-	panic("bad type")
+	panic("错误: 不正确的类型")
 }
 
 func (v *VMValue) ReadFunctionData() (*FunctionData, bool) {
