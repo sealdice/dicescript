@@ -6,9 +6,11 @@ package main
 import (
 	"github.com/gopherjs/gopherjs/js"
 	dice "github.com/sealdice/dicescript"
+	"regexp"
+	"strconv"
 )
 
-var scope = map[string]*dicescript.VMValue{}
+var scope = map[string]*dice.VMValue{}
 
 func newVM(name string) *js.Object {
 	player := dice.VMValueNewDict(nil)
@@ -17,8 +19,8 @@ func newVM(name string) *js.Object {
 	player.Store("智力", dice.VMValueNewInt(70))
 	scope["player"] = player.V()
 
-	vm := dicescript.NewVM()
-	//vm.ValueStoreFunc = func(name string, v *dicescript.VMValue) {
+	vm := dice.NewVM()
+	//vm.ValueStoreFunc = func(name string, v *dice.VMValue) {
 	//	scope[name] = v
 	//}
 
@@ -30,7 +32,7 @@ func newVM(name string) *js.Object {
 			return dice.VMValueNewInt(val)
 		}
 
-		if v, exists := player.Load(name) {
+		if v, exists := player.Load(name); exists {
 			return v
 		}
 
@@ -55,14 +57,14 @@ func main() {
 	js.Global.Set("dice", map[string]interface{}{
 		"newVM":        newVM,
 		"newValueMap":  newValueMap,
-		"vmNewInt64":   js.MakeWrapper(dicescript.VMValueNewInt),
-		"vmNewFloat64": js.MakeWrapper(dicescript.VMValueNewFloat),
-		"vmNewStr":     js.MakeWrapper(dicescript.VMValueNewStr),
+		"vmNewInt64":   js.MakeWrapper(dice.VMValueNewInt),
+		"vmNewFloat64": js.MakeWrapper(dice.VMValueNewFloat),
+		"vmNewStr":     js.MakeWrapper(dice.VMValueNewStr),
 		//"vmNewArray":    js.MakeWrapper(newArray),
 		"vmNewDict": js.MakeWrapper(newDict),
-		"help":      js.MakeWrapper("此项目的js绑定: https://github.com/sealdice/dicescript"),
+		"help":      js.MakeWrapper("此项目的js绑定: https://github.com/sealdice/dice"),
 	})
 
-	//js.Module.Set("newVM", dicescript.NewVM)
-	//js.Module.Set("Context", dicescript.Context{})
+	//js.Module.Set("newVM", dice.NewVM)
+	//js.Module.Set("Context", dice.Context{})
 }
