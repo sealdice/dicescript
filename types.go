@@ -60,6 +60,9 @@ var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
 	(*VMValue).OpCompNE,
 	(*VMValue).OpCompGE,
 	(*VMValue).OpCompGT,
+
+	(*VMValue).OpBitwiseAnd,
+	(*VMValue).OpBitwiseOr,
 }
 
 type RollExtraFlags struct {
@@ -112,15 +115,10 @@ type Context struct {
 	Matched   string   // 匹配的字符串
 	Detail    string   // 计算过程
 
-	//lastDetails := []string{}
-	//lastDetailsLeft := []string{}
-	//calcDetail := ""
-
 	CustomDiceInfo []*customDiceItem
 
-	/* 如果返回值为true，那么不作其他处理 */
-	ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
-
+	// 如果返回值为true，那么不作其他处理
+	//ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
 	ValueStoreFunc func(name string, v *VMValue)
 	ValueLoadFunc  func(name string) *VMValue
 }
@@ -254,7 +252,6 @@ func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
 		ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
 		return
 	}
-
 }
 
 func (ctx *Context) RegCustomDice(s string, callback func(ctx *Context, groups []string) *VMValue) error {
@@ -821,6 +818,28 @@ func (v *VMValue) OpCompGT(ctx *Context, v2 *VMValue) *VMValue {
 		}
 	}
 
+	return nil
+}
+
+func (v *VMValue) OpBitwiseAnd(ctx *Context, v2 *VMValue) *VMValue {
+	switch v.TypeId {
+	case VMTypeInt:
+		switch v2.TypeId {
+		case VMTypeInt:
+			return VMValueNewInt(v.Value.(int64) & v2.Value.(int64))
+		}
+	}
+	return nil
+}
+
+func (v *VMValue) OpBitwiseOr(ctx *Context, v2 *VMValue) *VMValue {
+	switch v.TypeId {
+	case VMTypeInt:
+		switch v2.TypeId {
+		case VMTypeInt:
+			return VMValueNewInt(v.Value.(int64) | v2.Value.(int64))
+		}
+	}
 	return nil
 }
 

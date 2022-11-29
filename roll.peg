@@ -36,10 +36,13 @@ stmtLinesInLoop <- (stmtWithBlock / stmtBreak / stmtContinue) stmtLinesInLoop*
                  / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* (stmtWithBlock stmtLinesInLoop* / stmtBreak / stmtContinue))*
                  / (';' sp)+
 
-flagsSwitch <- '//' sp? '#EnableDiceWoD' sp1 ('true' sp1 !{p.Flags.EnableDiceWoD = true} / 'false' sp1 !{p.Flags.EnableDiceWoD = false})  [^\n]*
-             / '//' sp? '#EnableDiceCoC' sp1 ('true' sp1 !{p.Flags.EnableDiceCoC = true} / 'false' sp1 !{p.Flags.EnableDiceCoC = false})  [^\n]*
-             / '//' sp? '#EnableDiceFate' sp1 ('true' sp1 !{p.Flags.EnableDiceFate = true} / 'false' sp1 !{p.Flags.EnableDiceFate = false})  [^\n]*
-             / '//' sp? '#EnableDiceDoubleCross' sp1 ('true' sp1 !{p.Flags.EnableDiceDoubleCross = true} / 'false' sp1 !{p.Flags.EnableDiceDoubleCross = false})  [^\n]*
+_switchEnablePrefix <- '#EnableDice'
+_switchTrue <- 'true'
+_switchFalse <- 'false'
+flagsSwitch <- '//' sp? _switchEnablePrefix 'WoD' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceWoD = true} / _switchFalse sp1 !{p.Flags.EnableDiceWoD = false})  [^\n]*
+             / '//' sp? _switchEnablePrefix 'CoC' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceCoC = true} / _switchFalse sp1 !{p.Flags.EnableDiceCoC = false})  [^\n]*
+             / '//' sp? _switchEnablePrefix 'Fate' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceFate = true} / _switchFalse sp1 !{p.Flags.EnableDiceFate = false})  [^\n]*
+             / '//' sp? _switchEnablePrefix 'DoubleCross' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceDoubleCross = true} / _switchFalse sp1 !{p.Flags.EnableDiceDoubleCross = false})  [^\n]*
 
 
 stmtWithSemicolon <- flagsSwitch / stmtAssign / exprRoot
@@ -101,10 +104,10 @@ exprSlice <- exprTernary _sliceSuffix (!'=') { p.AddOp(TypeSliceGet) }
            / exprTernary
 
 // 三元算符 ? :
-exprValueIfExists <- exprBitwise sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwise sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); } // 这里的Pop对应的是jne，所有jmp将攒到最后
-exprTernary <- exprBitwise sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBitwise sp ':' sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush() } exprBitwise sp { p.OffsetPopAndSet() }
+exprValueIfExists <- exprLogicOr sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprLogicOr sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); } // 这里的Pop对应的是jne，所有jmp将攒到最后
+exprTernary <- exprLogicOr sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprLogicOr sp ':' sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush() } exprLogicOr sp { p.OffsetPopAndSet() }
         / exprValueIfExists { p.CounterPush() } ( ',' sp exprValueIfExists {p.CounterAdd(1)} )*  { p.PushStr(""); limit:=p.CounterPop()+1; for i:=int64(0); i<limit; i++ { p.OffsetPopAndSet() } }
-        / exprBitwise
+        / exprLogicOr
 
 // switch { case 1: ..., case 2: ... }
 // push cond1
@@ -118,10 +121,15 @@ exprTernary <- exprBitwise sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprBi
 // push 0 // 默认
 // push "ret3"
 
+// 注: 越靠下的算符优先级越高
+
+// 逻辑运算
+exprLogicOr <- exprLogicAnd sp (logicOr {p.AddOp(TypeJeDup); p.OffsetPush()} exprLogicAnd { p.AddOp(TypeJeDup); p.OffsetPush()} { p.AddOp(TypePushLast); p.WriteCode(TypeJmp, int64(1)); p.OffsetPopAndSet(); p.OffsetPopAndSet();  } )*
+exprLogicAnd <- exprBitwiseOr sp (logicAnd exprBitwiseOr { p.AddOp(TypeLogicAnd) } )*
 
 // 位运算
-exprBitwise <- exprCompare sp ((logicOr / bitwiseOr) exprCompare { p.AddOp(TypeBitwiseOr) }
-                 / (logicAnd / bitwiseAnd) exprCompare { p.AddOp(TypeBitwiseAnd) } )*
+exprBitwiseOr <- exprBitwiseAnd sp (bitwiseOr exprBitwiseAnd { p.AddOp(TypeBitwiseOr) })*
+exprBitwiseAnd <- exprCompare sp (bitwiseAnd exprCompare { p.AddOp(TypeBitwiseAnd) })*
 
 
 // 比较
@@ -163,7 +171,7 @@ exprUnaryPos <- add exprRoot { p.AddOp(TypePositive) }
 // number or sub, 这样能省200行
 nos <- (number / sub)
 
-// 骰子算符，注: 越靠下的算符优先级越高
+// 骰子算符
 _diceMod <- (('kl' / [qQ]) nos { p.AddOp(TypeDiceSetKeepLowNum) } )  // 这里fvtt只有kl
           / (('kl' / [qQ]) { p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) } )
           / (('kh' / [kK]) nos { p.AddOp(TypeDiceSetKeepHighNum) })  // 这里fvtt与国内骰一致
@@ -196,25 +204,28 @@ _diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } nos (_dicePearMod / _diceMod)? _di
 _diceExprX <- &_diceType2 detailStart _diceExpr1 detailEnd { p.AddOp(TypeDice) }
 
 // WOD规则，左侧个数，a加骰线，m面数，k阈值
-_wodDiceType <- nos? [aA] nos (([mM] nos) / ([kK] nos) / ([qQ] nos))*
+// 这里有点麻烦，此处 a5c 将被视为变量，而 2a5c 被视为 2a5余c
+_wodTypeMain <- [aA] nos (([mM] nos) / ([kK] nos) / ([qQ] nos))*
+_wodDiceType <- nos _wodTypeMain / _wodTypeMain !identifier_ch
+_wodMain <- [aA] nos (([mM] nos { p.AddOp(TypeWodSetPoints) }) / ([kK] nos { p.AddOp(TypeWodSetThreshold) }) / ([qQ] nos { p.AddOp(TypeWodSetThresholdQ) }))*
 
 // COC规则，b奖励骰，p惩罚骰
-_cocDiceType <- [pPbB] (nos / sp1)
-_diceCocBonus <- [bB] (nos / sp1 {p.PushIntNumber("1")}) detailEnd { p.AddOp(TypeDiceCocBonus) }
-_diceCocPenalty <- [pP] (nos / sp1 {p.PushIntNumber("1")}) detailEnd { p.AddOp(TypeDiceCocPenalty) }
+_cocDiceType <- [pPbB] (nos !identifier_ch / !identifier_ch)
+_diceCocBonus <- [bB] (nos !identifier_ch / !identifier_ch {p.PushIntNumber("1")}) detailEnd { p.AddOp(TypeDiceCocBonus) }
+_diceCocPenalty <- [pP] (nos !identifier_ch / !identifier_ch {p.PushIntNumber("1")}) detailEnd { p.AddOp(TypeDiceCocPenalty) }
 
 // 双十字规则
 _dcDiceType <- nos [cC] nos ([mM] nos)*
 
 // Fate规则
-_fateDiceType <- [fF] sp1
+_fateDiceType <- [fF] !identifier_ch
 
 exprDice <- &_diceType1 detailStart nos _diceExpr1 detailEnd { p.AddOp(TypeDice) } _diceExprX*
           / &_diceType2 detailStart _diceExpr2 detailEnd { p.AddOp(TypeDice) } _diceExprX*
           / &{p.Flags.EnableDiceCoC} &_cocDiceType detailStart (_diceCocBonus / _diceCocPenalty)
-          / &{p.Flags.EnableDiceWoD} &_wodDiceType detailStart { p.AddOp(TypeWodSetInit) } (nos { p.AddOp(TypeWodSetPool) })? [aA] nos (([mM] nos { p.AddOp(TypeWodSetPoints) }) / ([kK] nos { p.AddOp(TypeWodSetThreshold) }) / ([qQ] nos { p.AddOp(TypeWodSetThresholdQ) }))* detailEnd { p.AddOp(TypeDiceWod) }
+          / &{p.Flags.EnableDiceWoD} &_wodDiceType detailStart { p.AddOp(TypeWodSetInit) } (nos { p.AddOp(TypeWodSetPool) } _wodMain / _wodMain !identifier_ch) detailEnd { p.AddOp(TypeDiceWod) }
           / &{p.Flags.EnableDiceDoubleCross} &_dcDiceType detailStart { p.AddOp(TypeDCSetInit) } nos { p.AddOp(TypeDCSetPool) } [cC] nos (([mM] nos { p.AddOp(TypeDCSetPoints) }) )* detailEnd { p.AddOp(TypeDiceDC) }
-          / &{p.Flags.EnableDiceFate} &_fateDiceType detailStart [fF] sp1 detailEnd { p.AddOp(TypeDiceFate) }
+          / &{p.Flags.EnableDiceFate} &_fateDiceType detailStart [fF] !identifier_ch detailEnd { p.AddOp(TypeDiceFate) }
           / value
 
 item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) } func_invoke? )*
@@ -283,6 +294,7 @@ fstring <- (
 
 // 变量名
 keywords <- 'while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func'
+// 注: 不能连一起写因为peg编译会崩溃
 identifier_ch0 <- [^!"#$%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ 0-9\t\n\r\36]
 identifier_ch <- identifier_ch0 / [0-9:]
 
@@ -317,12 +329,13 @@ logicOr <- '||' sp
 logicAnd <- '&&' sp
 
 // 比较算符
-lt <- ('<' / '＜') sp
-gt <- ('>' / '＞') sp
-le <- ('<=' / '＜＝') sp
-ge <- ('>=' / '＞＝') sp
-eq <- ('==' / '＝＝') sp
-ne <- ('!=' / '！＝') sp
+// 注: 全角符号过于阴间，peg没办法处理＝＝，因此放弃兼容了，可以读入前做一个统一替换
+lt <- '<' sp
+gt <- '>' sp
+le <- '<=' sp
+ge <- '>=' sp
+eq <- '==' sp
+ne <- '!=' sp
 
 // 其他
 sp <- ( ' ' / '\t' / '\n' / '\r' )*

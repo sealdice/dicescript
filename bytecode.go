@@ -25,6 +25,7 @@ const (
 	TypePushThis
 	TypePushGlobal
 	TypePushFunction
+	TypePushLast
 
 	TypeLoadFormatString
 	TypeLoadName
@@ -92,11 +93,14 @@ const (
 	TypeDetailMark
 
 	TypePop
+	TypePopN
+
 	TypeNop
 
 	TypeJmp
 	TypeJe
 	TypeJne
+	TypeJeDup
 	TypeReturn
 )
 
@@ -159,6 +163,11 @@ func (code *ByteCode) CodeString() string {
 		return "mod"
 	case TypeExponentiation:
 		return "pow"
+
+	case TypeLogicAnd:
+		return "and"
+	case TypeLogicOr:
+		return "or"
 
 	case TypeBitwiseAnd:
 		return "&"
@@ -238,6 +247,8 @@ func (code *ByteCode) CodeString() string {
 		return fmt.Sprintf("jmp %d", code.Value)
 	case TypeJe:
 		return fmt.Sprintf("je %d", code.Value)
+	case TypeJeDup:
+		return fmt.Sprintf("je.dup %d", code.Value)
 	case TypeJne:
 		return fmt.Sprintf("jne %d", code.Value)
 	case TypeCompLT:
@@ -252,10 +263,14 @@ func (code *ByteCode) CodeString() string {
 		return "comp.ge"
 	case TypeCompGT:
 		return "comp.gt"
-	case TypeNop:
-		return "nop"
+	case TypePushLast:
+		return "push.last"
 	case TypePop:
 		return "pop"
+	case TypePopN:
+		return fmt.Sprintf("popn %d", code.Value)
+	case TypeNop:
+		return "nop"
 	case TypeReturn:
 		return "ret"
 	}

@@ -236,17 +236,19 @@ func (e *Parser) Evaluate() {
 		}
 
 		ctx.Detail = string(detailResult)
-		fmt.Println("TEST", string(detailResult))
 	}
 
+	var lastPop *VMValue
 	stackPop := func() *VMValue {
 		v := &e.stack[e.top-1]
 		e.top -= 1
+		lastPop = v
 		return v
 	}
 
 	stackPop2 := func() (*VMValue, *VMValue) {
 		v2, v1 := stackPop(), stackPop()
+		lastPop = v1
 		return v1, v2
 	}
 
@@ -257,6 +259,9 @@ func (e *Parser) Evaluate() {
 		}
 		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
 			data[i], data[j] = data[j], data[i]
+		}
+		if num >= 1 {
+			lastPop = data[0]
 		}
 		return data
 	}
@@ -495,6 +500,20 @@ func (e *Parser) Evaluate() {
 				return
 			}
 
+		case TypePushLast:
+			if lastPop == nil {
+				ctx.Error = errors.New("非法调用指令 push.last")
+				return
+			}
+			stackPush(lastPop)
+		case TypeJe, TypeJeDup:
+			v := stackPop()
+			if v.AsBool() {
+				opIndex += int(code.Value.(int64))
+				if code.T == TypeJeDup {
+					stackPush(v)
+				}
+			}
 		case TypeJne:
 			t := stackPop()
 			if !t.AsBool() {
@@ -504,9 +523,12 @@ func (e *Parser) Evaluate() {
 			opIndex += int(code.Value.(int64))
 		case TypePop:
 			stackPop()
+		case TypePopN:
+			stackPopN(code.Value.(int64))
 
 		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
-			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT:
+			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT,
+			TypeBitwiseAnd, TypeBitwiseOr:
 			// 所有二元运算符
 			v1, v2 := stackPop2()
 			opFunc := binOperator[code.T-TypeAdd]
@@ -586,6 +608,13 @@ func (e *Parser) Evaluate() {
 			num, detail := RollCommon(diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
 
 			ret := VMValueNewInt(num)
+			details[len(details)-1].ret = ret
+			details[len(details)-1].text = detail
+			stackPush(ret)
+
+		case TypeDiceFate:
+			sum, detail := RollFate()
+			ret := VMValueNewInt(sum)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detail
 			stackPush(ret)

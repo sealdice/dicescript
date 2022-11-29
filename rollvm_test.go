@@ -285,6 +285,12 @@ func TestKeywords(t *testing.T) {
 			assert.Error(t, err)
 		}
 	}
+
+	vm = NewVM()
+	err = vm.Run("return 1")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
 }
 
 func TestWhile(t *testing.T) {
@@ -373,6 +379,12 @@ func TestCompareExpr(t *testing.T) {
 		{"1<0", ni(0)},
 		{"1<=0", ni(0)},
 		{"1!=0", ni(1)},
+
+		// 带空格
+		{"1 > 0", ni(1)},
+
+		// 中断
+		{"5＝+2", ni(5)},
 	}
 
 	for _, i := range tests {
@@ -584,6 +596,38 @@ func TestArray(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestArrayMethod(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("[1,2,3].sum()")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(6)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3].len()")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3].pop()")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("[1,2,3].shift()")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("a = [1,2,3]; a.push(4); a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, na(ni(1), ni(2), ni(3), ni(4))))
+	}
+}
+
 func TestReturn(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("func test(n) { return 1; 2 }; test(11)")
@@ -707,9 +751,13 @@ func TestBytecodeToString(t *testing.T) {
 		{TypeCompGE, nil},
 		{TypeCompGT, nil},
 
+		{TypeLogicAnd, nil},
+		{TypeLogicOr, nil},
+
+		{TypeNop, nil},
+
 		{TypeBitwiseAnd, nil},
 		{TypeBitwiseOr, nil},
-		{TypeNop, nil},
 
 		{TypeDiceInit, nil},
 		{TypeDiceSetTimes, nil},
@@ -904,5 +952,244 @@ func TestCrash1(t *testing.T) {
 		if assert.Error(t, err) {
 			assert.True(t, strings.Index(err.Error(), "parse error near") != -1)
 		}
+	}
+}
+
+func TestDiceWodExpr(t *testing.T) {
+	vm := NewVM()
+	vm.Flags.EnableDiceWoD = true
+	err := vm.Run("8a11m10k1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, valueEqual(vm.Ret, ni(8)))
+	}
+
+	vm = NewVM()
+	vm.Flags.EnableDiceWoD = true
+	err = vm.Run("20001a11m10k1")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	vm.Flags.EnableDiceWoD = true
+	err = vm.Run("8a1m10k1")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	vm.Flags.EnableDiceWoD = true
+	err = vm.Run("8a11m0k1")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	vm.Flags.EnableDiceWoD = true
+	err = vm.Run("8a11m10k0")
+	assert.Error(t, err)
+}
+
+func TestDiceDoubleCrossExpr(t *testing.T) {
+	// 没有很好的测试用例
+	vm := NewVM()
+	vm.Flags.EnableDiceDoubleCross = true
+	err := vm.Run("10c11m10")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, vm.Ret.MustReadInt() <= 10)
+	}
+
+	vm = NewVM()
+	vm.Flags.EnableDiceDoubleCross = true
+	err = vm.Run("20001c11m10")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	vm.Flags.EnableDiceDoubleCross = true
+	err = vm.Run("10c1m10")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	vm.Flags.EnableDiceDoubleCross = true
+	err = vm.Run("10c11m0")
+	assert.Error(t, err)
+}
+
+func TestDiceFlagWodMacroExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("// #EnableDiceWoD true")
+	if assert.NoError(t, err) {
+		err := vm.Run("10a11")
+		if assert.NoError(t, err) {
+			assert.Equal(t, "", vm.RestInput)
+
+			err := vm.Run("// #EnableDiceWoD false")
+			if assert.NoError(t, err) {
+				err := vm.Run("10a11")
+				if assert.NoError(t, err) {
+					assert.Equal(t, "a11", vm.RestInput)
+				}
+			}
+		}
+	}
+}
+
+func TestDiceFlagCoCMacroExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("// #EnableDiceCoC true")
+	if assert.NoError(t, err) {
+		err := vm.Run("b2")
+		if assert.NoError(t, err) {
+			assert.Equal(t, "", vm.RestInput)
+			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+
+			err := vm.Run("// #EnableDiceCoC false")
+			if assert.NoError(t, err) {
+				err := vm.Run("b2")
+				if assert.NoError(t, err) {
+					assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+				}
+			}
+		}
+	}
+}
+
+func TestDiceFlagFateMacroExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("// #EnableDiceFate true")
+	if assert.NoError(t, err) {
+		err := vm.Run("f")
+		if assert.NoError(t, err) {
+			assert.Equal(t, "", vm.RestInput)
+			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+
+			err := vm.Run("// #EnableDiceFate false")
+			if assert.NoError(t, err) {
+				err := vm.Run("f")
+				if assert.NoError(t, err) {
+					assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+				}
+			}
+		}
+	}
+}
+func TestDiceFlagDoubleCrossMacroExpr(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("// #EnableDiceDoubleCross true")
+	if assert.NoError(t, err) {
+		err := vm.Run("2c5")
+		if assert.NoError(t, err) {
+			assert.Equal(t, "", vm.RestInput)
+			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+
+			err := vm.Run("// #EnableDiceDoubleCross false")
+			if assert.NoError(t, err) {
+				err := vm.Run("2c5")
+				if assert.NoError(t, err) {
+					assert.Equal(t, "c5", vm.RestInput)
+				}
+			}
+		}
+	}
+}
+
+func TestComment(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("// test\na = 1\na")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+}
+
+func TestDiceAndSpaceBug(t *testing.T) {
+	// 一个错误的代码逻辑: 部分算符后需要跟sp1，导致f +1可以工作，但f+1不行
+	// 但也不能让 f1 被解析为f，剩余文本1
+	vm := NewVM()
+	vm.Flags.EnableDiceFate = true
+	err := vm.Run("f +1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+	}
+
+	err = vm.Run("f+1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+	}
+
+	err = vm.Run("f1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+	}
+}
+
+func TestDiceAndSpaceBug2(t *testing.T) {
+	// 其他版本
+	tests := [][]string{
+		{"b +1", "b+1", "bX"},
+		{"p +1", "p+1", "pX"},
+		{"a10 +1", "a10+1", "a10x"},
+		{"1c5 +1", "1c5+1", "x"},
+	}
+
+	for _, i := range tests {
+		e1, e2, e3 := i[0], i[1], i[2]
+		vm := NewVM()
+		vm.Flags.EnableDiceCoC = true
+		vm.Flags.EnableDiceWoD = true
+		vm.Flags.EnableDiceDoubleCross = true
+		err := vm.Run(e1)
+		if assert.NoError(t, err) {
+			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+		}
+
+		err = vm.Run(e2)
+		if assert.NoError(t, err) {
+			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+		}
+
+		err = vm.Run(e3)
+		if assert.NoError(t, err) {
+			assert.Equal(t, "", vm.RestInput)
+			assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+		}
+	}
+
+	vm := NewVM()
+	vm.Flags.EnableDiceDoubleCross = true
+	err := vm.Run("1c5d")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "d", vm.RestInput)
+	}
+
+	vm = NewVM()
+	vm.Flags.EnableDiceWoD = true
+	err = vm.Run("2a10x")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "x", vm.RestInput)
+	}
+}
+
+func TestBitwisePrecedence(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("1|2&4")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("(1|2)&4")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(0)))
+	}
+}
+
+func TestLogicOp(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("a = [1,2]; 5 || a.push(3); a ")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, na(ni(1), ni(2))))
+	}
+
+	vm = NewVM()
+	err = vm.Run("a = [1,2]; 5 && a.push(3); a ")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, na(ni(1), ni(2), ni(3))))
 	}
 }

@@ -63,6 +63,46 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 
 		return bytes.Join(lst2, []byte("")), nil
 
+	case VMTypeDict:
+		if save == nil {
+			save = map[*VMValue]bool{}
+		}
+		if _, exists := save[v]; exists {
+			return nil, errors.New("值错误: 序列化时检测到循环引用")
+		}
+		save[v] = true
+		cd := v.MustReadDictData()
+
+		lst := [][]byte{}
+		var err error
+		cd.Dict.Range(func(key string, value *VMValue) bool {
+			var jsonKey []byte
+			var jsonData []byte
+			jsonData, err = value.ToJSONRaw(save)
+			if err != nil {
+				return true
+			}
+			jsonKey, err = json.Marshal(key)
+			if err != nil {
+				return true
+			}
+
+			b := append(jsonKey, []byte(":")...)
+			b = append(b, jsonData...)
+
+			lst = append(lst, b)
+			return false
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		lst2 := [][]byte{[]byte(`{"typeId":7,"value":{"dict":{`)}
+		lst2 = append(lst2, bytes.Join(lst, []byte(",")))
+		lst2 = append(lst2, []byte("}}}"))
+
+		return bytes.Join(lst2, []byte("")), nil
+
 	case VMTypeFunction:
 		cd, _ := v.ReadFunctionData()
 		return json.Marshal(struct {
@@ -166,6 +206,22 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
 			v.Value = VMValueNewArrayRaw(v1.Value.List).Value
+		}
+		return err
+	case VMTypeDict:
+		var v1 struct {
+			Value struct {
+				Dict map[string]*VMValue `json:"dict"`
+			} `json:"value"`
+		}
+
+		err := json.Unmarshal(input, &v1)
+		if err == nil {
+			m := &ValueMap{}
+			for k, v := range v1.Value.Dict {
+				m.Store(k, v)
+			}
+			v.Value = VMValueNewDict(m).Value
 		}
 		return err
 

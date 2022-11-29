@@ -6,6 +6,8 @@ import (
 	dice "github.com/sealdice/dicescript"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -16,31 +18,6 @@ var (
 func main() {
 	line := liner.NewLiner()
 	defer line.Close()
-
-	d := dice.VMValueNewDict(nil)
-	d.Store("aaa", dice.VMValueNewInt(10))
-	d.Store("bbb", dice.VMValueNewInt(120))
-	d.Store("s", dice.VMValueNewStr("str"))
-
-	d.Store("ccc", dice.VMValueNewDict(nil).V())
-	fmt.Println("ccccccc", d.ToString())
-
-	a, b := dice.VMValueNewFloat(3.2).ToJSON()
-	fmt.Println("!!!", string(a), b)
-
-	//a, b = dice.VMValueNewComputed("1 + this.x + d10").ToJSON()
-	//fmt.Println("!!!", string(a), b)
-	v := dice.NewVM()
-
-	v.Run(`func a(x) { return 5 }; a`)
-	aa, _ := v.Ret.ToJSON()
-	fmt.Println("!!!!", string(aa), v.Ret)
-
-	v = dice.NewVM()
-	v.Run(`[1,2,3]`)
-	aa, _ = v.Ret.ToJSON()
-	fmt.Println("!!!!", string(aa), v.Ret)
-	dice.VMValueFromJSON(aa)
 
 	line.SetCtrlCAborts(true)
 	line.SetCompleter(func(line string) (c []string) {
@@ -63,9 +40,6 @@ func main() {
 	vm.Flags.EnableDiceDoubleCross = true
 	vm.Flags.PrintBytecode = true
 
-	//cc := regexp.MustCompile(`E(\d+)`)
-	//fmt.Println(cc.FindStringSubmatch("1111E333"))
-
 	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *dice.Context, groups []string) *dice.VMValue {
 		return dice.VMValueNewInt(2)
 	})
@@ -74,8 +48,15 @@ func main() {
 	//	attrs[name] = v
 	//}
 
+	re := regexp.MustCompile(`^(\D+)(\d+)$`)
+
 	vm.ValueLoadFunc = func(name string) *dice.VMValue {
-		//fmt.Println("XXXXXXXXX", name)
+		m := re.FindStringSubmatch(name)
+		if len(m) > 1 {
+			val, _ := strconv.ParseInt(m[2], 10, 64)
+			return dice.VMValueNewInt(val)
+		}
+
 		if val, ok := attrs[name]; ok {
 			return val
 		}
@@ -90,6 +71,7 @@ func main() {
 			line.AppendHistory(text)
 
 			err := vm.Run(text)
+			//fmt.Println(vm.GetAsmText())
 			if err != nil {
 				fmt.Printf("错误: %s\n", err.Error())
 			} else {
@@ -97,6 +79,7 @@ func main() {
 				if rest != "" {
 					rest = fmt.Sprintf(" 剩余文本: %s", rest)
 				}
+				fmt.Printf("过程: %s\n", vm.Detail)
 				fmt.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
 			}
 

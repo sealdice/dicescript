@@ -11,32 +11,32 @@ func TestDumps(t *testing.T) {
 
 	v, err = VMValueNewInt(123).ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":0,"value":123}`)
+		assert.Equal(t, `{"typeId":0,"value":123}`, string(v))
 	}
 
 	v, err = VMValueNewFloat(3.2).ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":1,"value":3.2}`)
+		assert.Equal(t, `{"typeId":1,"value":3.2}`, string(v))
 	}
 
 	v, err = VMValueNewStr("asd").ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":2,"value":"asd"}`)
+		assert.Equal(t, `{"typeId":2,"value":"asd"}`, string(v))
 	}
 
 	v, err = VMValueNewUndefined().ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":3}`)
+		assert.Equal(t, `{"typeId":3}`, string(v))
 	}
 
 	v, err = VMValueNewNull().ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":4}`)
+		assert.Equal(t, `{"typeId":4}`, string(v))
 	}
 
 	v, err = VMValueNewComputed("1 + this.x + d10").ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":5,"value":{"expr":"1 + this.x + d10"}}`)
+		assert.Equal(t, `{"typeId":5,"value":{"expr":"1 + this.x + d10"}}`, string(v))
 	}
 
 	vm := NewVM()
@@ -44,12 +44,12 @@ func TestDumps(t *testing.T) {
 	if assert.NoError(t, err) {
 		ret := vm.Ret
 		v, err = ret.ToJSON()
-		assert.Equal(t, string(v), `{"typeId":8,"value":{"expr":"return 5 ","name":"a","params":["x"]}}`)
+		assert.Equal(t, `{"typeId":8,"value":{"expr":"return 5 ","name":"a","params":["x"]}}`, string(v))
 	}
 
 	v, err = na(ni(1), nf(2.0), ns("test")).ToJSON()
 	if assert.NoError(t, err) {
-		assert.Equal(t, string(v), `{"typeId":6,"value":{"list":[{"typeId":0,"value":1},{"typeId":1,"value":2},{"typeId":2,"value":"test"}]}}`)
+		assert.Equal(t, `{"typeId":6,"value":{"list":[{"typeId":0,"value":1},{"typeId":1,"value":2},{"typeId":2,"value":"test"}]}}`, string(v))
 	}
 
 	// 	递归检测
@@ -64,7 +64,7 @@ func TestDumps(t *testing.T) {
 	if assert.NoError(t, err) {
 		ret := vm.Ret
 		v, err = ret.ToJSON()
-		assert.Equal(t, string(v), `{"typeId":9,"value":{"name":"ceil"}}`)
+		assert.Equal(t, `{"typeId":9,"value":{"name":"ceil"}}`, string(v))
 	}
 }
 
@@ -75,24 +75,24 @@ func TestLoads(t *testing.T) {
 	v, err = VMValueFromJSON([]byte(`{"typeId":0,"value":123}`))
 	if assert.NoError(t, err) {
 		assert.Equal(t, v.TypeId, VMTypeInt)
-		assert.Equal(t, v.Value, int64(123))
+		assert.Equal(t, int64(123), v.Value)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":1,"value":3.2}`))
 	if assert.NoError(t, err) {
-		assert.Equal(t, v.TypeId, VMTypeFloat)
-		assert.Equal(t, v.Value, float64(3.2))
+		assert.Equal(t, VMTypeFloat, v.TypeId)
+		assert.Equal(t, float64(3.2), v.Value)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":2,"value":"asd"}`))
 	if assert.NoError(t, err) {
-		assert.Equal(t, v.TypeId, VMTypeString)
-		assert.Equal(t, v.Value, "asd")
+		assert.Equal(t, VMTypeString, v.TypeId)
+		assert.Equal(t, "asd", v.Value)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":3}`))
 	if assert.NoError(t, err) {
-		assert.Equal(t, v.TypeId, VMTypeUndefined)
+		assert.Equal(t, VMTypeUndefined, v.TypeId)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":4}`))
@@ -102,17 +102,17 @@ func TestLoads(t *testing.T) {
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":5,"value":{"expr":"1 + this.x + d10"}}`))
 	if assert.NoError(t, err) {
-		assert.Equal(t, v.TypeId, VMTypeComputedValue)
-		assert.Equal(t, v.Value.(*ComputedData).Expr, "1 + this.x + d10")
+		assert.Equal(t, VMTypeComputedValue, v.TypeId)
+		assert.Equal(t, "1 + this.x + d10", v.Value.(*ComputedData).Expr)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":8,"value":{"expr":"return 5 ","name":"a","params":["x"]}}`))
 	if assert.NoError(t, err) {
 		assert.Equal(t, v.TypeId, VMTypeFunction)
 		fd, _ := v.ReadFunctionData()
-		assert.Equal(t, fd.Expr, "return 5 ")
-		assert.Equal(t, fd.Name, "a")
-		assert.Equal(t, fd.Params, []string{"x"})
+		assert.Equal(t, "return 5 ", fd.Expr)
+		assert.Equal(t, "a", fd.Name)
+		assert.Equal(t, []string{"x"}, fd.Params)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":6,"value":{"list":[{"typeId":0,"value":1},{"typeId":1,"value":2},{"typeId":2,"value":"test"}]}}`))
@@ -128,5 +128,41 @@ func TestLoads(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, v.TypeId, VMTypeNativeFunction)
 		assert.True(t, valueEqual(v, builtinValues["ceil"]))
+	}
+}
+
+func TestDumpsArray(t *testing.T) {
+	v, err := VMValueNewArray(ni(1), ni(2), na(ni(3)), ni(4)).ToJSON()
+	if assert.NoError(t, err) {
+		assert.Equal(t, `{"typeId":6,"value":{"list":[{"typeId":0,"value":1},{"typeId":0,"value":2},{"typeId":6,"value":{"list":[{"typeId":0,"value":3}]}},{"typeId":0,"value":4}]}}`, string(v))
+	}
+}
+
+func TestLoadsArray(t *testing.T) {
+	v, err := VMValueFromJSON([]byte(`{"typeId":6,"value":{"list":[{"typeId":0,"value":1},{"typeId":0,"value":2},{"typeId":6,"value":{"list":[{"typeId":0,"value":3}]}},{"typeId":0,"value":4}]}}`))
+	if assert.NoError(t, err) {
+		assert.Equal(t, v.TypeId, VMTypeArray)
+		assert.True(t, valueEqual(v, VMValueNewArray(ni(1), ni(2), na(ni(3)), ni(4))))
+	}
+}
+
+func TestDumpsDict(t *testing.T) {
+	m := VMValueNewDict(nil)
+	m.Store("XXX", VMValueNewInt(222))
+
+	v, err := m.V().ToJSON()
+	if assert.NoError(t, err) {
+		assert.Equal(t, `{"typeId":7,"value":{"dict":{"XXX":{"typeId":0,"value":222}}}}`, string(v))
+	}
+}
+
+func TestLoadsDict(t *testing.T) {
+	v, err := VMValueFromJSON([]byte(`{"typeId":7,"value":{"dict":{"XXX":{"typeId":0,"value":222}}}}`))
+	if assert.NoError(t, err) {
+		m := VMValueNewDict(nil)
+		m.Store("XXX", VMValueNewInt(222))
+
+		assert.Equal(t, v.TypeId, VMTypeDict)
+		assert.True(t, valueEqual(v, m.V()))
 	}
 }

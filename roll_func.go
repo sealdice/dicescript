@@ -341,3 +341,21 @@ func RollCoC(isBonus bool, diceNum int64) (int64, string) {
 		return newVal, lastDetail
 	}
 }
+
+func RollFate() (int64, string) {
+	detail := ""
+	sum := int64(0)
+	for i := 0; i < 4; i++ {
+		n := rand.Int63()%3 - 1
+		sum += n
+		switch n {
+		case -1:
+			detail += "-"
+		case 0:
+			detail += "0"
+		case +1:
+			detail += "+"
+		}
+	}
+	return sum, detail
+}
