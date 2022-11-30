@@ -1183,3 +1183,23 @@ func TestFuncAbs(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
 }
+
+func TestLogicAnd(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("1 && 2 && 3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("1 && 0 && 3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(0)))
+	}
+}
+
+func TestStackOverFlow(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("while 1 { 2 }")
+	assert.Error(t, err)
+}

@@ -29,64 +29,6 @@ DiceScript 被设计为一门专用于TRPG场景的脚本语言。
 
 https://sealdice.github.io/dicescript/
 
-#### 集成到你的项目
-
-Golang:
-```go
-package main
-
-import (
-	"fmt"
-	dice "github.com/sealdice/dicescript"
-)
-
-func main() {
-	vm := dice.NewVM()
-	if err := vm.Run(`d20`); err == nil {
-		fmt.Printf("结果: %s\n", vm.Ret.ToString())
-	} else {
-		fmt.Printf("错误: %s\n", err.Error())
-	}
-}
-```
-
-JavaScript // 还会再调整API
-```javascript
-function roll(text) {
-    let ctx = dice.newVM();
-    try {
-        ctx.Run(text)
-        if (ctx.Error) {
-            console.log(`错误: ${ctx.Error.Error()}`)
-        } else {
-            console.log(`结果: ${ctx.Ret.ToString()}`)
-        }
-    } catch (e) {
-        this.items.push(`错误: 未知错误`)
-    }
-}
-```
-
-#### 编译
-
-依次执行:
-```
-go mod install
-go install github.com/pointlander/peg@v1.0.1
-go install github.com/gopherjs/gopherjs@v1.18.0-beta1
-peg -switch -inline roll.peg
-```
-
-如果你使用golang:
-```
-go build
-```
-
-如果你使用JS:
-```
-gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.js
-```
-
 ### 语法
 
 DiceScript的语法从JS、golang和Python上各吸取了一点东西，不过不用担心，语法非常的简单。
@@ -312,8 +254,8 @@ DiceScript 允许两种字符串的常规写法：
 以及一种带格式化的模板语法：
 
 ```
-name1 = 'Alice'
-name2 = 'Bob'
+name1 = 'Alice';
+name2 = 'Bob';
 
 `Hello, {name1} & {name2}, {d100} is today's lucky number`
 ```
@@ -425,7 +367,7 @@ a = [1,2,3]; a[2:3] = [4,5,6] // a == [1, 2, 4, 5, 6]
 [1,2,3].kl() // 取最低的1个值，1
 [1,2,3].kl(2) // 取最低的2个值，3
 [1,2,3].kh() //  取最高的1个值，3
-[1,2,3].kh(2) //  取最高的1个值，5
+[1,2,3].kh(2) //  取最高的2个值并相加，得到5
 [1,2,3].shuffle() // 打乱顺序，[3,1,2]
 [1,2,3].len() // 求长度，3
 [1,2,3].rand() // 随机取其中一项并返回，2
@@ -535,13 +477,15 @@ while t1 < 10 {
 
 其中 && 为逻辑与，即都满足时才为真(即数字1)，不满足时为假(数字0)
 
+以 `expr1 && expr2` 为例， 如果 expr1 能被转换为 false，那么返回 expr1；否则，返回expr2。因此，&&用于布尔值时，当操作数都为 true 时返回 true；否则返回 false
+
 ```
 if v1 > 10 && v2 > 15 {
     // ...
 }
 ```
 
-使用 || 为逻辑或，只要有一个条件满足，后面的就不会执行：
+而 || 为逻辑或，只要有一个条件满足，后面的就不会执行：
 
 ```
 a = [1,2,3];
@@ -553,10 +497,10 @@ if '' || 'OK' || a.push(4) {
 同时可以这样使用：
 
 ```
-val1 = v1 || v2 
+val1 = expr1 || expr2 
 ```
 
-val1的值将是v1或v2中的一个
+如果 expr1 能被转换为 true，那么返回 expr1；否则，返回expr2。因此，|| 用于布尔值时，当任何一个操作数为 true 则返回 true；如果操作数都是 false 则返回 false。
 
 
 #### 其他算符
@@ -617,4 +561,65 @@ a2
 // #EnableDiceWoD true
 // #EnableDiceFate true
 // #EnableDiceDoubleCross true
+```
+
+
+### 开发者
+
+#### 集成到你的项目
+
+Golang:
+```go
+package main
+
+import (
+	"fmt"
+	dice "github.com/sealdice/dicescript"
+)
+
+func main() {
+	vm := dice.NewVM()
+	if err := vm.Run(`d20`); err == nil {
+		fmt.Printf("结果: %s\n", vm.Ret.ToString())
+	} else {
+		fmt.Printf("错误: %s\n", err.Error())
+	}
+}
+```
+
+JavaScript // 还会再调整API
+```javascript
+function roll(text) {
+    let ctx = dice.newVM();
+    try {
+        ctx.Run(text)
+        if (ctx.Error) {
+            console.log(`错误: ${ctx.Error.Error()}`)
+        } else {
+            console.log(`结果: ${ctx.Ret.ToString()}`)
+        }
+    } catch (e) {
+        this.items.push(`错误: 未知错误`)
+    }
+}
+```
+
+#### 编译
+
+依次执行:
+```
+go mod install
+go install github.com/pointlander/peg@v1.0.1
+go install github.com/gopherjs/gopherjs@v1.18.0-beta1
+peg -switch -inline roll.peg
+```
+
+如果你使用golang:
+```
+go build
+```
+
+如果你使用JS:
+```
+gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.js
 ```

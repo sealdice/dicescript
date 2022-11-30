@@ -274,6 +274,11 @@ func (e *Parser) Evaluate() {
 	startTime := time.Now().UnixMilli()
 	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
 		numOpCountAdd(1)
+
+		if ctx.Error == nil && e.top == len(stack) {
+			ctx.Error = errors.New("执行栈到达溢出线")
+		}
+
 		if ctx.Error != nil {
 			return
 		}
@@ -360,6 +365,14 @@ func (e *Parser) Evaluate() {
 				}
 			}
 			stackPush(VMValueNewArray(arr...))
+
+		case TypeLogicAnd:
+			a, b := stackPop2()
+			if a.AsBool() == false {
+				stackPush(a)
+			} else {
+				stackPush(b)
+			}
 
 		case TypeInvoke:
 			paramsNum := code.Value.(int64)
