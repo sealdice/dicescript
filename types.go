@@ -1029,7 +1029,7 @@ func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue 
 	switch v.TypeId {
 	case VMTypeString:
 		str, _ := v.ReadString()
-		newArr := str[_a:_b]
+		newArr := string([]rune(str)[_a:_b])
 		return VMValueNewStr(newArr)
 	case VMTypeArray:
 		arr, _ := v.ReadArray()

@@ -1203,3 +1203,11 @@ func TestStackOverFlow(t *testing.T) {
 	err := vm.Run("while 1 { 2 }")
 	assert.Error(t, err)
 }
+
+func TestSliceUnicode(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("'中文测试'[1:3]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("文测")))
+	}
+}
