@@ -7,24 +7,6 @@ import (
 	"testing"
 )
 
-//func newVMWithStore(attrs map[string]*VMValue) (*Context, *ValueMap) {
-//	vm := NewVM()
-//	if attrs == nil {
-//		attrs = map[string]*VMValue{}
-//	}
-//
-//	//vm.ValueStoreNameFunc = func(name string, v *VMValue) {
-//	//	attrs[name] = v
-//	//}
-//	vm.ValueLoadFunc = func(name string) *VMValue {
-//		if val, ok := attrs[name]; ok {
-//			return val
-//		}
-//		return nil
-//	}
-//	return vm, vm.attrs
-//}
-
 func vmValueEqual(vm *Context, aKey string, bValue *VMValue) bool {
 	return valueEqual(vm.attrs.MustLoad(aKey), bValue)
 }
@@ -1191,5 +1173,13 @@ func TestLogicOp(t *testing.T) {
 	err = vm.Run("a = [1,2]; 5 && a.push(3); a ")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, na(ni(1), ni(2), ni(3))))
+	}
+}
+
+func TestFuncAbs(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("abs(-1)")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
 }

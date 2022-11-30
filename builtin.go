@@ -37,6 +37,27 @@ func funcFloor(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return nil
 }
 
+func funcAbs(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	v := params[0]
+	switch v.TypeId {
+	case VMTypeInt:
+		val := v.MustReadInt()
+		if val < 0 {
+			return VMValueNewInt(-val)
+		}
+		return v
+	case VMTypeFloat:
+		val := v.MustReadFloat()
+		if val < 0 {
+			return VMValueNewFloat(-val)
+		}
+		return v
+	}
+
+	ctx.Error = errors.New("类型错误: 参数必须为int或float")
+	return nil
+}
+
 func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
@@ -98,6 +119,7 @@ var builtinValues = map[string]*VMValue{
 	"int":   nnf(&ndf{"int", []string{"value"}, nil, nil, funcInt}),
 	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
 	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
+	"abs":   nnf(&ndf{"abs", []string{"value"}, nil, nil, funcAbs}),
 	// TODO: roll()
 }
 
