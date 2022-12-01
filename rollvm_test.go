@@ -3,6 +3,8 @@ package dicescript
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -1181,5 +1183,119 @@ func TestFuncAbs(t *testing.T) {
 	err := vm.Run("abs(-1)")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+}
+
+func TestLogicAnd(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("1 && 2 && 3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+	}
+
+	vm = NewVM()
+	err = vm.Run("1 && 0 && 3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(0)))
+	}
+}
+
+func TestStackOverFlow(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("while 1 { 2 }")
+	assert.Error(t, err)
+}
+
+func TestSliceUnicode(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("'中文测试'[1:3]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("文测")))
+	}
+
+	err = vm.Run("'中文测试'[-3:3]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("文测")))
+	}
+}
+
+func TestDiceExprError(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("(-1)d5")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	err = vm.Run("('xxx')d5")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	err = vm.Run("3d(-10)")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	err = vm.Run("3d('xx')")
+	assert.Error(t, err)
+}
+
+func TestDiceDH_DL(t *testing.T) {
+	reResult := regexp.MustCompile(`\{(\d+) (\d+) \| (\d+)}`)
+
+	vm := NewVM()
+	for {
+		err := vm.Run("3d1000dh1")
+		if assert.NoError(t, err) {
+			m := reResult.FindStringSubmatch(vm.Detail)
+			a1, _ := strconv.ParseInt(m[1], 10, 64)
+			a2, _ := strconv.ParseInt(m[2], 10, 64)
+			a3, _ := strconv.ParseInt(m[3], 10, 64)
+			if a1 != a2 && a2 != a3 {
+				// 三个输出数字不等，符合测试条件
+				assert.True(t, a3 > a2 && a3 > a1)
+				break
+			}
+		}
+	}
+
+	vm = NewVM()
+	for {
+		err := vm.Run("3d1000dl1")
+		if assert.NoError(t, err) {
+			m := reResult.FindStringSubmatch(vm.Detail)
+			a1, _ := strconv.ParseInt(m[1], 10, 64)
+			a2, _ := strconv.ParseInt(m[2], 10, 64)
+			a3, _ := strconv.ParseInt(m[3], 10, 64)
+			if a1 != a2 && a2 != a3 {
+				// 三个输出数字不等，符合测试条件
+				assert.True(t, a3 < a2 && a3 < a1)
+				break
+			}
+		}
+	}
+}
+
+func TestDiceExprIndexBug(t *testing.T) {
+	// 12.1 于言诺发现，如 2d(3d1) 会被错误计算为 9[2d(3d1)=9=3+3+3,3d1=3]
+	// 经查原因为Dice字节指令执行时，并未将骰子栈正确出栈
+	reResult := regexp.MustCompile(`2d\(3d1\)=(\d+)=(\d+)\+(\d+),`)
+
+	vm := NewVM()
+	err := vm.Run("2d(3d1)")
+
+	if assert.NoError(t, err) {
+		assert.True(t, reResult.MatchString(vm.Detail))
+	}
+}
+
+func TestStringGetItem(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("a = '测试'; a[1]")
+
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("试")))
+	}
+
+	err = vm.Run("a = '测试'; a[-1]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("试")))
 	}
 }

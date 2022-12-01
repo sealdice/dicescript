@@ -49,6 +49,7 @@ func (ctx *Context) Run(value string) error {
 	p.codeIndex = 0
 	ctx.Error = nil
 	ctx.NumOpCount = 0
+	ctx.Detail = ""
 
 	// 开始解析，编译字节码
 	err = p.Parse()
@@ -274,6 +275,11 @@ func (e *Parser) Evaluate() {
 	startTime := time.Now().UnixMilli()
 	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
 		numOpCountAdd(1)
+
+		if ctx.Error == nil && e.top == len(stack) {
+			ctx.Error = errors.New("执行栈到达溢出线")
+		}
+
 		if ctx.Error != nil {
 			return
 		}
@@ -360,6 +366,14 @@ func (e *Parser) Evaluate() {
 				}
 			}
 			stackPush(VMValueNewArray(arr...))
+
+		case TypeLogicAnd:
+			a, b := stackPop2()
+			if a.AsBool() == false {
+				stackPush(a)
+			} else {
+				stackPush(b)
+			}
 
 		case TypeInvoke:
 			paramsNum := code.Value.(int64)
@@ -565,40 +579,48 @@ func (e *Parser) Evaluate() {
 			diceInit()
 		case TypeDiceSetTimes:
 			v := stackPop()
-			diceStates[len(diceStates)-1].times, _ = v.ReadInt()
+			times, ok := v.ReadInt()
+			if !ok || times <= 0 {
+				ctx.Error = errors.New("骰点次数不为正整数")
+				return
+			}
+			diceStates[diceStateIndex].times = times
 		case TypeDiceSetKeepLowNum:
 			v := stackPop()
-			diceStates[len(diceStates)-1].isKeepLH = 1
-			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt()
+			diceStates[diceStateIndex].isKeepLH = 1
+			diceStates[diceStateIndex].lowNum, _ = v.ReadInt()
 		case TypeDiceSetKeepHighNum:
 			v := stackPop()
-			diceStates[len(diceStates)-1].isKeepLH = 2
-			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt()
+			diceStates[diceStateIndex].isKeepLH = 2
+			diceStates[diceStateIndex].highNum, _ = v.ReadInt()
 		case TypeDiceSetDropLowNum:
 			v := stackPop()
-			diceStates[len(diceStates)-1].isKeepLH = 3
-			diceStates[len(diceStates)-1].lowNum, _ = v.ReadInt()
+			diceStates[diceStateIndex].isKeepLH = 3
+			diceStates[diceStateIndex].lowNum, _ = v.ReadInt()
 		case TypeDiceSetMin:
 			v := stackPop()
 			i, _ := v.ReadInt()
-			diceStates[len(diceStates)-1].min = &i
+			diceStates[diceStateIndex].min = &i
 		case TypeDiceSetMax:
 			v := stackPop()
 			i, _ := v.ReadInt()
-			diceStates[len(diceStates)-1].max = &i
+			diceStates[diceStateIndex].max = &i
 		case TypeDiceSetDropHighNum:
 			v := stackPop()
-			diceStates[len(diceStates)-1].isKeepLH = 4
-			diceStates[len(diceStates)-1].highNum, _ = v.ReadInt()
+			diceStates[diceStateIndex].isKeepLH = 4
+			diceStates[diceStateIndex].highNum, _ = v.ReadInt()
 		case TypeDetailMark:
 			span := code.Value.(BufferSpan)
 			details = append(details, span)
 		case TypeDice:
-			diceState := diceStates[len(diceStates)-1]
+			diceState := diceStates[diceStateIndex]
 
 			val := stackPop()
-			bInt, _ := val.ReadInt()
-			// TODO: 类型检查
+			bInt, ok := val.ReadInt()
+			if !ok || bInt < 0 {
+				ctx.Error = errors.New("骰子面数不为正整数")
+				return
+			}
 
 			numOpCountAdd(diceState.times)
 			if ctx.Error != nil {
@@ -606,6 +628,7 @@ func (e *Parser) Evaluate() {
 			}
 
 			num, detail := RollCommon(diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
+			diceStateIndex -= 1
 
 			ret := VMValueNewInt(num)
 			details[len(details)-1].ret = ret

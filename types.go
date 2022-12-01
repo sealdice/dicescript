@@ -960,7 +960,21 @@ func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
 			val, _ := (*VMDictValue)(v).Load(key)
 			return val
 		}
-	case VMTypeUndefined, VMTypeNull:
+	case VMTypeString:
+		if index.TypeId != VMTypeInt {
+			ctx.Error = errors.New(fmt.Sprintf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName()))
+		} else {
+			str, _ := v.ReadString()
+			rstr := []rune(str)
+
+			rIndex := index.MustReadInt()
+			_index := getClampRealIndex(ctx, rIndex, int64(len(rstr)))
+
+			newArr := string(rstr[_index : _index+1])
+			return VMValueNewStr(newArr)
+		}
+	default:
+		//case VMTypeUndefined, VMTypeNull:
 		ctx.Error = errors.New("此类型无法取下标")
 	}
 	return nil
@@ -1029,7 +1043,7 @@ func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue 
 	switch v.TypeId {
 	case VMTypeString:
 		str, _ := v.ReadString()
-		newArr := str[_a:_b]
+		newArr := string([]rune(str)[_a:_b])
 		return VMValueNewStr(newArr)
 	case VMTypeArray:
 		arr, _ := v.ReadArray()
@@ -1050,7 +1064,7 @@ func (v *VMValue) Length(ctx *Context) int64 {
 		length = int64(len(arr.List))
 	case VMTypeString:
 		str, _ := v.ReadString()
-		length = int64(len(str))
+		length = int64(len([]rune(str)))
 	default:
 		ctx.Error = errors.New("这个类型无法取得分片")
 		return 0
