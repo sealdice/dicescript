@@ -243,13 +243,20 @@ func RollCommon(times, dicePoints int64, diceMin, diceMax *int64, isKeepLH, lowN
 	pickNum := times
 
 	if isKeepLH != 0 {
-		if isKeepLH == 1 || isKeepLH == 3 {
-			pickNum = lowNum
+		// 为1对应取低个数，为2对应取高个数，3为丢弃低个数，4为丢弃高个数
+		if isKeepLH == 1 || isKeepLH == 4 {
 			sort.Slice(nums, func(i, j int) bool { return nums[i] < nums[j] }) // 从小到大
 		} else {
-			pickNum = highNum
 			sort.Slice(nums, func(i, j int) bool { return nums[i] > nums[j] }) // 从大到小
 		}
+
+		switch isKeepLH {
+		case 1, 3:
+			pickNum = lowNum
+		case 2, 4:
+			pickNum = highNum
+		}
+
 		if isKeepLH > 2 {
 			pickNum = times - pickNum
 		}
