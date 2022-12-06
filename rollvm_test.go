@@ -234,6 +234,11 @@ func TestStatementLines(t *testing.T) {
 	vm = NewVM()
 	err = vm.Run("i = 0 if 1 { i = 3 }")
 	assert.NoError(t, err)
+	assert.Equal(t, "if 1 { i = 3 }", vm.RestInput)
+
+	vm = NewVM()
+	err = vm.Run("i = 0; if 1 { i = 3 }")
+	assert.NoError(t, err)
 	assert.True(t, vmValueEqual(vm, "i", ni(3)))
 
 	vm = NewVM()
@@ -266,7 +271,7 @@ func TestKeywords(t *testing.T) {
 		for _, j := range suffixBad {
 			vm := NewVM()
 			err = vm.Run(i + j)
-			assert.Error(t, err)
+			assert.Errorf(t, err, i+j)
 		}
 	}
 
@@ -1075,7 +1080,7 @@ func TestDiceFlagDoubleCrossMacroExpr(t *testing.T) {
 
 func TestComment(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("// test\na = 1\na")
+	err := vm.Run("// test\na = 1;\na")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
@@ -1297,5 +1302,48 @@ func TestStringGetItem(t *testing.T) {
 	err = vm.Run("a = '测试'; a[-1]")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("试")))
+	}
+}
+
+func TestDiceExprKlBug(t *testing.T) {
+	// 12.6 云陌发现，2d5kld4时有概率中间过程这样子：1[2d5kld4=1={1 | 2 3 4},2d5kl=4]
+	// 原因也是骰子栈未正确出栈
+	// 这个有一定运气成分(虽然很小)，所以跑5次
+
+	for i := 0; i < 5; i++ {
+		vm := NewVM()
+		err := vm.Run("(1d1000kl)d1")
+
+		if assert.NoError(t, err) {
+			assert.False(t, strings.Contains(vm.Detail, "|"))
+		}
+	}
+}
+
+func TestIfElseExprBug1(t *testing.T) {
+	// 12.6 于言诺 else后面必须跟一个空格
+	vm := NewVM()
+	err := vm.Run("if true {} else{}")
+
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+	}
+
+	vm = NewVM()
+	err = vm.Run("if true {} elseif 1{}")
+
+	if assert.NoError(t, err) {
+		// 注: 这里 elseif 会被当做变量 所以这里读到是undefined
+		assert.Equal(t, "1{}", vm.RestInput)
+	}
+}
+
+func TestBlockExprBug(t *testing.T) {
+	// 12.7 木落
+	vm := NewVM()
+	err := vm.Run("if 1 {} 1 2 3 4 5")
+
+	if assert.NoError(t, err) {
+		assert.Equal(t, "2 3 4 5", vm.RestInput)
 	}
 }

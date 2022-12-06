@@ -11,6 +11,7 @@ type ParserData struct {
 	jmpStack      []int64
 	breakStack    []int64 // break用，用时创建
 	continueStack []int64 // continue用，用时创建
+	loopLayer     int64   // 当前loop层数
 	codeStack     []struct {
 		code  []ByteCode
 		index int
@@ -146,11 +147,15 @@ func (e *Parser) OffsetPush() {
 }
 
 func (p *Parser) ContinuePush() {
-	if p.continueStack == nil {
-		p.continueStack = []int64{}
+	if p.loopLayer > 0 {
+		if p.continueStack == nil {
+			p.continueStack = []int64{}
+		}
+		p.AddOp(TypeJmp)
+		p.continueStack = append(p.continueStack, int64(p.codeIndex)-1)
+	} else {
+		p.Error = errors.New("循环外不能放置continue")
 	}
-	p.AddOp(TypeJmp)
-	p.continueStack = append(p.continueStack, int64(p.codeIndex)-1)
 }
 
 func (p *Parser) ContinueSet(offsetB int) {
@@ -173,11 +178,15 @@ func (p *Parser) BreakSet() {
 }
 
 func (p *Parser) BreakPush() {
-	if p.breakStack == nil {
-		p.breakStack = []int64{}
+	if p.loopLayer > 0 {
+		if p.breakStack == nil {
+			p.breakStack = []int64{}
+		}
+		p.AddOp(TypeJmp)
+		p.breakStack = append(p.breakStack, int64(p.codeIndex)-1)
+	} else {
+		p.Error = errors.New("循环外不能放置break")
 	}
-	p.AddOp(TypeJmp)
-	p.breakStack = append(p.breakStack, int64(p.codeIndex)-1)
 }
 
 func (e *Parser) OffsetPopAndSet() {

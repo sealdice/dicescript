@@ -22,19 +22,14 @@ type Parser Peg {
 // 出口
 dicescript <- sp stmtRoot { p.AddOp(TypeHalt) }
 stmtRoot <- stmtLines sp // stmtLines
-stmtRootInLoop <- stmtLinesInLoop
 
-stmtLines <- stmtWithBlock stmtLines*
-           / flagsSwitch stmtLines*
-           / comment stmtLines*
-           / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* stmtWithBlock stmtLines*)*
-           / (';' sp)+
+stmtLines <- stmtWithBlock stmtLines?
+           / flagsSwitch stmtLines?
+           / comment stmtLines?
+           / stmtWithSemicolon nextLine?
+           / (';' sp)+ stmtLines?
 
-stmtLinesInLoop <- (stmtWithBlock / stmtBreak / stmtContinue) stmtLinesInLoop*
-                 / flagsSwitch stmtLinesInLoop*
-                 / comment stmtLinesInLoop*
-                 / stmtWithSemicolon ((';' sp)+ stmtWithSemicolon / (';' sp)* (stmtWithBlock stmtLinesInLoop* / stmtBreak / stmtContinue))*
-                 / (';' sp)+
+nextLine <- ((spNoCR '\n' / sp ';') sp)+ stmtLines
 
 _switchEnablePrefix <- '#EnableDice'
 _switchTrue <- 'true'
@@ -45,7 +40,7 @@ flagsSwitch <- '//' sp? _switchEnablePrefix 'WoD' sp1 (_switchTrue sp1 !{p.Flags
              / '//' sp? _switchEnablePrefix 'DoubleCross' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceDoubleCross = true} / _switchFalse sp1 !{p.Flags.EnableDiceDoubleCross = false})  [^\n]*
 
 
-stmtWithSemicolon <- flagsSwitch / stmtAssign / exprRoot
+stmtWithSemicolon <- stmtAssign / stmtBreak / stmtContinue / exprRoot
 
 stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtReturn
 
@@ -56,16 +51,15 @@ stmtContinue <- 'continue' sp { p.ContinuePush() }
 stmtReturn <- 'return' sp1 exprRoot { p.AddOp(TypeReturn); }
             / 'return' sp { p.PushUndefined(); p.AddOp(TypeReturn); }
 
-blockInLoop <- ( '{' sp '}' / '{' sp stmtRootInLoop '}' ) sp
-stmtWhile <- 'while' { p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
-             blockInLoop { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.ContinueSet(2); p.BreakSet(); p.OffsetPopN(3); }
+stmtWhile <- 'while' { p.loopLayer+=1; p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
+             block { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.ContinueSet(2); p.BreakSet(); p.OffsetPopN(3);p.loopLayer-=1; }
 // push xxx // 这里是while后面的exprRoot
 // jne 1
 // ...
 // jmp -3 // 跳回开始点
 
 block <- ( '{' sp '}' / '{' sp stmtRoot '}' ) sp
-stmtElse <- 'else' sp1 (block / stmtIf)
+stmtElse <- 'else' (sp block / sp1 stmtIf)
 stmtIf <- 'if' sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() } block { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); }
            stmtElse? { p.OffsetPopAndSet() }
 // 'if' exprRoot block
@@ -339,6 +333,7 @@ ne <- '!=' sp
 
 // 其他
 sp <- ( ' ' / '\t' / '\n' / '\r' )*
+spNoCR <- ( ' ' / '\t' / '\r' )*
 sp1 <- ( ' ' / '\t' / '\n' / '\r') sp / !.
 escape <- '\\' ([btnfr"'\\])  //  / OctalEscape / UnicodeEscape
-comment <- '//' (!'\n' .)* sp1
+comment <- spNoCR '//' (!'\n' .)* ('\n' / !.)

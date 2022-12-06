@@ -129,7 +129,7 @@ func (e *Parser) Evaluate() {
 
 	diceInit := func() {
 		diceStateIndex += 1
-		diceStates = append(diceStates, struct {
+		data := struct {
 			times    int64 // 次数，如 2d10，times为2
 			isKeepLH int64 // 为1对应取低个数，为2对应取高个数
 			lowNum   int64
@@ -138,7 +138,14 @@ func (e *Parser) Evaluate() {
 			max      *int64
 		}{
 			times: 1,
-		})
+		}
+
+		if diceStateIndex >= len(diceStates) {
+			diceStates = append(diceStates, data)
+		} else {
+			// 其实我不太清楚这样是否对效率有提升。。
+			diceStates[diceStateIndex] = data
+		}
 	}
 
 	var wodState struct {
@@ -597,6 +604,10 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			diceStates[diceStateIndex].isKeepLH = 3
 			diceStates[diceStateIndex].lowNum, _ = v.ReadInt()
+		case TypeDiceSetDropHighNum:
+			v := stackPop()
+			diceStates[diceStateIndex].isKeepLH = 4
+			diceStates[diceStateIndex].highNum, _ = v.ReadInt()
 		case TypeDiceSetMin:
 			v := stackPop()
 			i, _ := v.ReadInt()
@@ -605,10 +616,6 @@ func (e *Parser) Evaluate() {
 			v := stackPop()
 			i, _ := v.ReadInt()
 			diceStates[diceStateIndex].max = &i
-		case TypeDiceSetDropHighNum:
-			v := stackPop()
-			diceStates[diceStateIndex].isKeepLH = 4
-			diceStates[diceStateIndex].highNum, _ = v.ReadInt()
 		case TypeDetailMark:
 			span := code.Value.(BufferSpan)
 			details = append(details, span)
@@ -617,8 +624,16 @@ func (e *Parser) Evaluate() {
 
 			val := stackPop()
 			bInt, ok := val.ReadInt()
-			if !ok || bInt < 0 {
+			if !ok || bInt <= 0 {
 				ctx.Error = errors.New("骰子面数不为正整数")
+				return
+			}
+			if ok && (diceState.isKeepLH == 1 || diceState.isKeepLH == 3) && diceState.lowNum <= 0 {
+				ctx.Error = errors.New("骰子取低个数不为正整数")
+				return
+			}
+			if ok && (diceState.isKeepLH == 2 || diceState.isKeepLH == 4) && diceState.highNum <= 0 {
+				ctx.Error = errors.New("骰子取高个数不为正整数")
 				return
 			}
 

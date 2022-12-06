@@ -260,6 +260,14 @@ func RollCommon(times, dicePoints int64, diceMin, diceMax *int64, isKeepLH, lowN
 		if isKeepLH > 2 {
 			pickNum = times - pickNum
 		}
+
+		// clamp
+		if pickNum < 0 {
+			pickNum = 0
+		}
+		if pickNum > times {
+			pickNum = times
+		}
 	}
 
 	num := int64(0)
