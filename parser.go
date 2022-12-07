@@ -9,10 +9,14 @@ type ParserData struct {
 	counterStack  []int64  // f-string 嵌套计数，在解析时中起作用
 	varnameStack  []string // 另一个解析用栈
 	jmpStack      []int64
-	breakStack    []int64 // break用，用时创建
+	breakStack    []int64 // break，用时创建
 	continueStack []int64 // continue用，用时创建
-	loopLayer     int64   // 当前loop层数
-	codeStack     []struct {
+	loopInfo      []struct {
+		continueIndex int
+		breakIndex    int
+	}
+	loopLayer int64 // 当前loop层数
+	codeStack []struct {
 		code  []ByteCode
 		index int
 	}
@@ -33,6 +37,22 @@ func (pd *ParserData) init() {
 		code  []ByteCode
 		index int
 	}{} // 用于处理函数
+}
+
+func (e *Parser) LoopBegin() {
+	e.loopLayer += 1
+	e.loopInfo = append(e.loopInfo, struct {
+		continueIndex int
+		breakIndex    int
+	}{continueIndex: len(e.continueStack), breakIndex: len(e.breakStack)})
+}
+
+func (e *Parser) LoopEnd() {
+	e.loopLayer -= 1
+	info := e.loopInfo[len(e.loopInfo)-1]
+	e.continueStack = e.continueStack[:info.continueIndex]
+	e.breakStack = e.breakStack[:info.breakIndex]
+	e.loopInfo = e.loopInfo[:len(e.loopInfo)-1]
 }
 
 func (e *Parser) checkStackOverflow() bool {
@@ -160,7 +180,8 @@ func (p *Parser) ContinuePush() {
 
 func (p *Parser) ContinueSet(offsetB int) {
 	if p.continueStack != nil {
-		for _, codeIndex := range p.continueStack {
+		info := p.loopInfo[len(p.loopInfo)-1]
+		for _, codeIndex := range p.continueStack[info.continueIndex:] {
 			lastB := len(p.jmpStack) - 1 - offsetB
 			jmpIndex := p.jmpStack[lastB]
 			// 试出来的，这个是对的，那么也许while那个是错的？？还是说因为while最后多push了一个jmp呢？
@@ -171,7 +192,8 @@ func (p *Parser) ContinueSet(offsetB int) {
 
 func (p *Parser) BreakSet() {
 	if p.breakStack != nil {
-		for _, codeIndex := range p.breakStack {
+		info := p.loopInfo[len(p.loopInfo)-1]
+		for _, codeIndex := range p.breakStack[info.breakIndex:] {
 			p.code[codeIndex].Value = int64(p.codeIndex) - codeIndex - 1
 		}
 	}

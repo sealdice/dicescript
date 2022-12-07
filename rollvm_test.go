@@ -1347,3 +1347,26 @@ func TestBlockExprBug(t *testing.T) {
 		assert.Equal(t, "2 3 4 5", vm.RestInput)
 	}
 }
+
+func TestWhileExprBug(t *testing.T) {
+	// 12.7 云陌
+	// 故障原因是第二次解析while时，第一次的没有出栈，因此又被处理了一遍，这个会引起程序崩溃
+	vm := NewVM()
+	err := vm.Run(`i = 1; while i < 2 {continue}`)
+	assert.Error(t, err) // 算力超出
+
+	err = vm.Run(`while i < 2 {i=i+1}`)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+	}
+}
+
+func TestNameDetailBug(t *testing.T) {
+	// "a = 1;a   " 时，过程为 "a = 1;1[a    =1]"，不应有空格
+	vm := NewVM()
+	err := vm.Run(`a = 1;a   `)
+	if assert.NoError(t, err) {
+		// TODO: 后面的空格
+		assert.Equal(t, "a = 1;1[a=1]   ", vm.Detail)
+	}
+}

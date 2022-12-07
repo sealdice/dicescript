@@ -29,7 +29,7 @@ stmtLines <- stmtWithBlock stmtLines?
            / stmtWithSemicolon nextLine?
            / (';' sp)+ stmtLines?
 
-nextLine <- ((spNoCR '\n' / sp ';') sp)+ stmtLines
+nextLine <- ((spNoCR '\n' / sp ';') sp)+ stmtLines?
 
 _switchEnablePrefix <- '#EnableDice'
 _switchTrue <- 'true'
@@ -51,8 +51,8 @@ stmtContinue <- 'continue' sp { p.ContinuePush() }
 stmtReturn <- 'return' sp1 exprRoot { p.AddOp(TypeReturn); }
             / 'return' sp { p.PushUndefined(); p.AddOp(TypeReturn); }
 
-stmtWhile <- 'while' { p.loopLayer+=1; p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
-             block { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.ContinueSet(2); p.BreakSet(); p.OffsetPopN(3);p.loopLayer-=1; }
+stmtWhile <- 'while' { p.LoopBegin(); p.OffsetPush() } sp1 exprRoot { p.AddOp(TypeJne); p.OffsetPush() }
+             block { p.AddOp(TypeJmp); p.OffsetPush(); p.OffsetJmpSetX(0, 2, true); p.OffsetJmpSetX(1, 1, false); p.ContinueSet(2); p.BreakSet(); p.OffsetPopN(3);p.LoopEnd(); }
 // push xxx // 这里是while后面的exprRoot
 // jne 1
 // ...
@@ -252,7 +252,7 @@ value <- 'true' sp { p.PushIntNumber("1") }
        / number
 
        // 变量
-       / &(identifier sp) detailStart identifier sp detailEnd { p.WriteCode(TypeLoadNameWithDetail, string(text)) } func_invoke? item_get attr_get
+       / &(identifier sp) detailStart identifier detailEnd spNoCR { p.WriteCode(TypeLoadNameWithDetail, string(text)) } func_invoke? item_get attr_get
 
        / fstring
        / sub item_get attr_get
