@@ -203,7 +203,7 @@ func funcArrayRandSize(ctx *Context, this *VMValue, params []*VMValue) *VMValue 
 
 func funcArrayPop(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	arr, _ := this.ReadArray()
-	if len(arr.List) > 1 {
+	if len(arr.List) >= 1 {
 		val := arr.List[len(arr.List)-1]
 		arr.List = arr.List[:len(arr.List)-1]
 		return val
@@ -213,7 +213,7 @@ func funcArrayPop(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 
 func funcArrayShift(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	arr, _ := this.ReadArray()
-	if len(arr.List) > 1 {
+	if len(arr.List) >= 1 {
 		val := arr.List[0]
 		arr.List = arr.List[1:]
 		return val
@@ -238,7 +238,7 @@ var builtinProto = map[VMValueType]*VMDictValue{
 		VMValueNewStr("randSize"), nnf(&ndf{"Array.rand", []string{"num"}, nil, nil, funcArrayRandSize}),
 		VMValueNewStr("pop"), nnf(&ndf{"Array.pop", []string{}, nil, nil, funcArrayPop}),
 		VMValueNewStr("shift"), nnf(&ndf{"Array.shift", []string{}, nil, nil, funcArrayShift}),
-		VMValueNewStr("push"), nnf(&ndf{"Array.shift", []string{"value"}, nil, nil, funcArrayPush}),
+		VMValueNewStr("push"), nnf(&ndf{"Array.push", []string{"value"}, nil, nil, funcArrayPush}),
 	),
 }
 
