@@ -134,6 +134,19 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 				Name string `json:"name"`
 			}{fd.Name},
 		})
+	case VMTypeNativeObject:
+		fd, _ := v.ReadNativeObjectData()
+		return json.Marshal(struct {
+			TypeId VMValueType `json:"typeId"`
+			Value  struct {
+				Name string `json:"name"`
+			} `json:"value"`
+		}{
+			v.TypeId,
+			struct {
+				Name string `json:"name"`
+			}{fd.Name},
+		})
 	}
 	return nil, nil
 }
@@ -252,6 +265,20 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 			if val, ok := builtinValues[v1.Value.Name]; ok {
 				v.Value = val.Value
 			}
+			return nil
+		}
+		return err
+	case VMTypeNativeObject:
+		var v1 struct {
+			Value struct {
+				Name string `json:"name"`
+			} `json:"value"`
+		}
+		err := json.Unmarshal(input, &v1)
+		if err == nil {
+			od := &NativeObjectData{Name: v1.Value.Name}
+			// 只能创建一个空壳，也许反序列化时跳过会更好
+			v.Value = VMValueNewNativeObject(od).Value
 			return nil
 		}
 		return err

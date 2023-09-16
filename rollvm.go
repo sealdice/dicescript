@@ -400,7 +400,7 @@ func (e *Parser) Evaluate() {
 				}
 				stackPush(ret)
 			} else {
-				ctx.Error = errors.New("无法调用")
+				ctx.Error = errors.New("类型错误: 无法调用，必须是一个函数")
 			}
 
 		case TypeItemGet:
@@ -426,7 +426,7 @@ func (e *Parser) Evaluate() {
 			attrVal, obj := stackPop2()
 			attrName := code.Value.(string)
 
-			ret := obj.AttrSet(attrName, attrVal)
+			ret := obj.AttrSet(ctx, attrName, attrVal)
 			if ctx.Error == nil && ret == nil {
 				ctx.Error = errors.New("不支持的类型：当前变量无法用.来设置属性")
 			}

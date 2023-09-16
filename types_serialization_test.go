@@ -166,3 +166,28 @@ func TestLoadsDict(t *testing.T) {
 		assert.True(t, valueEqual(v, m.V()))
 	}
 }
+
+func TestNativeTypes(t *testing.T) {
+	//vm := NewVM()
+	var slot *VMValue
+	od := &NativeObjectData{
+		Name: "obj1",
+		AttrSet: func(ctx *Context, name string, v *VMValue) {
+			slot = v
+		},
+		AttrGet: func(ctx *Context, name string) *VMValue {
+			return slot
+		},
+	}
+	nVal := VMValueNewNativeObject(od)
+	data, err := nVal.ToJSON()
+	if assert.NoError(t, err) {
+		assert.Equal(t, `{"typeId":10,"value":{"name":"obj1"}}`, string(data))
+	}
+
+	v, err := VMValueFromJSON([]byte(`{"typeId":10,"value":{"name":"obj1"}}`))
+	if assert.NoError(t, err) {
+		assert.Equal(t, v.TypeId, VMTypeNativeObject)
+		assert.Equal(t, v.Value.(*NativeObjectData).Name, "obj1")
+	}
+}

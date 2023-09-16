@@ -50,7 +50,7 @@ func main() {
 
 	re := regexp.MustCompile(`^(\D+)(\d+)$`)
 
-	vm.ValueLoadFunc = func(name string) *dice.VMValue {
+	vm.GlobalValueLoadFunc = func(name string) *dice.VMValue {
 		m := re.FindStringSubmatch(name)
 		if len(m) > 1 {
 			val, _ := strconv.ParseInt(m[2], 10, 64)

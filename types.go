@@ -95,9 +95,6 @@ type Context struct {
 	upCtx          *Context
 	//subThread      *Context // 用于执行子句
 
-	/** 全局变量 */
-	globalNames *ValueMap
-
 	code      []ByteCode
 	codeIndex int
 
@@ -115,12 +112,17 @@ type Context struct {
 	Matched   string   // 匹配的字符串
 	Detail    string   // 计算过程
 
+	//seed      int64 // 随机种子，之后换PCG算法
+
 	CustomDiceInfo []*customDiceItem
 
-	// 如果返回值为true，那么不作其他处理
-	//ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
-	ValueStoreFunc func(name string, v *VMValue)
-	ValueLoadFunc  func(name string) *VMValue
+	// 如果返回值为true，那么不会保存在本地变量上
+	ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
+
+	/** 全局变量 */
+	globalNames          *ValueMap
+	GlobalValueStoreFunc func(name string, v *VMValue)
+	GlobalValueLoadFunc  func(name string) *VMValue
 }
 
 func (e *Context) Init() {
@@ -135,7 +137,7 @@ func (e *Context) loadInnerVar(name string) *VMValue {
 func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 	var loadFunc func(name string) *VMValue
 	if loadFunc == nil {
-		loadFunc = ctx.ValueLoadFunc
+		loadFunc = ctx.GlobalValueLoadFunc
 	}
 
 	// 检测全局表
@@ -152,7 +154,7 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 		}
 	}
 	//else {
-	//	ctx.Error = errors.New("未设置 ValueLoadFunc，无法获取变量")
+	//	ctx.Error = errors.New("未设置 GlobalValueLoadFunc，无法获取变量")
 	//	return nil
 	//}
 
@@ -212,8 +214,8 @@ func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
 	}
 
 	return ctx.LoadNameGlobal(name, isRaw)
-	//if ctx.ValueLoadFunc != nil {
-	//	ret := ctx.ValueLoadFunc(name)
+	//if ctx.GlobalValueLoadFunc != nil {
+	//	ret := ctx.GlobalValueLoadFunc(name)
 	//	if ctx.Error != nil {
 	//		return nil
 	//	}
@@ -232,6 +234,12 @@ func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
 
 // StoreName 储存变量
 func (ctx *Context) StoreName(name string, v *VMValue) {
+	if ctx.ValueStoreHookFunc != nil {
+		solved := ctx.ValueStoreHookFunc(ctx, name, v)
+		if solved {
+			return
+		}
+	}
 	if _, ok := ctx.globalNames.Load(name); ok {
 		ctx.StoreNameGlobal(name, v)
 	} else {
@@ -245,7 +253,7 @@ func (ctx *Context) StoreNameLocal(name string, v *VMValue) {
 }
 
 func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
-	storeFunc := ctx.ValueStoreFunc
+	storeFunc := ctx.GlobalValueStoreFunc
 	if storeFunc != nil {
 		storeFunc(name, v.Clone())
 	} else {
@@ -313,12 +321,14 @@ type NativeFunctionData struct {
 	NativeFunc NativeFunctionDef
 }
 
-type NativeObjectData interface {
-	AttrSet(name string, v *VMValue)
-	AttrGet(name string) *VMValue
-	ItemSet(name string, v *VMValue)
-	ItemGet(name string, v *VMValue) *VMValue
-	ToString() string
+type NativeObjectData struct {
+	Name     string
+	AttrSet  func(ctx *Context, name string, v *VMValue)
+	AttrGet  func(ctx *Context, name string) *VMValue
+	ItemSet  func(ctx *Context, index *VMValue, v *VMValue)
+	ItemGet  func(ctx *Context, index *VMValue) *VMValue
+	DirFunc  func(ctx *Context) []*VMValue
+	ToString func(ctx *Context) string
 }
 
 func (v *VMValue) Clone() *VMValue {
@@ -420,6 +430,9 @@ func (v *VMValue) toStringRaw(ri *recursionInfo) string {
 	case VMTypeNativeFunction:
 		cd, _ := v.ReadNativeFunctionData()
 		return "nfunction " + cd.Name
+	case VMTypeNativeObject:
+		od, _ := v.ReadNativeObjectData()
+		return "nobject " + od.Name
 	default:
 		return "a value"
 	}
@@ -527,6 +540,13 @@ func (v *VMValue) ReadFunctionData() (*FunctionData, bool) {
 func (v *VMValue) ReadNativeFunctionData() (*NativeFunctionData, bool) {
 	if v.TypeId == VMTypeNativeFunction {
 		return v.Value.(*NativeFunctionData), true
+	}
+	return nil, false
+}
+
+func (v *VMValue) ReadNativeObjectData() (*NativeObjectData, bool) {
+	if v.TypeId == VMTypeNativeObject {
+		return v.Value.(*NativeObjectData), true
 	}
 	return nil, false
 }
@@ -863,7 +883,7 @@ func (v *VMValue) OpNegation() *VMValue {
 	return nil
 }
 
-func (v *VMValue) AttrSet(name string, val *VMValue) *VMValue {
+func (v *VMValue) AttrSet(ctx *Context, name string, val *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
@@ -876,11 +896,16 @@ func (v *VMValue) AttrSet(name string, val *VMValue) *VMValue {
 		d := (*VMDictValue)(v)
 		d.Store(name, val)
 		return val
+	case VMTypeNativeObject:
+		od, _ := v.ReadNativeObjectData()
+		od.AttrSet(ctx, name, val)
+		return val
 	}
 
 	return nil
 }
 
+// AttrGet 如果返回nil 说明不支持 . 取属性
 func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 	switch v.TypeId {
 	case VMTypeComputedValue:
@@ -915,11 +940,14 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 				}
 			}
 
-			if ret == nil {
-				ret = VMValueNewUndefined()
-			}
+			//if ret == nil {
+			//	ret = VMValueNewUndefined()
+			//}
 		}
-		return ret
+		// TODO: 思考一下 Dict.keys 和 Dict.values 与 ArrtGet 的冲突
+		if ret != nil {
+			return ret
+		}
 	case vmTypeGlobal:
 		// 加载全局变量
 		ret := ctx.LoadNameGlobal(name, false)
@@ -933,6 +961,12 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 			ret = VMValueNewUndefined()
 		}
 		return ret
+	case VMTypeNativeObject:
+		od, _ := v.ReadNativeObjectData()
+		ret := od.AttrGet(ctx, name)
+		if ret != nil {
+			return ret
+		}
 	}
 
 	proto := builtinProto[v.TypeId]
@@ -942,7 +976,14 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 		}
 	}
 
-	return nil
+	// 给少数几个类明确设定为不支持，返回nil
+	// 其他一律返回 undefined
+	switch v.TypeId {
+	case VMTypeInt, VMTypeFloat, VMTypeString, VMTypeUndefined, VMTypeNull:
+		return nil
+	}
+
+	return VMValueNewUndefined()
 }
 
 func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
@@ -973,6 +1014,13 @@ func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
 			newArr := string(rstr[_index : _index+1])
 			return VMValueNewStr(newArr)
 		}
+	case VMTypeNativeObject:
+		od, _ := v.ReadNativeObjectData()
+		ret := od.ItemGet(ctx, index)
+		if ret == nil {
+			ret = VMValueNewUndefined()
+		}
+		return ret
 	default:
 		//case VMTypeUndefined, VMTypeNull:
 		ctx.Error = errors.New("此类型无法取下标")
@@ -993,6 +1041,12 @@ func (v *VMValue) ItemSet(ctx *Context, index *VMValue, val *VMValue) bool {
 			ctx.Error = err
 		} else {
 			(*VMDictValue)(v).Store(key, val)
+			return true
+		}
+	case VMTypeNativeObject:
+		od, _ := v.ReadNativeObjectData()
+		od.ItemSet(ctx, index, val)
+		if ctx.Error == nil {
 			return true
 		}
 	default:
@@ -1209,7 +1263,11 @@ func (v *VMValue) GetTypeName() string {
 	case VMTypeArray:
 		return "array"
 	case VMTypeFunction:
-		//return "function"
+		return "function"
+	case VMTypeNativeFunction:
+		return "nfunction"
+	case VMTypeNativeObject:
+		return "nobject"
 	}
 	return "unknown"
 }
@@ -1224,8 +1282,8 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	}
 	vm.attrs = cd.Attrs
 
-	vm.ValueStoreFunc = ctx.ValueStoreFunc
-	vm.ValueLoadFunc = ctx.ValueLoadFunc
+	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
+	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
@@ -1283,8 +1341,8 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 
 	vm.Flags = ctx.Flags
 	//vm.Flags.PrintBytecode = false
-	vm.ValueStoreFunc = ctx.ValueStoreFunc
-	vm.ValueLoadFunc = ctx.ValueLoadFunc
+	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
+	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
@@ -1511,4 +1569,8 @@ func VMValueNewFunctionRaw(computed *FunctionData) *VMValue {
 
 func VMValueNewNativeFunction(data *NativeFunctionData) *VMValue {
 	return &VMValue{TypeId: VMTypeNativeFunction, Value: data}
+}
+
+func VMValueNewNativeObject(data *NativeObjectData) *VMValue {
+	return &VMValue{TypeId: VMTypeNativeObject, Value: data}
 }

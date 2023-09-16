@@ -15,6 +15,12 @@ func (d *VMDictValue) Store(key string, value *VMValue) {
 	}
 }
 
+func (d *VMDictValue) Range(callback func(key string, value *VMValue) bool) {
+	if dd, ok := d.V().ReadDictData(); ok {
+		dd.Dict.Range(callback)
+	}
+}
+
 // Load value为变量的值，ok代表是否找到变量
 func (d *VMDictValue) Load(key string) (value *VMValue, ok bool) {
 	if dd, ok := d.V().ReadDictData(); ok {

@@ -353,3 +353,37 @@ func TestDict(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), VMValueNewUndefined()))
 	}
 }
+
+func TestNativeObject(t *testing.T) {
+	vm := NewVM()
+	var slot *VMValue
+	od := &NativeObjectData{
+		Name: "obj1",
+		AttrSet: func(ctx *Context, name string, v *VMValue) {
+			slot = v
+		},
+		AttrGet: func(ctx *Context, name string) *VMValue {
+			return slot
+		},
+		ItemGet: func(ctx *Context, index *VMValue) *VMValue {
+			return slot
+		},
+		ItemSet: func(ctx *Context, index *VMValue, v *VMValue) {
+			slot = v
+		},
+		DirFunc: func(ctx *Context) []*VMValue {
+			return []*VMValue{ns("x")}
+		},
+	}
+	v := VMValueNewNativeObject(od)
+	assert.True(t, valueEqual(v.AttrGet(vm, "a"), VMValueNewUndefined()))
+	v.AttrSet(vm, "a", ni(1))
+	assert.True(t, valueEqual(v.AttrGet(vm, "a"), ni(1)))
+
+	assert.True(t, valueEqual(v.ItemGet(vm, ni(0)), ni(1)))
+	v.AttrSet(vm, "a", ni(2))
+	assert.True(t, valueEqual(v.ItemGet(vm, ni(0)), ni(2)))
+
+	ret := funcDir(vm, nil, []*VMValue{v})
+	assert.Equal(t, ret.ToString(), "['x']")
+}
