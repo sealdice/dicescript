@@ -289,7 +289,7 @@ fstring <- (
 // 变量名
 keywords <- 'while' / 'if' / 'else' / 'continue' / 'break' / 'return' / 'func'
 // 注: 不能连一起写因为peg编译会崩溃
-identifier_ch0 <- [^!"#$%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ 0-9\t\n\r\36]
+identifier_ch0 <- [^!"#%&\'()*+,-./:;<=>?@\[\\\]^`{|}~ 0-9\t\n\r\36]
 identifier_ch <- identifier_ch0 / [0-9:]
 
 no_keywords <- !(keywords (sp1 / !(identifier_ch0 / [0-9]) .))
