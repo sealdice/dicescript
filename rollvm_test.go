@@ -1370,3 +1370,17 @@ func TestNameDetailBug(t *testing.T) {
 		assert.Equal(t, "a = 1;1[a=1]   ", vm.Detail)
 	}
 }
+
+func TestLogicOrBug(t *testing.T) {
+	// (0||0)+1 报错，原因是生成的代码里最后有一个jmp 1，跳过了1的push，导致栈里只有一个值
+	vm := NewVM()
+	err := vm.Run(`(0||0)+1`)
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	err = vm.Run(`(0||1)+1`)
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+}

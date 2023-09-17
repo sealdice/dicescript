@@ -884,7 +884,6 @@ func (p *Parser) Execute() {
 			p.OffsetPush()
 		case ruleAction49:
 			p.AddOp(TypePushLast)
-			p.WriteCode(TypeJmp, int64(1))
 			p.OffsetPopAndSet()
 			p.OffsetPopAndSet()
 		case ruleAction50:
@@ -7589,7 +7588,7 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 		nil,
 		/* 150 Action48 <- <{ p.AddOp(TypeJeDup); p.OffsetPush()}> */
 		nil,
-		/* 151 Action49 <- <{ p.AddOp(TypePushLast); p.WriteCode(TypeJmp, int64(1)); p.OffsetPopAndSet(); p.OffsetPopAndSet();  }> */
+		/* 151 Action49 <- <{ p.AddOp(TypePushLast); p.OffsetPopAndSet(); p.OffsetPopAndSet();  }> */
 		nil,
 		/* 152 Action50 <- <{ p.AddOp(TypeLogicAnd) }> */
 		nil,

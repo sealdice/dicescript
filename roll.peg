@@ -118,7 +118,7 @@ exprTernary <- exprLogicOr sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprLo
 // 注: 越靠下的算符优先级越高
 
 // 逻辑运算
-exprLogicOr <- exprLogicAnd sp (logicOr {p.AddOp(TypeJeDup); p.OffsetPush()} exprLogicAnd { p.AddOp(TypeJeDup); p.OffsetPush()} { p.AddOp(TypePushLast); p.WriteCode(TypeJmp, int64(1)); p.OffsetPopAndSet(); p.OffsetPopAndSet();  } )*
+exprLogicOr <- exprLogicAnd sp (logicOr {p.AddOp(TypeJeDup); p.OffsetPush()} exprLogicAnd { p.AddOp(TypeJeDup); p.OffsetPush()} { p.AddOp(TypePushLast); p.OffsetPopAndSet(); p.OffsetPopAndSet();  } )*
 exprLogicAnd <- exprBitwiseOr sp (logicAnd exprBitwiseOr { p.AddOp(TypeLogicAnd) } )*
 
 // 位运算

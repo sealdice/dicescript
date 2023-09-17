@@ -446,7 +446,7 @@ func (v *VMValue) toReprRaw(ri *recursionInfo) string {
 	case VMTypeString:
 		// TODO: 检测其中是否有"
 		return "'" + v.toStringRaw(ri) + "'"
-	case VMTypeInt, VMTypeFloat, VMTypeUndefined, VMTypeNull, VMTypeArray, VMTypeComputedValue, VMTypeDict, VMTypeFunction, VMTypeNativeFunction:
+	case VMTypeInt, VMTypeFloat, VMTypeUndefined, VMTypeNull, VMTypeArray, VMTypeComputedValue, VMTypeDict, VMTypeFunction, VMTypeNativeFunction, VMTypeNativeObject:
 		return v.toStringRaw(ri)
 	default:
 		return "<a value>"
@@ -703,10 +703,18 @@ func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
 }
 
 func (v *VMValue) OpModulus(ctx *Context, v2 *VMValue) *VMValue {
+	setDivideZero := func() {
+		ctx.Error = errors.New("被除数被0")
+	}
+
 	switch v.TypeId {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
+			if v2.Value.(int64) == 0 {
+				setDivideZero()
+				return nil
+			}
 			val := v.Value.(int64) % v2.Value.(int64)
 			return VMValueNewInt(val)
 		}
