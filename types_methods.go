@@ -137,6 +137,16 @@ func funcDictItems(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return VMValueNewArrayRaw(arr)
 }
 
+func funcDictLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	d := this.MustReadDictData()
+	var size int64
+	d.Dict.Range(func(key string, value *VMValue) bool {
+		size++
+		return true
+	})
+	return VMValueNewInt(size)
+}
+
 var builtinProto = map[VMValueType]*VMDictValue{
 	VMTypeArray: VMValueMustNewDictWithArray(
 		VMValueNewStr("kh"), nnf(&ndf{"Array.kh", []string{"num"}, []*VMValue{VMValueNewInt(1)}, nil, funcArrayKeepHigh}),
@@ -154,6 +164,7 @@ var builtinProto = map[VMValueType]*VMDictValue{
 		VMValueNewStr("keys"), nnf(&ndf{"Dict.keys", []string{}, nil, nil, funcDictKeys}),
 		VMValueNewStr("values"), nnf(&ndf{"Dict.values", []string{}, nil, nil, funcDictValues}),
 		VMValueNewStr("items"), nnf(&ndf{"Dict.items", []string{}, nil, nil, funcDictItems}),
+		VMValueNewStr("len"), nnf(&ndf{"Dict.len", []string{}, nil, nil, funcDictLen}),
 	),
 }
 
