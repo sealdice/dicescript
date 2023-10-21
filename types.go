@@ -53,6 +53,7 @@ var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
 	(*VMValue).OpDivide,
 	(*VMValue).OpModulus,
 	(*VMValue).OpPower,
+	(*VMValue).OpNullCoalescing,
 
 	(*VMValue).OpCompLT,
 	(*VMValue).OpCompLE,
@@ -746,6 +747,14 @@ func (v *VMValue) OpPower(ctx *Context, v2 *VMValue) *VMValue {
 	}
 
 	return nil
+}
+
+func (v *VMValue) OpNullCoalescing(ctx *Context, v2 *VMValue) *VMValue {
+	if v.TypeId == VMTypeUndefined || v.TypeId == VMTypeNull {
+		return v2
+	} else {
+		return v
+	}
 }
 
 func boolToVMValue(v bool) *VMValue {

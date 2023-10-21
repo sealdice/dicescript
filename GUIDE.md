@@ -578,6 +578,12 @@ val1 = expr1 || expr2
 灵视 >= 0 ? '呵，无知之人。'
 ```
 
+#### 空值合并算符
+
+对于可能为 `undefined` 或 `null` 的值，通过该算符 `??` 提供默认值。
+
+`expr1 ?? expr2`：当 `expr1` 不为 `undefined` 或 `null` 时取 `expr1`，为空时取 `expr2`。
+
 
 ### 内置函数
 
