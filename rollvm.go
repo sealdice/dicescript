@@ -547,7 +547,7 @@ func (e *Parser) Evaluate() {
 		case TypePopN:
 			stackPopN(code.Value.(int64))
 
-		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation,
+		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation, TypeNullCoalescing,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT,
 			TypeBitwiseAnd, TypeBitwiseOr:
 			// 所有二元运算符

@@ -50,6 +50,7 @@ const (
 	TypeDivide
 	TypeModulus
 	TypeExponentiation
+	TypeNullCoalescing
 
 	TypeCompLT
 	TypeCompLE
@@ -163,6 +164,8 @@ func (code *ByteCode) CodeString() string {
 		return "mod"
 	case TypeExponentiation:
 		return "pow"
+	case TypeNullCoalescing:
+		return "nullCoalescing"
 
 	case TypeLogicAnd:
 		return "and"

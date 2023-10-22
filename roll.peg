@@ -143,11 +143,16 @@ exprAdditive <- exprMultiplicative sp (
               )*
 
 // 乘除余
-exprMultiplicative <- exprExp sp (
+exprMultiplicative <- exprNullCoalescing sp (
                         multiply exprExp { p.AddOp(TypeMultiply) }
                       / divide exprExp { p.AddOp(TypeDivide) }
                       / modulus exprExp { p.AddOp(TypeModulus) }
                     )*
+
+// 空值合并
+exprNullCoalescing <- exprExp sp (
+                        nullCoalescing exprExp { p.AddOp(TypeNullCoalescing) }
+                    )
 
 // 平方
 exprExp <- exprUnaryNeg sp (
@@ -306,13 +311,14 @@ sub <- parenOpen exprRoot parenClose
 parenOpen <- '(' sp
 parenClose <- ')' sp
 
-// 加减乘除余 乘方
+// 加减乘除余 乘方 空值合并
 add <- ('+'/'＋') sp
 minus <- ('-' / '－') sp
 multiply <- ('*' / '＊') sp
 divide <- ('/' / '／') sp
 modulus <- '%' sp
 exponentiation <- '^' sp / '**' sp
+nullCoalescing <- '??' sp
 
 // 按位算符
 bitwiseOr <- '|' sp

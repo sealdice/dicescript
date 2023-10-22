@@ -732,6 +732,7 @@ func TestBytecodeToString(t *testing.T) {
 		{TypeDivide, nil},
 		{TypeModulus, nil},
 		{TypeExponentiation, nil},
+		{TypeNullCoalescing, nil},
 
 		{TypeCompLT, nil},
 		{TypeCompLE, nil},
