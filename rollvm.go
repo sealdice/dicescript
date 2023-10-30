@@ -36,13 +36,11 @@ func NewVM() *Context {
 }
 
 func (ctx *Context) Run(value string) error {
-	var err error
-
 	// 初始化Parser，这里是分词过程
 	p := ctx.parser
 	p.Buffer = value
-	p.Trim(0) // 移动到下一行会报错
-	err = p.Init()
+	p.Trim(0)       // 移动到下一行会报错
+	err := p.Init() // nolint
 
 	// 初始化指令栈，默认指令长度512条，会自动增长
 	p.code = make([]ByteCode, 512)
@@ -181,8 +179,8 @@ func (e *Parser) Evaluate() {
 			end   int64
 			spans []BufferSpan
 		}
-		curPoint := int64(-1)
-		lastEnd := int64(-1)
+		curPoint := int64(-1) // nolint
+		lastEnd := int64(-1)  // nolint
 		sort.Sort(spanByBegin(details))
 
 		for _, i := range details {
@@ -376,7 +374,7 @@ func (e *Parser) Evaluate() {
 
 		case TypeLogicAnd:
 			a, b := stackPop2()
-			if a.AsBool() == false {
+			if !a.AsBool() {
 				stackPush(a)
 			} else {
 				stackPush(b)
@@ -676,9 +674,9 @@ func (e *Parser) Evaluate() {
 			wodInit()
 		case TypeWodSetPoints:
 			v := stackPop()
-			if v.TypeId != VMTypeInt {
-				// ...
-			}
+			// if v.TypeId != VMTypeInt {
+			//   // ...
+			// }
 			wodState.points = v.MustReadInt()
 		case TypeWodSetThreshold:
 			v := stackPop()
