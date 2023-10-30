@@ -152,7 +152,7 @@ exprMultiplicative <- exprNullCoalescing sp (
 // 空值合并
 exprNullCoalescing <- exprExp sp (
                         nullCoalescing exprExp { p.AddOp(TypeNullCoalescing) }
-                    )
+                    )*
 
 // 平方
 exprExp <- exprUnaryNeg sp (
