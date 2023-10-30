@@ -39,6 +39,9 @@ func main() {
 	vm.Flags.EnableDiceFate = true
 	vm.Flags.EnableDiceDoubleCross = true
 	vm.Flags.PrintBytecode = true
+	vm.Flags.StCallback = func(_type string, name string, val *dice.VMValue, op string, detail string) {
+		fmt.Println("st:", _type, name, val.ToString(), op, detail)
+	}
 
 	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *dice.Context, groups []string) *dice.VMValue {
 		return dice.VMValueNewInt(2)
@@ -81,6 +84,7 @@ func main() {
 				}
 				fmt.Printf("过程: %s\n", vm.Detail)
 				fmt.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
+				fmt.Printf("栈顶: %d 算力: %d\n", vm.StackTop(), vm.NumOpCount)
 			}
 
 		} else if err == liner.ErrPromptAborted {

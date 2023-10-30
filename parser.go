@@ -139,6 +139,19 @@ func (e *Parser) PushFloatNumber(value string) {
 	e.WriteCode(TypePushFloatNumber, float64(val))
 }
 
+func (e *Parser) AddStName() {
+	e.WriteCode(TypeStSetName, nil)
+}
+
+type StInfo struct {
+	Op   string
+	Text string
+}
+
+func (e *Parser) AddStModify(op string, text string) {
+	e.WriteCode(TypeStModify, StInfo{op, text})
+}
+
 func (e *Parser) AddStore(text string) {
 	e.WriteCode(TypeStoreName, text)
 }
@@ -276,6 +289,17 @@ func (p *Parser) AddStoreComputed(name string, text string) {
 
 	p.WriteCode(TypePushComputed, val)
 	p.WriteCode(TypeStoreName, name)
+}
+
+func (p *Parser) AddStoreComputedOnStack(text string) {
+	code, length := p.CodePop()
+	val := VMValueNewComputedRaw(&ComputedData{
+		Expr:      text,
+		code:      code,
+		codeIndex: length,
+	})
+
+	p.WriteCode(TypePushComputed, val)
 }
 
 func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text string) {

@@ -73,6 +73,8 @@ type RollExtraFlags struct {
 	EnableDiceFate        bool
 	EnableDiceDoubleCross bool
 
+	StCallback func(_type string, name string, val *VMValue, op string, detail string) // st回调
+
 	// 以下尚未实现
 	disableStmts bool // 禁用语句语法(如if while等)，仅允许表达式
 
@@ -124,6 +126,10 @@ type Context struct {
 	globalNames          *ValueMap
 	GlobalValueStoreFunc func(name string, v *VMValue)
 	GlobalValueLoadFunc  func(name string) *VMValue
+}
+
+func (e *Context) StackTop() int {
+	return e.top
 }
 
 func (e *Context) Init() {

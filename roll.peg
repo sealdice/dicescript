@@ -20,7 +20,10 @@ type Parser Peg {
 }
 
 // 出口
-dicescript <- sp stmtRoot { p.AddOp(TypeHalt) }
+dicescript <- sp stmtUnderground { p.AddOp(TypeHalt) }
+stmtUnderground <- '^st' st_expr
+                 / stmtRoot
+
 stmtRoot <- stmtLines sp // stmtLines
 
 stmtLines <- stmtWithBlock stmtLines?
@@ -152,7 +155,7 @@ exprMultiplicative <- exprNullCoalescing sp (
 // 空值合并
 exprNullCoalescing <- exprExp sp (
                         nullCoalescing exprExp { p.AddOp(TypeNullCoalescing) }
-                    )
+                    )*
 
 // 平方
 exprExp <- exprUnaryNeg sp (
@@ -343,3 +346,74 @@ spNoCR <- ( ' ' / '\t' / '\r' )*
 sp1 <- ( ' ' / '\t' / '\n' / '\r') sp / !.
 escape <- '\\' ([btnfr"'\\])  //  / OctalEscape / UnicodeEscape
 comment <- spNoCR '//' (!'\n' .)* ('\n' / !.)
+
+
+// --------------------------
+
+// st 力量60敏捷70
+// st 力量60 敏捷70
+// st 智力:80
+// st 知识=90
+// st 力量+1
+// st 力量+1d4
+// st 力量+1d4+2
+// st 力量-1d4+2  => 力量 = 力量 - (1d4+2)
+// st &手枪=1d6
+// st &手枪=(1d6+2)
+
+st_expr <- st_modify_multi_1
+          / st_assign_multi
+          / st_modify_multi_2
+          / '123'
+
+// est <- eDice / &'(' ? e0
+// est <- e0
+e0 <- stmtRoot
+est <- ( &'(' e0 )
+     / !{p.Flags.EnableDiceWoD = true}
+       e0
+       !{p.Flags.EnableDiceWoD = false}
+
+st_assign_multi <- (st_assign sp ','? sp)+
+
+st_assign <- st_name2 sp (':' / '=') sp est { p.AddStName() } // 射击:弓箭:40 / 射击:弓箭40
+           / st_name1 est { p.AddStName() } // 测试:力量60
+           / st_name2r sp (':' / '=') sp est { p.AddStName() } // 属性2: 70
+           / st_name1r est { p.AddStName() } // 力量60
+           / '&' st_name2 sp (':' / '=') sp { p.CodePush() } < est > { p.CodePop(); p.AddStoreComputedOnStack(text); p.AddStName() } // &手枪 = 1d4
+           / '&' st_name2r sp (':' / '=') sp { p.CodePush() } < est > { p.CodePop(); p.AddStoreComputedOnStack(text); p.AddStName() } // &手枪 = 1d4
+
+// 第一类:
+// 力量+1d3
+// 力量123+=1d3
+st_modify_multi_1 <- ((st_name2 st_modify_rest1 / st_name2r st_modify_rest1 / st_name1 st_modify_rest / st_name1r st_modify_rest) sp ','? sp ) st_modify_multi_rest
+
+st_modify_rest1 <- sp (
+     '+=' sp < e0 > {p.AddStModify("+", text)} /
+     '-=' sp < e0 > {p.AddStModify("-", text)}
+    )
+
+// 第二类，在第一种基础上增加:
+// 力量123+1d3
+
+st_modify_multi_2 <- (st_modify2 sp ','? sp) st_modify_multi_rest
+
+st_modify_multi_rest <- (st_modify2 sp ','? sp)*
+st_modify2 <- st_name2 st_modify_rest
+            / st_name2r st_modify_rest
+
+st_modify_rest <- sp (
+     '+' '='? sp < e0 > {p.AddStModify("+", text)} /
+     &( '-' ) sp < e0 > {p.AddStModify("-", text)} /
+     '-' '='? sp < e0 > {p.AddStModify("-", text)}
+    )
+
+st_name1 <- < id_ch0+ ':' id_ch0+ > { p.PushStr(text) } // 结尾不带数字
+st_name1r <- < id_ch0+ > { p.PushStr(text) } // 结尾不带数字
+
+st_name2 <- < id_ch0 id_ch* (':' id_ch+) > { p.PushStr(text) } // 结尾可带数字，即常规变量名
+st_name2r <- < id_ch0 id_ch* > { p.PushStr(text) } // 结尾可带数字，即常规变量名
+           / '\'' < (id_ch0 / [0-9] / ' ' / ':')+ > '\'' { p.PushStr(text) } // 任意字符
+
+id_ch0 <- [^!"#$%&\'()*+,-.:;<=>?@\[\\\]^`{|}~ 0-9\t\n\r\36] // 临时去掉一个斜杠，等车卡工具上线
+id_ch <- id_ch0 // / [0-9]

@@ -724,6 +724,21 @@ func (e *Parser) Evaluate() {
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
 			stackPush(ret)
+
+		case TypeStSetName:
+			stName, stVal := stackPop2()
+			if e.Flags.StCallback != nil {
+				name, _ := stName.ReadString()
+				e.Flags.StCallback("set", name, stVal, "", "")
+			}
+		case TypeStModify:
+			stName, stVal := stackPop2()
+			stInfo := code.Value.(StInfo)
+
+			if e.Flags.StCallback != nil {
+				name, _ := stName.ReadString()
+				e.Flags.StCallback("mod", name, stVal, stInfo.Op, stInfo.Text)
+			}
 		}
 	}
 }

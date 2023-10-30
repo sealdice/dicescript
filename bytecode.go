@@ -103,6 +103,9 @@ const (
 	TypeJne
 	TypeJeDup
 	TypeReturn
+
+	TypeStSetName
+	TypeStModify
 )
 
 func (code *ByteCode) CodeString() string {
@@ -276,6 +279,11 @@ func (code *ByteCode) CodeString() string {
 		return "nop"
 	case TypeReturn:
 		return "ret"
+
+	case TypeStSetName:
+		return "st.set"
+	case TypeStModify:
+		return fmt.Sprintf("st.mod %s", code.Value)
 	}
 	return ""
 }
