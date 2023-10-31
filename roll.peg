@@ -26,7 +26,7 @@ stmtUnderground <- '^st' st_expr
 
 stmtRoot <- stmtLines sp // stmtLines
 
-stmtLines <- stmtWithBlock stmtLines?
+stmtLines <- &{!p.Config.DisableStmts} stmtWithBlock stmtLines?
            / flagsSwitch stmtLines?
            / comment stmtLines?
            / stmtWithSemicolon nextLine?
@@ -37,10 +37,10 @@ nextLine <- ((spNoCR '\n' / sp ';') sp)+ stmtLines?
 _switchEnablePrefix <- '#EnableDice'
 _switchTrue <- 'true'
 _switchFalse <- 'false'
-flagsSwitch <- '//' sp? _switchEnablePrefix 'WoD' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceWoD = true} / _switchFalse sp1 !{p.Flags.EnableDiceWoD = false})  [^\n]*
-             / '//' sp? _switchEnablePrefix 'CoC' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceCoC = true} / _switchFalse sp1 !{p.Flags.EnableDiceCoC = false})  [^\n]*
-             / '//' sp? _switchEnablePrefix 'Fate' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceFate = true} / _switchFalse sp1 !{p.Flags.EnableDiceFate = false})  [^\n]*
-             / '//' sp? _switchEnablePrefix 'DoubleCross' sp1 (_switchTrue sp1 !{p.Flags.EnableDiceDoubleCross = true} / _switchFalse sp1 !{p.Flags.EnableDiceDoubleCross = false})  [^\n]*
+flagsSwitch <- '//' sp? _switchEnablePrefix 'WoD' sp1 (_switchTrue sp1 !{p.Config.EnableDiceWoD = true} / _switchFalse sp1 !{p.Config.EnableDiceWoD = false})  [^\n]*
+             / '//' sp? _switchEnablePrefix 'CoC' sp1 (_switchTrue sp1 !{p.Config.EnableDiceCoC = true} / _switchFalse sp1 !{p.Config.EnableDiceCoC = false})  [^\n]*
+             / '//' sp? _switchEnablePrefix 'Fate' sp1 (_switchTrue sp1 !{p.Config.EnableDiceFate = true} / _switchFalse sp1 !{p.Config.EnableDiceFate = false})  [^\n]*
+             / '//' sp? _switchEnablePrefix 'DoubleCross' sp1 (_switchTrue sp1 !{p.Config.EnableDiceDoubleCross = true} / _switchFalse sp1 !{p.Config.EnableDiceDoubleCross = false})  [^\n]*
 
 
 stmtWithSemicolon <- stmtAssign / stmtBreak / stmtContinue / exprRoot
@@ -125,7 +125,8 @@ exprLogicOr <- exprLogicAnd sp (logicOr {p.AddOp(TypeJeDup); p.OffsetPush()} exp
 exprLogicAnd <- exprBitwiseOr sp (logicAnd exprBitwiseOr { p.AddOp(TypeLogicAnd) } )*
 
 // 位运算
-exprBitwiseOr <- exprBitwiseAnd sp (bitwiseOr exprBitwiseAnd { p.AddOp(TypeBitwiseOr) })*
+exprBitwiseOr <- &{p.Config.DisableBitwiseOp} exprCompare // 如果禁止，那么直接向下
+               / exprBitwiseAnd sp (bitwiseOr exprBitwiseAnd { p.AddOp(TypeBitwiseOr) })*
 exprBitwiseAnd <- exprCompare sp (bitwiseAnd exprCompare { p.AddOp(TypeBitwiseAnd) })*
 
 
@@ -197,10 +198,15 @@ detailEnd <- { p.AddDiceDetail(p.CounterPop(), int64(token.end)) }
 _diceType1 <- nos [dD] nos
 // d20
 _diceType2 <- [dD] nos
+// 3d
+_diceType3 <- nos [dD]
+// d
+_diceType4 <- [dD]
 
-// XdY 中的 dy 部分
+// XdY 中的 dy 部分，跟上面 _diceTypeX 一一对应
 _diceExpr1 <- [dD] { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } nos _diceMod? _diceMod2?
 _diceExpr2 <- [dD] { p.AddOp(TypeDiceInit); } nos (_dicePearMod / _diceMod)? _diceMod2?
+_diceExpr3 <- [dD] { p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); } (_dicePearMod / _diceMod)?  _diceMod2?
 
 // 多重式子 d4d6d8
 _diceExprX <- &_diceType2 detailStart _diceExpr1 detailEnd { p.AddOp(TypeDice) }
@@ -224,10 +230,12 @@ _fateDiceType <- [fF] !identifier_ch
 
 exprDice <- &_diceType1 detailStart nos _diceExpr1 detailEnd { p.AddOp(TypeDice) } _diceExprX*
           / &_diceType2 detailStart _diceExpr2 detailEnd { p.AddOp(TypeDice) } _diceExprX*
-          / &{p.Flags.EnableDiceCoC} &_cocDiceType detailStart (_diceCocBonus / _diceCocPenalty)
-          / &{p.Flags.EnableDiceWoD} &_wodDiceType detailStart { p.AddOp(TypeWodSetInit) } (nos { p.AddOp(TypeWodSetPool) } _wodMain / _wodMain !identifier_ch) detailEnd { p.AddOp(TypeDiceWod) }
-          / &{p.Flags.EnableDiceDoubleCross} &_dcDiceType detailStart { p.AddOp(TypeDCSetInit) } nos { p.AddOp(TypeDCSetPool) } [cC] nos (([mM] nos { p.AddOp(TypeDCSetPoints) }) )* detailEnd { p.AddOp(TypeDiceDC) }
-          / &{p.Flags.EnableDiceFate} &_fateDiceType detailStart [fF] !identifier_ch detailEnd { p.AddOp(TypeDiceFate) }
+          / &{!p.Config.DisableNDice} &_diceType3 detailStart nos _diceExpr3 detailEnd { p.AddOp(TypePushDefaultExpr); p.AddOp(TypeDice) } _diceExprX*
+          / &{!p.Config.DisableNDice} &_diceType4 detailStart { p.PushIntNumber("1") } _diceExpr3 detailEnd { p.AddOp(TypePushDefaultExpr); p.AddOp(TypeDice) } _diceExprX*
+          / &{p.Config.EnableDiceCoC} &_cocDiceType detailStart (_diceCocBonus / _diceCocPenalty)
+          / &{p.Config.EnableDiceWoD} &_wodDiceType detailStart { p.AddOp(TypeWodSetInit) } (nos { p.AddOp(TypeWodSetPool) } _wodMain / _wodMain !identifier_ch) detailEnd { p.AddOp(TypeDiceWod) }
+          / &{p.Config.EnableDiceDoubleCross} &_dcDiceType detailStart { p.AddOp(TypeDCSetInit) } nos { p.AddOp(TypeDCSetPool) } [cC] nos (([mM] nos { p.AddOp(TypeDCSetPoints) }) )* detailEnd { p.AddOp(TypeDiceDC) }
+          / &{p.Config.EnableDiceFate} &_fateDiceType detailStart [fF] !identifier_ch detailEnd { p.AddOp(TypeDiceFate) }
           / value
 
 item_get <- ('[' sp exprRoot ']' sp (!'=') { p.AddOp(TypeItemGet) } func_invoke? )*
@@ -370,14 +378,17 @@ st_expr <- st_modify_multi_1
 // est <- e0
 e0 <- stmtRoot
 est <- ( &'(' e0 )
-     / !{p.Flags.EnableDiceWoD = true}
+     / !{p.FlagsPush() } !{p.Config.DisableStmts = true} !{p.Config.DisableNDice = true}
        e0
-       !{p.Flags.EnableDiceWoD = false}
+       !{p.FlagsPop() }
 
 st_assign_multi <- (st_assign sp ','? sp)+
 
+st_star <- '*' sp (float / number / sub)
 st_assign <- st_name2 sp (':' / '=') sp est { p.AddStName() } // 射击:弓箭:40 / 射击:弓箭40
            / st_name1 est { p.AddStName() } // 测试:力量60
+           / st_name2r sp st_star sp (':' / '=') sp est { p.AddOp(TypeStX1) } // 属性2*2.0: 5
+           / st_name2r sp '*' sp (':' / '=') sp est { p.AddOp(TypeStX0) } // 属性*: 4
            / st_name2r sp (':' / '=') sp est { p.AddStName() } // 属性2: 70
            / st_name1r est { p.AddStName() } // 力量60
            / '&' st_name2 sp (':' / '=') sp { p.CodePush() } < est > { p.CodePop(); p.AddStoreComputedOnStack(text); p.AddStName() } // &手枪 = 1d4

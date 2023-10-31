@@ -66,24 +66,29 @@ var binOperator = []func(*VMValue, *Context, *VMValue) *VMValue{
 	(*VMValue).OpBitwiseOr,
 }
 
-type RollExtraFlags struct {
-	PrintBytecode         bool // 执行时打印字节码
+type RollConfig struct {
 	EnableDiceWoD         bool // 启用WOD骰子语法，即XaYmZkNqM，X个数，Y加骰线，Z面数，N阈值(>=)，M阈值(<=)
 	EnableDiceCoC         bool // 启用COC骰子语法，即bX/pX奖惩骰
-	EnableDiceFate        bool
-	EnableDiceDoubleCross bool
+	EnableDiceFate        bool // 启用Fate骰语法，即fX
+	EnableDiceDoubleCross bool // 启用双十字骰语法，即XcY
 
-	StCallback func(_type string, name string, val *VMValue, op string, detail string) // st回调
+	DisableBitwiseOp bool // 禁用位运算，用于st，如 &a=1d4
+	DisableStmts     bool // 禁用语句语法(如if while等)，仅允许表达式
+	DisableNDice     bool // 禁用Nd语法，即只能2d6这样写，不能写2d
+
+	CallbackLoadVar func(name string) (string, *VMValue)                                                    // 加载变量回调，返回值会成为新变量名
+	CallbackSt      func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
+
+	OpCountLimit                 int64    // 算力限制，超过这个值会报错，0为无限，建议值30000
+	DefaultDiceSideExpr          string   // 默认骰子面数
+	defaultDiceSideExprCacheFunc *VMValue // expr的缓存函数
+
+	PrintBytecode bool // 执行时打印字节码
+	IgnoreDiv0    bool // 当div0时暂不报错
 
 	// 以下尚未实现
-	disableStmts bool // 禁用语句语法(如if while等)，仅允许表达式
-
-	DiceMinMode         bool   // 骰子以最小值结算，用于获取下界
-	DiceMaxMode         bool   // 以最大值结算 获取上界
-	DisableLoadVarname  bool   // 不允许加载变量，这是为了防止遇到 .r XXX 被当做属性读取，而不是“由于XXX，骰出了”
-	IgnoreDiv0          bool   // 当div0时暂不报错
-	DefaultDiceSideNum  int64  // 默认骰子面数
-	DefaultDiceSideExpr string // 默认骰子面数
+	DiceMinMode bool // 骰子以最小值结算，用于获取下界
+	DiceMaxMode bool // 以最大值结算 获取上界
 }
 
 type customDiceItem struct {
@@ -107,8 +112,8 @@ type Context struct {
 	NumOpCount int64 // 算力计数
 	//CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
-	Flags RollExtraFlags // 标记
-	Error error          // 报错信息
+	Config RollConfig // 标记
+	Error  error      // 报错信息
 
 	Ret       *VMValue // 返回值
 	RestInput string   // 剩余字符串
@@ -116,6 +121,9 @@ type Context struct {
 	Detail    string   // 计算过程
 
 	//seed      int64 // 随机种子，之后换PCG算法
+
+	IsRunning  bool // 是否正在运行，Run时会置为true，halt时会置为false
+	flagsStack []RollConfig
 
 	CustomDiceInfo []*customDiceItem
 
@@ -130,6 +138,10 @@ type Context struct {
 
 func (e *Context) StackTop() int {
 	return e.top
+}
+
+func (e *Context) Depth() int {
+	return e.subThreadDepth
 }
 
 func (e *Context) Init() {
@@ -664,9 +676,12 @@ func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 }
 
 func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
-	// TODO: 被除数为0
-	setDivideZero := func() {
-		ctx.Error = errors.New("被除数被0")
+	setDivideZero := func() *VMValue {
+		if ctx.Config.IgnoreDiv0 {
+			return v
+		}
+		ctx.Error = errors.New("被除数为0")
+		return nil
 	}
 
 	switch v.TypeId {
@@ -674,15 +689,13 @@ func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
 		switch v2.TypeId {
 		case VMTypeInt:
 			if v2.Value.(int64) == 0 {
-				setDivideZero()
-				return nil
+				return setDivideZero()
 			}
 			val := v.Value.(int64) / v2.Value.(int64)
 			return VMValueNewInt(val)
 		case VMTypeFloat:
 			if v2.Value.(float64) == 0 {
-				setDivideZero()
-				return nil
+				return setDivideZero()
 			}
 			val := float64(v.Value.(int64)) / v2.Value.(float64)
 			return VMValueNewFloat(val)
@@ -691,15 +704,13 @@ func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
 		switch v2.TypeId {
 		case VMTypeInt:
 			if v2.Value.(int64) == 0 {
-				setDivideZero()
-				return nil
+				return setDivideZero()
 			}
 			val := v.Value.(float64) / float64(v2.Value.(int64))
 			return VMValueNewFloat(val)
 		case VMTypeFloat:
 			if v2.Value.(float64) == 0 {
-				setDivideZero()
-				return nil
+				return setDivideZero()
 			}
 			val := v.Value.(float64) / v2.Value.(float64)
 			return VMValueNewFloat(val)
@@ -1299,7 +1310,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	cd, _ := v.ReadComputed()
 
 	vm := NewVM()
-	vm.Flags = ctx.Flags
+	vm.Config = ctx.Config
 	if cd.Attrs == nil {
 		cd.Attrs = &ValueMap{}
 	}
@@ -1311,7 +1322,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
-	if vm.NumOpCount > 30000 {
+	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
 		return nil
@@ -1362,15 +1373,15 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 		vm.attrs.Store(i, params[index])
 	}
 
-	vm.Flags = ctx.Flags
-	//vm.Flags.PrintBytecode = false
+	vm.Config = ctx.Config
+	//vm.Config.PrintBytecode = false
 	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
 	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
-	if vm.NumOpCount > 30000 {
+	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
 		return nil

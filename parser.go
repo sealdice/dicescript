@@ -269,6 +269,16 @@ func (e *Parser) CounterPop() int64 {
 	return num
 }
 
+func (e *Parser) FlagsPush() {
+	e.flagsStack = append(e.flagsStack, e.Config)
+}
+
+func (e *Parser) FlagsPop() {
+	last := len(e.flagsStack) - 1
+	e.Config = e.flagsStack[last]
+	e.flagsStack = e.flagsStack[:last]
+}
+
 func (e *Parser) AddInvokeMethod(name string, paramsNum int64) {
 	e.WriteCode(TypePushIntNumber, paramsNum)
 	e.WriteCode(TypeInvokeSelf, name)

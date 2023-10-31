@@ -123,6 +123,7 @@ func TestDice(t *testing.T) {
 
 	// 算力上限
 	vm := NewVM()
+	vm.Config.OpCountLimit = 30000
 	err := vm.Run("30001d20")
 	if err == nil {
 		t.Errorf("VM Error")
@@ -289,14 +290,17 @@ func TestWhile(t *testing.T) {
 	assert.True(t, vm.NumOpCount < 100)
 
 	vm = NewVM()
+	vm.Config.OpCountLimit = 30000
 	err = vm.Run("i = 0; while 1 {  }")
 	assert.Error(t, err) // 算力上限
 
 	vm = NewVM()
+	vm.Config.OpCountLimit = 30000
 	err = vm.Run("i = 0; while 1 {}")
 	assert.Error(t, err) // 算力上限
 
 	vm = NewVM()
+	vm.Config.OpCountLimit = 30000
 	err = vm.Run("i = 0; while1 {}")
 	assert.True(t, vm.RestInput == "{}", vm.RestInput)
 }
@@ -472,6 +476,7 @@ func TestRest(t *testing.T) {
 
 func TestRecursion(t *testing.T) {
 	vm := NewVM()
+	vm.Config.OpCountLimit = 30000
 	err := vm.Run("&a = a + 1")
 	assert.NoError(t, err)
 
@@ -947,7 +952,7 @@ func TestCrash1(t *testing.T) {
 
 func TestDiceWodExpr(t *testing.T) {
 	vm := NewVM()
-	vm.Flags.EnableDiceWoD = true
+	vm.Config.EnableDiceWoD = true
 	err := vm.Run("8a11m10k1")
 	if assert.NoError(t, err) {
 		assert.Equal(t, "", vm.RestInput)
@@ -955,22 +960,22 @@ func TestDiceWodExpr(t *testing.T) {
 	}
 
 	vm = NewVM()
-	vm.Flags.EnableDiceWoD = true
+	vm.Config.EnableDiceWoD = true
 	err = vm.Run("20001a11m10k1")
 	assert.Error(t, err)
 
 	vm = NewVM()
-	vm.Flags.EnableDiceWoD = true
+	vm.Config.EnableDiceWoD = true
 	err = vm.Run("8a1m10k1")
 	assert.Error(t, err)
 
 	vm = NewVM()
-	vm.Flags.EnableDiceWoD = true
+	vm.Config.EnableDiceWoD = true
 	err = vm.Run("8a11m0k1")
 	assert.Error(t, err)
 
 	vm = NewVM()
-	vm.Flags.EnableDiceWoD = true
+	vm.Config.EnableDiceWoD = true
 	err = vm.Run("8a11m10k0")
 	assert.Error(t, err)
 }
@@ -978,7 +983,7 @@ func TestDiceWodExpr(t *testing.T) {
 func TestDiceDoubleCrossExpr(t *testing.T) {
 	// 没有很好的测试用例
 	vm := NewVM()
-	vm.Flags.EnableDiceDoubleCross = true
+	vm.Config.EnableDiceDoubleCross = true
 	err := vm.Run("10c11m10")
 	if assert.NoError(t, err) {
 		assert.Equal(t, "", vm.RestInput)
@@ -986,17 +991,17 @@ func TestDiceDoubleCrossExpr(t *testing.T) {
 	}
 
 	vm = NewVM()
-	vm.Flags.EnableDiceDoubleCross = true
+	vm.Config.EnableDiceDoubleCross = true
 	err = vm.Run("20001c11m10")
 	assert.Error(t, err)
 
 	vm = NewVM()
-	vm.Flags.EnableDiceDoubleCross = true
+	vm.Config.EnableDiceDoubleCross = true
 	err = vm.Run("10c1m10")
 	assert.Error(t, err)
 
 	vm = NewVM()
-	vm.Flags.EnableDiceDoubleCross = true
+	vm.Config.EnableDiceDoubleCross = true
 	err = vm.Run("10c11m0")
 	assert.Error(t, err)
 }
@@ -1091,7 +1096,7 @@ func TestDiceAndSpaceBug(t *testing.T) {
 	// 一个错误的代码逻辑: 部分算符后需要跟sp1，导致f +1可以工作，但f+1不行
 	// 但也不能让 f1 被解析为f，剩余文本1
 	vm := NewVM()
-	vm.Flags.EnableDiceFate = true
+	vm.Config.EnableDiceFate = true
 	err := vm.Run("f +1")
 	if assert.NoError(t, err) {
 		assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
@@ -1121,9 +1126,9 @@ func TestDiceAndSpaceBug2(t *testing.T) {
 	for _, i := range tests {
 		e1, e2, e3 := i[0], i[1], i[2]
 		vm := NewVM()
-		vm.Flags.EnableDiceCoC = true
-		vm.Flags.EnableDiceWoD = true
-		vm.Flags.EnableDiceDoubleCross = true
+		vm.Config.EnableDiceCoC = true
+		vm.Config.EnableDiceWoD = true
+		vm.Config.EnableDiceDoubleCross = true
 		err := vm.Run(e1)
 		if assert.NoError(t, err) {
 			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
@@ -1142,14 +1147,14 @@ func TestDiceAndSpaceBug2(t *testing.T) {
 	}
 
 	vm := NewVM()
-	vm.Flags.EnableDiceDoubleCross = true
+	vm.Config.EnableDiceDoubleCross = true
 	err := vm.Run("1c5d")
 	if assert.NoError(t, err) {
 		assert.Equal(t, "d", vm.RestInput)
 	}
 
 	vm = NewVM()
-	vm.Flags.EnableDiceWoD = true
+	vm.Config.EnableDiceWoD = true
 	err = vm.Run("2a10x")
 	if assert.NoError(t, err) {
 		assert.Equal(t, "x", vm.RestInput)
@@ -1353,6 +1358,7 @@ func TestWhileExprBug(t *testing.T) {
 	// 12.7 云陌
 	// 故障原因是第二次解析while时，第一次的没有出栈，因此又被处理了一遍，这个会引起程序崩溃
 	vm := NewVM()
+	vm.Config.OpCountLimit = 30000
 	err := vm.Run(`i = 1; while i < 2 {continue}`)
 	assert.Error(t, err) // 算力超出
 

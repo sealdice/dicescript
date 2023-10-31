@@ -35,8 +35,29 @@ func NewVM() *Context {
 	return &p.Context
 }
 
+// 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
+func (ctx *Context) RunExpr(value string) (*VMValue, error) {
+	val := VMValueNewFunctionRaw(&FunctionData{
+		Expr:      ctx.Config.DefaultDiceSideExpr,
+		Name:      "",
+		Params:    nil,
+		code:      nil,
+		codeIndex: 0,
+	})
+	ctx.Config.defaultDiceSideExprCacheFunc = val
+
+	v := val.FuncInvoke(ctx, nil)
+	return v, ctx.Error
+}
+
 func (ctx *Context) Run(value string) error {
 	var err error
+
+	// 检测是否正在执行，正在执行则使用新的上下文
+	if ctx.IsRunning {
+		return errors.New("正在执行中，无法执行新的语句")
+	}
+	ctx.IsRunning = false
 
 	// 初始化Parser，这里是分词过程
 	p := ctx.parser
@@ -110,7 +131,7 @@ func (e *Parser) Evaluate() {
 	var details []BufferSpan
 	numOpCountAdd := func(count int64) bool {
 		e.NumOpCount += count
-		if e.NumOpCount > 30000 {
+		if ctx.Config.OpCountLimit > 0 && e.NumOpCount > ctx.Config.OpCountLimit {
 			ctx.Error = errors.New("允许算力上限")
 			return true
 		}
@@ -293,7 +314,7 @@ func (e *Parser) Evaluate() {
 
 		code := e.code[opIndex]
 		cIndex := fmt.Sprintf("%d/%d", opIndex+1, e.codeIndex)
-		if ctx.Flags.PrintBytecode {
+		if ctx.Config.PrintBytecode {
 			var subThread string
 			if ctx.subThreadDepth != 0 {
 				subThread = fmt.Sprintf("  S%d", ctx.subThreadDepth)
@@ -373,6 +394,46 @@ func (e *Parser) Evaluate() {
 				}
 			}
 			stackPush(VMValueNewArray(arr...))
+		case TypePushLast:
+			if lastPop == nil {
+				ctx.Error = errors.New("非法调用指令 push.last")
+				return
+			}
+			stackPush(lastPop)
+		case TypePushDefaultExpr:
+			// 创建一个函数对象，然后调用它
+			if ctx.Config.DefaultDiceSideExpr != "" {
+				var val *VMValue
+
+				// 检查缓存
+				if ctx.Config.defaultDiceSideExprCacheFunc != nil {
+					fd, ok := ctx.Config.defaultDiceSideExprCacheFunc.ReadFunctionData()
+					if ok {
+						if fd.Expr == ctx.Config.DefaultDiceSideExpr {
+							val = ctx.Config.defaultDiceSideExprCacheFunc
+						}
+					}
+				}
+
+				if val == nil {
+					val = VMValueNewFunctionRaw(&FunctionData{
+						Expr:      ctx.Config.DefaultDiceSideExpr,
+						Name:      "",
+						Params:    nil,
+						code:      nil,
+						codeIndex: 0,
+					})
+					ctx.Config.defaultDiceSideExprCacheFunc = val
+				}
+
+				v := val.FuncInvoke(ctx, nil)
+				if ctx.Error != nil {
+					return
+				}
+				stackPush(v)
+			} else {
+				stackPush(VMValueNewInt(100))
+			}
 
 		case TypeLogicAnd:
 			a, b := stackPop2()
@@ -476,9 +537,11 @@ func (e *Parser) Evaluate() {
 
 		case TypeReturn:
 			solveDetail()
+			ctx.IsRunning = false
 			return
 		case TypeHalt:
 			solveDetail()
+			ctx.IsRunning = false
 			return
 
 		case TypeLoadFormatString:
@@ -502,6 +565,21 @@ func (e *Parser) Evaluate() {
 			e.top++
 		case TypeLoadName, TypeLoadNameRaw, TypeLoadNameWithDetail:
 			name := code.Value.(string)
+			if e.Config.CallbackLoadVar != nil {
+				var val *VMValue
+				name, val = e.Config.CallbackLoadVar(name)
+
+				if val != nil {
+					// 使用弄进来的替代值进行计算
+					if TypeLoadNameWithDetail == code.T {
+						details[len(details)-1].ret = val
+						details[len(details)-1].text = ""
+					}
+					stackPush(val)
+					continue
+				}
+			}
+
 			val := ctx.LoadName(name, TypeLoadNameRaw == code.T)
 			if ctx.Error != nil {
 				return
@@ -521,12 +599,6 @@ func (e *Parser) Evaluate() {
 				return
 			}
 
-		case TypePushLast:
-			if lastPop == nil {
-				ctx.Error = errors.New("非法调用指令 push.last")
-				return
-			}
-			stackPush(lastPop)
 		case TypeJe, TypeJeDup:
 			v := stackPop()
 			if v.AsBool() {
@@ -727,17 +799,31 @@ func (e *Parser) Evaluate() {
 
 		case TypeStSetName:
 			stName, stVal := stackPop2()
-			if e.Flags.StCallback != nil {
+			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
-				e.Flags.StCallback("set", name, stVal, "", "")
+				e.Config.CallbackSt("set", name, stVal, nil, "", "")
 			}
 		case TypeStModify:
 			stName, stVal := stackPop2()
 			stInfo := code.Value.(StInfo)
 
-			if e.Flags.StCallback != nil {
+			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
-				e.Flags.StCallback("mod", name, stVal, stInfo.Op, stInfo.Text)
+				e.Config.CallbackSt("mod", name, stVal, nil, stInfo.Op, stInfo.Text)
+			}
+		case TypeStX0:
+			stName, stVal := stackPop2()
+			if e.Config.CallbackSt != nil {
+				name, _ := stName.ReadString()
+				e.Config.CallbackSt("set.x0", name, stVal, nil, "", "")
+			}
+		case TypeStX1:
+			stVal := stackPop()
+			stExtra := stackPop()
+			stName := stackPop()
+			if e.Config.CallbackSt != nil {
+				name, _ := stName.ReadString()
+				e.Config.CallbackSt("set.x1", name, stVal, stExtra, "", "")
 			}
 		}
 	}

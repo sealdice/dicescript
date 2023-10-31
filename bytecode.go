@@ -26,6 +26,7 @@ const (
 	TypePushGlobal
 	TypePushFunction
 	TypePushLast
+	TypePushDefaultExpr
 
 	TypeLoadFormatString
 	TypeLoadName
@@ -106,6 +107,8 @@ const (
 
 	TypeStSetName
 	TypeStModify
+	TypeStX0
+	TypeStX1
 )
 
 func (code *ByteCode) CodeString() string {
@@ -271,6 +274,8 @@ func (code *ByteCode) CodeString() string {
 		return "comp.gt"
 	case TypePushLast:
 		return "push.last"
+	case TypePushDefaultExpr:
+		return "push.def_expr"
 	case TypePop:
 		return "pop"
 	case TypePopN:
@@ -284,6 +289,10 @@ func (code *ByteCode) CodeString() string {
 		return "st.set"
 	case TypeStModify:
 		return fmt.Sprintf("st.mod %s", code.Value)
+	case TypeStX0:
+		return "st.x0"
+	case TypeStX1:
+		return "st.x1"
 	}
 	return ""
 }
