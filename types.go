@@ -1024,7 +1024,7 @@ func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
 	switch v.TypeId {
 	case VMTypeArray:
 		if index.TypeId != VMTypeInt {
-			ctx.Error = errors.New(fmt.Sprintf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName()))
+			ctx.Error = fmt.Errorf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName())
 		} else {
 			return v.ArrayItemGet(ctx, index.MustReadInt())
 		}
@@ -1037,7 +1037,7 @@ func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
 		}
 	case VMTypeString:
 		if index.TypeId != VMTypeInt {
-			ctx.Error = errors.New(fmt.Sprintf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName()))
+			ctx.Error = fmt.Errorf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName())
 		} else {
 			str, _ := v.ReadString()
 			rstr := []rune(str)
@@ -1066,7 +1066,7 @@ func (v *VMValue) ItemSet(ctx *Context, index *VMValue, val *VMValue) bool {
 	switch v.TypeId {
 	case VMTypeArray:
 		if index.TypeId != VMTypeInt {
-			ctx.Error = errors.New(fmt.Sprintf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName()))
+			ctx.Error = fmt.Errorf("类型错误: 数字下标必须为数字，不能为 %s", index.GetTypeName())
 		} else {
 			return v.ArrayItemSet(ctx, index.MustReadInt(), val)
 		}
@@ -1363,7 +1363,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 
 	// 设置参数
 	if len(cd.Params) != len(params) {
-		ctx.Error = errors.New(fmt.Sprintf("调用参数个数与函数定义不符，需求%d，传入%d", len(cd.Params), len(params)))
+		ctx.Error = fmt.Errorf("调用参数个数与函数定义不符，需求%d，传入%d", len(cd.Params), len(params))
 		return nil
 	}
 	for index, i := range cd.Params {
@@ -1430,13 +1430,12 @@ func (v *VMValue) FuncInvokeNative(ctx *Context, params []*VMValue) *VMValue {
 	}
 
 	if len(cd.Params) != len(params) {
-		ctx.Error = errors.New(fmt.Sprintf("调用参数个数与函数定义不符，需求%d，传入%d", len(cd.Params), len(params)))
+		ctx.Error = fmt.Errorf("调用参数个数与函数定义不符，需求%d，传入%d", len(cd.Params), len(params))
 		return nil
 	}
 	ret := cd.NativeFunc(ctx, cd.Self, params)
 
 	if ctx.Error != nil {
-		ctx.Error = ctx.Error
 		return nil
 	}
 
@@ -1450,7 +1449,7 @@ func (v *VMValue) AsDictKey() (string, error) {
 	if v.TypeId == VMTypeString || v.TypeId == VMTypeInt || v.TypeId == VMTypeFloat {
 		return v.ToString(), nil
 	} else {
-		return "", errors.New(fmt.Sprintf("类型错误: 字典键只能为字符串或数字，不支持 %s", v.GetTypeName()))
+		return "", fmt.Errorf("类型错误: 字典键只能为字符串或数字，不支持 %s", v.GetTypeName())
 	}
 }
 
@@ -1553,10 +1552,7 @@ func VMValueNewArrayRaw(data []*VMValue) *VMValue {
 
 func VMValueNewArray(values ...*VMValue) *VMValue {
 	var data []*VMValue
-	for _, i := range values {
-		data = append(data, i)
-	}
-
+	data = append(data, values...)
 	return &VMValue{TypeId: VMTypeArray, Value: &ArrayData{data}}
 }
 

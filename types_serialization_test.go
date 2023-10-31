@@ -43,7 +43,7 @@ func TestDumps(t *testing.T) {
 	err = vm.Run(`func a(x) { return 5 }; a`)
 	if assert.NoError(t, err) {
 		ret := vm.Ret
-		v, err = ret.ToJSON()
+		v, err = ret.ToJSON() // nolint
 		assert.Equal(t, `{"typeId":8,"value":{"expr":"return 5 ","name":"a","params":["x"]}}`, string(v))
 	}
 
@@ -56,14 +56,14 @@ func TestDumps(t *testing.T) {
 	v1 := na(ni(1), nf(2.0), ns("test"))
 	ad, _ := v1.ReadArray()
 	ad.List = append(ad.List, v1)
-	v, err = v1.ToJSON()
+	v, err = v1.ToJSON() // nolint
 	assert.Error(t, err)
 
 	vm = NewVM()
 	err = vm.Run(`ceil`)
 	if assert.NoError(t, err) {
 		ret := vm.Ret
-		v, err = ret.ToJSON()
+		v, err = ret.ToJSON() // nolint
 		assert.Equal(t, `{"typeId":9,"value":{"name":"ceil"}}`, string(v))
 	}
 }

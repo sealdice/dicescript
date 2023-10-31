@@ -3,8 +3,6 @@ name: Build Js Port
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
 

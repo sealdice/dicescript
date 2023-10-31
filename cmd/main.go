@@ -25,8 +25,8 @@ func main() {
 	})
 
 	if f, err := os.Open(historyFn); err == nil {
-		line.ReadHistory(f)
-		f.Close()
+		_, _ = line.ReadHistory(f)
+		_ = f.Close()
 	}
 
 	attrs := map[string]*dice.VMValue{}
@@ -94,7 +94,7 @@ func main() {
 		return nil
 	}
 
-	for true {
+	for {
 		if text, err := line.Prompt(">>> "); err == nil {
 			if strings.TrimSpace(text) == "" {
 				continue

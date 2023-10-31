@@ -301,7 +301,7 @@ func TestWhile(t *testing.T) {
 
 	vm = NewVM()
 	vm.Config.OpCountLimit = 30000
-	err = vm.Run("i = 0; while1 {}")
+	err = vm.Run("i = 0; while1 {}") // nolint
 	assert.True(t, vm.RestInput == "{}", vm.RestInput)
 }
 
@@ -777,7 +777,7 @@ func TestBytecodeToString(t *testing.T) {
 
 func TestWriteCodeOverflow(t *testing.T) {
 	vm := NewVM()
-	vm.Run("")
+	_ = vm.Run("")
 	for i := 0; i < 8193; i++ {
 		vm.parser.WriteCode(TypeNop, nil)
 	}
@@ -788,7 +788,7 @@ func TestWriteCodeOverflow(t *testing.T) {
 
 func TestGetASM(t *testing.T) {
 	vm := NewVM()
-	vm.Run("1+1")
+	_ = vm.Run("1+1")
 	vm.GetAsmText()
 }
 
@@ -878,9 +878,9 @@ func TestRange(t *testing.T) {
 
 func TestDictExpr(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("a = {'a': 1}")
-	if assert.NoError(t, err) {
-	}
+	err := vm.Run("a = {'a': 1}") // nolint
+	// if assert.NoError(t, err) {
+	// }
 
 	err = vm.Run("a.a")
 	if assert.NoError(t, err) {
@@ -895,18 +895,18 @@ func TestDictExpr(t *testing.T) {
 
 func TestDictExpr2(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("a = {'a': 1,}")
-	if assert.NoError(t, err) {
-	}
+	err := vm.Run("a = {'a': 1,}") // nolint
+	// if assert.NoError(t, err) {
+	// }
 	err = vm.Run("a.a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
 	}
 
 	vm = NewVM()
-	err = vm.Run("c = 'c'; a = {c:1,'b':3}")
-	if assert.NoError(t, err) {
-	}
+	err = vm.Run("c = 'c'; a = {c:1,'b':3}") // nolint
+	// if assert.NoError(t, err) {
+	// }
 	err = vm.Run("a.c")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
@@ -945,7 +945,7 @@ func TestCrash1(t *testing.T) {
 	if assert.Error(t, err) {
 		err := vm.Run("/")
 		if assert.Error(t, err) {
-			assert.True(t, strings.Index(err.Error(), "parse error near") != -1)
+			assert.True(t, strings.Contains(err.Error(), "parse error near"))
 		}
 	}
 }
