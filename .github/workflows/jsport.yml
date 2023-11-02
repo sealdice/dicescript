@@ -30,7 +30,10 @@ jobs:
       run: peg -switch -inline roll.peg
 
     - name: Build
-      run: gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.js
+      run: gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.cjs
+
+    - name: Bundle ESM
+      run: cd ./jsport && yarn && yarn build
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3

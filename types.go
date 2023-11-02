@@ -144,6 +144,10 @@ func (e *Context) Depth() int {
 	return e.subThreadDepth
 }
 
+func (e *Context) SetConfig(cfg *RollConfig) {
+	e.Config = *cfg
+}
+
 func (e *Context) Init() {
 	e.attrs = &ValueMap{}
 	e.globalNames = &ValueMap{}
