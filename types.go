@@ -27,6 +27,7 @@ import (
 )
 
 type VMValueType int
+type IntType int // :IntType
 
 const (
 	VMTypeInt            VMValueType = 0
@@ -79,7 +80,7 @@ type RollConfig struct {
 	CallbackLoadVar func(name string) (string, *VMValue)                                                    // 加载变量回调，返回值会成为新变量名
 	CallbackSt      func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
 
-	OpCountLimit                 int64    // 算力限制，超过这个值会报错，0为无限，建议值30000
+	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
 	DefaultDiceSideExpr          string   // 默认骰子面数
 	defaultDiceSideExprCacheFunc *VMValue // expr的缓存函数
 
@@ -109,7 +110,7 @@ type Context struct {
 	stack []VMValue
 	top   int
 
-	NumOpCount int64 // 算力计数
+	NumOpCount IntType // 算力计数
 	//CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
 	Config RollConfig // 标记
@@ -366,7 +367,7 @@ func (v *VMValue) Clone() *VMValue {
 func (v *VMValue) AsBool() bool {
 	switch v.TypeId {
 	case VMTypeInt:
-		return v.Value != int64(0)
+		return v.Value != IntType(0)
 	case VMTypeString:
 		return v.Value != ""
 	case VMTypeNull, VMTypeUndefined:
@@ -394,7 +395,7 @@ func (v *VMValue) toStringRaw(ri *recursionInfo) string {
 	}
 	switch v.TypeId {
 	case VMTypeInt:
-		return strconv.FormatInt(v.Value.(int64), 10)
+		return strconv.FormatInt(int64(v.Value.(IntType)), 10)
 	case VMTypeFloat:
 		return strconv.FormatFloat(v.Value.(float64), 'f', -1, 64)
 	case VMTypeString:
@@ -481,9 +482,9 @@ func (v *VMValue) ToRepr() string {
 	return v.toReprRaw(ri)
 }
 
-func (v *VMValue) ReadInt() (int64, bool) {
+func (v *VMValue) ReadInt() (IntType, bool) {
 	if v.TypeId == VMTypeInt {
-		return v.Value.(int64), true
+		return v.Value.(IntType), true
 	}
 	return 0, false
 }
@@ -537,7 +538,7 @@ func (v *VMValue) MustReadArray() *ArrayData {
 	panic("错误: 不正确的类型")
 }
 
-func (v *VMValue) MustReadInt() int64 {
+func (v *VMValue) MustReadInt() IntType {
 	val, ok := v.ReadInt()
 	if ok {
 		return val
@@ -579,16 +580,16 @@ func (v *VMValue) OpAdd(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := v.Value.(int64) + v2.Value.(int64)
+			val := v.Value.(IntType) + v2.Value.(IntType)
 			return VMValueNewInt(val)
 		case VMTypeFloat:
-			val := float64(v.Value.(int64)) + v2.Value.(float64)
+			val := float64(v.Value.(IntType)) + v2.Value.(float64)
 			return VMValueNewFloat(val)
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := v.Value.(float64) + float64(v2.Value.(int64))
+			val := v.Value.(float64) + float64(v2.Value.(IntType))
 			return VMValueNewFloat(val)
 		case VMTypeFloat:
 			val := v.Value.(float64) + v2.Value.(float64)
@@ -629,16 +630,16 @@ func (v *VMValue) OpSub(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := v.Value.(int64) - v2.Value.(int64)
+			val := v.Value.(IntType) - v2.Value.(IntType)
 			return VMValueNewInt(val)
 		case VMTypeFloat:
-			val := float64(v.Value.(int64)) - v2.Value.(float64)
+			val := float64(v.Value.(IntType)) - v2.Value.(float64)
 			return VMValueNewFloat(val)
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := v.Value.(float64) - float64(v2.Value.(int64))
+			val := v.Value.(float64) - float64(v2.Value.(IntType))
 			return VMValueNewFloat(val)
 		case VMTypeFloat:
 			val := v.Value.(float64) - v2.Value.(float64)
@@ -655,10 +656,10 @@ func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 		switch v2.TypeId {
 		case VMTypeInt:
 			// TODO: 溢出，均未考虑溢出
-			val := v.Value.(int64) * v2.Value.(int64)
+			val := v.Value.(IntType) * v2.Value.(IntType)
 			return VMValueNewInt(val)
 		case VMTypeFloat:
-			val := float64(v.Value.(int64)) * v2.Value.(float64)
+			val := float64(v.Value.(IntType)) * v2.Value.(float64)
 			return VMValueNewFloat(val)
 		case VMTypeArray:
 			return v2.ArrayRepeatTimesEx(ctx, v)
@@ -666,7 +667,7 @@ func (v *VMValue) OpMultiply(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := v.Value.(float64) * float64(v2.Value.(int64))
+			val := v.Value.(float64) * float64(v2.Value.(IntType))
 			return VMValueNewFloat(val)
 		case VMTypeFloat:
 			val := v.Value.(float64) * v2.Value.(float64)
@@ -692,25 +693,25 @@ func (v *VMValue) OpDivide(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			if v2.Value.(int64) == 0 {
+			if v2.Value.(IntType) == 0 {
 				return setDivideZero()
 			}
-			val := v.Value.(int64) / v2.Value.(int64)
+			val := v.Value.(IntType) / v2.Value.(IntType)
 			return VMValueNewInt(val)
 		case VMTypeFloat:
 			if v2.Value.(float64) == 0 {
 				return setDivideZero()
 			}
-			val := float64(v.Value.(int64)) / v2.Value.(float64)
+			val := float64(v.Value.(IntType)) / v2.Value.(float64)
 			return VMValueNewFloat(val)
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			if v2.Value.(int64) == 0 {
+			if v2.Value.(IntType) == 0 {
 				return setDivideZero()
 			}
-			val := v.Value.(float64) / float64(v2.Value.(int64))
+			val := v.Value.(float64) / float64(v2.Value.(IntType))
 			return VMValueNewFloat(val)
 		case VMTypeFloat:
 			if v2.Value.(float64) == 0 {
@@ -733,11 +734,11 @@ func (v *VMValue) OpModulus(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			if v2.Value.(int64) == 0 {
+			if v2.Value.(IntType) == 0 {
 				setDivideZero()
 				return nil
 			}
-			val := v.Value.(int64) % v2.Value.(int64)
+			val := v.Value.(IntType) % v2.Value.(IntType)
 			return VMValueNewInt(val)
 		}
 	}
@@ -750,16 +751,16 @@ func (v *VMValue) OpPower(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := int64(math.Pow(float64(v.Value.(int64)), float64(v2.Value.(int64))))
+			val := IntType(math.Pow(float64(v.Value.(IntType)), float64(v2.Value.(IntType))))
 			return VMValueNewInt(val)
 		case VMTypeFloat:
-			val := math.Pow(float64(v.Value.(int64)), v2.Value.(float64))
+			val := math.Pow(float64(v.Value.(IntType)), v2.Value.(float64))
 			return VMValueNewFloat(val)
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			val := math.Pow(v.Value.(float64), float64(v2.Value.(int64)))
+			val := math.Pow(v.Value.(float64), float64(v2.Value.(IntType)))
 			return VMValueNewFloat(val)
 		case VMTypeFloat:
 			val := math.Pow(v.Value.(float64), v2.Value.(float64))
@@ -779,7 +780,7 @@ func (v *VMValue) OpNullCoalescing(ctx *Context, v2 *VMValue) *VMValue {
 }
 
 func boolToVMValue(v bool) *VMValue {
-	var val int64
+	var val IntType
 	if v {
 		val = 1
 	}
@@ -791,14 +792,14 @@ func (v *VMValue) OpCompLT(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(int64) < v2.Value.(int64))
+			return boolToVMValue(v.Value.(IntType) < v2.Value.(IntType))
 		case VMTypeFloat:
-			return boolToVMValue(float64(v.Value.(int64)) < v2.Value.(float64))
+			return boolToVMValue(float64(v.Value.(IntType)) < v2.Value.(float64))
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(float64) < float64(v2.Value.(int64)))
+			return boolToVMValue(v.Value.(float64) < float64(v2.Value.(IntType)))
 		case VMTypeFloat:
 			return boolToVMValue(v.Value.(float64) < v2.Value.(float64))
 		}
@@ -812,14 +813,14 @@ func (v *VMValue) OpCompLE(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(int64) <= v2.Value.(int64))
+			return boolToVMValue(v.Value.(IntType) <= v2.Value.(IntType))
 		case VMTypeFloat:
-			return boolToVMValue(float64(v.Value.(int64)) <= v2.Value.(float64))
+			return boolToVMValue(float64(v.Value.(IntType)) <= v2.Value.(float64))
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(float64) <= float64(v2.Value.(int64)))
+			return boolToVMValue(v.Value.(float64) <= float64(v2.Value.(IntType)))
 		case VMTypeFloat:
 			return boolToVMValue(v.Value.(float64) <= v2.Value.(float64))
 		}
@@ -842,14 +843,14 @@ func (v *VMValue) OpCompGE(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(int64) >= v2.Value.(int64))
+			return boolToVMValue(v.Value.(IntType) >= v2.Value.(IntType))
 		case VMTypeFloat:
-			return boolToVMValue(float64(v.Value.(int64)) >= v2.Value.(float64))
+			return boolToVMValue(float64(v.Value.(IntType)) >= v2.Value.(float64))
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(float64) >= float64(v2.Value.(int64)))
+			return boolToVMValue(v.Value.(float64) >= float64(v2.Value.(IntType)))
 		case VMTypeFloat:
 			return boolToVMValue(v.Value.(float64) >= v2.Value.(float64))
 		}
@@ -863,14 +864,14 @@ func (v *VMValue) OpCompGT(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(int64) > v2.Value.(int64))
+			return boolToVMValue(v.Value.(IntType) > v2.Value.(IntType))
 		case VMTypeFloat:
-			return boolToVMValue(float64(v.Value.(int64)) > v2.Value.(float64))
+			return boolToVMValue(float64(v.Value.(IntType)) > v2.Value.(float64))
 		}
 	case VMTypeFloat:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return boolToVMValue(v.Value.(float64) > float64(v2.Value.(int64)))
+			return boolToVMValue(v.Value.(float64) > float64(v2.Value.(IntType)))
 		case VMTypeFloat:
 			return boolToVMValue(v.Value.(float64) > v2.Value.(float64))
 		}
@@ -884,7 +885,7 @@ func (v *VMValue) OpBitwiseAnd(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return VMValueNewInt(v.Value.(int64) & v2.Value.(int64))
+			return VMValueNewInt(v.Value.(IntType) & v2.Value.(IntType))
 		}
 	}
 	return nil
@@ -895,7 +896,7 @@ func (v *VMValue) OpBitwiseOr(ctx *Context, v2 *VMValue) *VMValue {
 	case VMTypeInt:
 		switch v2.TypeId {
 		case VMTypeInt:
-			return VMValueNewInt(v.Value.(int64) | v2.Value.(int64))
+			return VMValueNewInt(v.Value.(IntType) | v2.Value.(IntType))
 		}
 	}
 	return nil
@@ -904,7 +905,7 @@ func (v *VMValue) OpBitwiseOr(ctx *Context, v2 *VMValue) *VMValue {
 func (v *VMValue) OpPositive() *VMValue {
 	switch v.TypeId {
 	case VMTypeInt:
-		return VMValueNewInt(v.Value.(int64))
+		return VMValueNewInt(v.Value.(IntType))
 	case VMTypeFloat:
 		return VMValueNewFloat(v.Value.(float64))
 	}
@@ -914,7 +915,7 @@ func (v *VMValue) OpPositive() *VMValue {
 func (v *VMValue) OpNegation() *VMValue {
 	switch v.TypeId {
 	case VMTypeInt:
-		return VMValueNewInt(-v.Value.(int64))
+		return VMValueNewInt(-v.Value.(IntType))
 	case VMTypeFloat:
 		return VMValueNewFloat(-v.Value.(float64))
 	}
@@ -1047,7 +1048,7 @@ func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
 			rstr := []rune(str)
 
 			rIndex := index.MustReadInt()
-			_index := getClampRealIndex(ctx, rIndex, int64(len(rstr)))
+			_index := getClampRealIndex(ctx, rIndex, IntType(len(rstr)))
 
 			newArr := string(rstr[_index : _index+1])
 			return VMValueNewStr(newArr)
@@ -1093,7 +1094,7 @@ func (v *VMValue) ItemSet(ctx *Context, index *VMValue, val *VMValue) bool {
 	return false
 }
 
-func getRealIndex(ctx *Context, index int64, length int64) int64 {
+func getRealIndex(ctx *Context, index IntType, length IntType) IntType {
 	if index < 0 {
 		// 负数下标支持
 		index = length + index
@@ -1104,7 +1105,7 @@ func getRealIndex(ctx *Context, index int64, length int64) int64 {
 	return index
 }
 
-func getClampRealIndex(ctx *Context, index int64, length int64) int64 {
+func getClampRealIndex(ctx *Context, index IntType, length IntType) IntType {
 	if index < 0 {
 		// 负数下标支持
 		index = length + index
@@ -1119,7 +1120,7 @@ func getClampRealIndex(ctx *Context, index int64, length int64) int64 {
 	return index
 }
 
-func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue {
+func (v *VMValue) GetSlice(ctx *Context, a IntType, b IntType, step IntType) *VMValue {
 	length := v.Length(ctx)
 	if ctx.Error != nil {
 		return nil
@@ -1147,16 +1148,16 @@ func (v *VMValue) GetSlice(ctx *Context, a int64, b int64, step int64) *VMValue 
 	}
 }
 
-func (v *VMValue) Length(ctx *Context) int64 {
-	var length int64
+func (v *VMValue) Length(ctx *Context) IntType {
+	var length IntType
 
 	switch v.TypeId {
 	case VMTypeArray:
 		arr, _ := v.ReadArray()
-		length = int64(len(arr.List))
+		length = IntType(len(arr.List))
 	case VMTypeString:
 		str, _ := v.ReadString()
-		length = int64(len([]rune(str)))
+		length = IntType(len([]rune(str)))
 	default:
 		ctx.Error = errors.New("这个类型无法取得分片")
 		return 0
@@ -1194,7 +1195,7 @@ func (v *VMValue) GetSliceEx(ctx *Context, a *VMValue, b *VMValue) *VMValue {
 	return v.GetSlice(ctx, valA, valB, 1)
 }
 
-func (v *VMValue) SetSlice(ctx *Context, a int64, b int64, step int64, val *VMValue) bool {
+func (v *VMValue) SetSlice(ctx *Context, a, b, step IntType, val *VMValue) bool {
 	arr, ok := v.ReadArray()
 	if !ok {
 		ctx.Error = errors.New("这个类型无法赋值分片")
@@ -1205,7 +1206,7 @@ func (v *VMValue) SetSlice(ctx *Context, a int64, b int64, step int64, val *VMVa
 		ctx.Error = errors.New("val 的类型必须是一个列表")
 		return false
 	}
-	length := int64(len(arr.List))
+	length := IntType(len(arr.List))
 	_a := getClampRealIndex(ctx, a, length)
 	_b := getClampRealIndex(ctx, b, length)
 
@@ -1216,7 +1217,7 @@ func (v *VMValue) SetSlice(ctx *Context, a int64, b int64, step int64, val *VMVa
 	offset := len(arr2.List) - int(_b-_a)
 	newArr := make([]*VMValue, len(arr.List)+offset)
 
-	for i := int64(0); i < _a; i++ {
+	for i := IntType(0); i < _a; i++ {
 		newArr[i] = arr.List[i]
 	}
 
@@ -1244,7 +1245,7 @@ func (v *VMValue) SetSliceEx(ctx *Context, a *VMValue, b *VMValue, val *VMValue)
 	}
 
 	if b.TypeId == VMTypeUndefined {
-		b = VMValueNewInt(int64(len(arr.List)))
+		b = VMValueNewInt(IntType(len(arr.List)))
 	}
 
 	valA, ok := a.ReadInt()
@@ -1267,7 +1268,7 @@ func (v *VMValue) ArrayRepeatTimesEx(ctx *Context, times *VMValue) *VMValue {
 	case VMTypeInt:
 		times, _ := times.ReadInt()
 		ad, _ := v.ReadArray()
-		length := int64(len(ad.List)) * times
+		length := IntType(len(ad.List)) * times
 
 		if length > 512 {
 			ctx.Error = errors.New("不能一次性创建过长的数组")
@@ -1276,7 +1277,7 @@ func (v *VMValue) ArrayRepeatTimesEx(ctx *Context, times *VMValue) *VMValue {
 
 		arr := make([]*VMValue, length)
 
-		for i := int64(0); i < length; i++ {
+		for i := IntType(0); i < length; i++ {
 			arr[i] = ad.List[int(i)%len(ad.List)].Clone()
 		}
 		return VMValueNewArray(arr...)
@@ -1287,9 +1288,9 @@ func (v *VMValue) ArrayRepeatTimesEx(ctx *Context, times *VMValue) *VMValue {
 func (v *VMValue) GetTypeName() string {
 	switch v.TypeId {
 	case VMTypeInt:
-		return "int64"
+		return "int"
 	case VMTypeFloat:
-		return "float64"
+		return "float"
 	case VMTypeString:
 		return "str"
 	case VMTypeUndefined:
@@ -1508,12 +1509,12 @@ func ValueEqual(a *VMValue, b *VMValue, autoConvert bool) bool {
 			case VMTypeInt:
 				switch b.TypeId {
 				case VMTypeFloat:
-					return float64(a.Value.(int64)) == b.Value.(float64)
+					return float64(a.Value.(IntType)) == b.Value.(float64)
 				}
 			case VMTypeFloat:
 				switch b.TypeId {
 				case VMTypeInt:
-					return a.Value.(float64) == float64(b.Value.(int64))
+					return a.Value.(float64) == float64(b.Value.(IntType))
 				}
 			}
 		}
@@ -1521,7 +1522,7 @@ func ValueEqual(a *VMValue, b *VMValue, autoConvert bool) bool {
 	return false
 }
 
-func VMValueNewInt(i int64) *VMValue {
+func VMValueNewInt(i IntType) *VMValue {
 	// TODO: 小整数可以处理为不可变对象，且一直停留在内存中，就像python那样。这可以避免很多内存申请
 	return &VMValue{TypeId: VMTypeInt, Value: i}
 }

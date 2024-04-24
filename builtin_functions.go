@@ -9,7 +9,7 @@ import (
 func funcCeil(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt(int64(math.Ceil(v)))
+		return VMValueNewInt(IntType(math.Ceil(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -19,7 +19,7 @@ func funcCeil(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 func funcRound(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt(int64(math.Round(v)))
+		return VMValueNewInt(IntType(math.Round(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -29,7 +29,7 @@ func funcRound(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 func funcFloor(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt(int64(math.Floor(v)))
+		return VMValueNewInt(IntType(math.Floor(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -63,12 +63,12 @@ func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		return params[0]
 	case VMTypeFloat:
 		v, _ := params[0].ReadFloat()
-		return VMValueNewInt(int64(v))
+		return VMValueNewInt(IntType(v))
 	case VMTypeString:
 		s, _ := params[0].ReadString()
 		val, err := strconv.ParseInt(s, 10, 64)
 		if err == nil {
-			return VMValueNewInt(val)
+			return VMValueNewInt(IntType(val))
 		} else {
 			ctx.Error = errors.New("值错误: 无法进行 int() 转换: " + s)
 		}

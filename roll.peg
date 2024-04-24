@@ -80,7 +80,7 @@ func_def_params <- '(' sp ')' sp { p.CounterPush() }
                  / '(' sp { p.CounterPush(); p.CounterAdd(1) } identifier sp { p.NamePush(text) } (',' sp identifier sp { p.NamePush(text) } {p.CounterAdd(1)} )* ')' sp
 
 stmtFunc <- 'func' sp1 identifier sp { p.NamePush(text) } func_def_params '{' sp { p.CodePush() } < stmtRoot? > '}' sp
-            {  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction(p.NamePop(), arr, string(text)) }
+            {  num := p.CounterPop(); arr := []string{}; for i:=IntType(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction(p.NamePop(), arr, string(text)) }
 
 // 赋值
 stmtAssign <- identifier sp { p.NamePush(text) } '=' sp exprRoot { p.AddStore(p.NamePop()) }
@@ -103,7 +103,7 @@ exprSlice <- exprTernary _sliceSuffix (!'=') { p.AddOp(TypeSliceGet) }
 // 三元算符 ? :
 exprValueIfExists <- exprLogicOr sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprLogicOr sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush(); } // 这里的Pop对应的是jne，所有jmp将攒到最后
 exprTernary <- exprLogicOr sp '?' sp { p.AddOp(TypeJne); p.OffsetPush() } exprLogicOr sp ':' sp { p.AddOp(TypeJmp); p.OffsetPopAndSet(); p.OffsetPush() } exprLogicOr sp { p.OffsetPopAndSet() }
-        / exprValueIfExists { p.CounterPush() } ( ',' sp exprValueIfExists {p.CounterAdd(1)} )*  { p.PushStr(""); limit:=p.CounterPop()+1; for i:=int64(0); i<limit; i++ { p.OffsetPopAndSet() } }
+        / exprValueIfExists { p.CounterPush() } ( ',' sp exprValueIfExists {p.CounterAdd(1)} )*  { p.PushStr(""); limit:=p.CounterPop()+1; for i:=IntType(0); i<limit; i++ { p.OffsetPopAndSet() } }
         / exprLogicOr
 
 // switch { case 1: ..., case 2: ... }
@@ -191,8 +191,8 @@ _diceMod2 <- ('min' nos { p.AddOp(TypeDiceSetMin) })?
 _dicePearMod <- '优势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepHighNum) }
               / '劣势' { p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }
 
-detailStart <- { p.CounterPush(); p.CounterAdd(int64(token.begin)) }
-detailEnd <- { p.AddDiceDetail(p.CounterPop(), int64(token.end)) }
+detailStart <- { p.CounterPush(); p.CounterAdd(IntType(token.begin)) }
+detailEnd <- { p.AddDiceDetail(p.CounterPop(), IntType(token.end)) }
 
 // 3d20, 3d20d2, 2d20优势
 _diceType1 <- nos [dD] nos
@@ -278,7 +278,7 @@ value <- 'true' sp { p.PushIntNumber("1") }
        / '{' sp '}' sp { p.PushDict(0) } item_get attr_get
        / '{' sp { p.CounterPush() } dict_item (',' sp dict_item )* ','? '}' sp { p.PushDict(p.CounterPop()) } item_get attr_get
        / 'func' sp func_def_params '{' sp { p.CodePush() } < stmtRoot? > '}' sp
-          {  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction("", arr, string(text)) }
+          {  num := p.CounterPop(); arr := []string{}; for i:=IntType(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction("", arr, string(text)) }
 
 
 // 数字

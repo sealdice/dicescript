@@ -40,7 +40,7 @@ func TestTypesFuncArray(t *testing.T) {
 	vm = NewVM()
 	arr = na(ni(1), ni(2), ni(3))
 	arr.ArrayItemSet(vm, 1, ni(4))
-	assert.Equal(t, arr.MustReadArray().List[1].MustReadInt(), int64(4))
+	assert.Equal(t, arr.MustReadArray().List[1].MustReadInt(), IntType(4))
 
 	vm = NewVM()
 	arr = na(ni(1), ni(2), ni(3))

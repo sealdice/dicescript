@@ -75,7 +75,7 @@ func TestLoads(t *testing.T) {
 	v, err = VMValueFromJSON([]byte(`{"typeId":0,"value":123}`))
 	if assert.NoError(t, err) {
 		assert.Equal(t, v.TypeId, VMTypeInt)
-		assert.Equal(t, int64(123), v.Value)
+		assert.Equal(t, IntType(123), v.Value)
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"typeId":1,"value":3.2}`))

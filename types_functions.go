@@ -33,10 +33,10 @@ func (d *VMDictValue) ToString() string {
 	return d.V().ToString()
 }
 
-func (v *VMValue) ArrayItemGet(ctx *Context, index int64) *VMValue {
+func (v *VMValue) ArrayItemGet(ctx *Context, index IntType) *VMValue {
 	if v.TypeId == VMTypeArray {
 		arr, _ := v.ReadArray()
-		index = getRealIndex(ctx, index, int64(len(arr.List)))
+		index = getRealIndex(ctx, index, IntType(len(arr.List)))
 		if ctx.Error != nil {
 			return nil
 		}
@@ -46,10 +46,10 @@ func (v *VMValue) ArrayItemGet(ctx *Context, index int64) *VMValue {
 	return nil
 }
 
-func (v *VMValue) ArrayItemSet(ctx *Context, index int64, val *VMValue) bool {
+func (v *VMValue) ArrayItemSet(ctx *Context, index IntType, val *VMValue) bool {
 	if v.TypeId == VMTypeArray {
 		arr, _ := v.ReadArray()
-		index = getRealIndex(ctx, index, int64(len(arr.List)))
+		index = getRealIndex(ctx, index, IntType(len(arr.List)))
 		if ctx.Error != nil {
 			return false
 		}
@@ -60,7 +60,7 @@ func (v *VMValue) ArrayItemSet(ctx *Context, index int64, val *VMValue) bool {
 	return false
 }
 
-func (v *VMValue) ArrayFuncKeepBase(ctx *Context, pickNum int64, orderType int) (isAllInt bool, ret float64) {
+func (v *VMValue) ArrayFuncKeepBase(ctx *Context, pickNum IntType, orderType int) (isAllInt bool, ret float64) {
 	arr, _ := v.ReadArray()
 	var nums []float64
 
@@ -82,9 +82,9 @@ func (v *VMValue) ArrayFuncKeepBase(ctx *Context, pickNum int64, orderType int) 
 	}
 
 	num := float64(0)
-	for i := int64(0); i < pickNum; i++ {
+	for i := IntType(0); i < pickNum; i++ {
 		// 当取数大于上限 跳过
-		if i >= int64(len(nums)) {
+		if i >= IntType(len(nums)) {
 			continue
 		}
 		num += nums[i]
@@ -93,10 +93,10 @@ func (v *VMValue) ArrayFuncKeepBase(ctx *Context, pickNum int64, orderType int) 
 	return isAllInt, num
 }
 
-func (v *VMValue) ArrayFuncKeepHigh(ctx *Context, pickNum int64) (isAllInt bool, ret float64) {
+func (v *VMValue) ArrayFuncKeepHigh(ctx *Context, pickNum IntType) (isAllInt bool, ret float64) {
 	return v.ArrayFuncKeepBase(ctx, pickNum, 0)
 }
 
-func (v *VMValue) ArrayFuncKeepLow(ctx *Context, pickNum int64) (isAllInt bool, ret float64) {
+func (v *VMValue) ArrayFuncKeepLow(ctx *Context, pickNum IntType) (isAllInt bool, ret float64) {
 	return v.ArrayFuncKeepBase(ctx, pickNum, 1)
 }

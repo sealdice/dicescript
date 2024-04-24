@@ -127,7 +127,7 @@ func (e *Parser) Evaluate() {
 
 	ctx := &e.Context
 	var details []BufferSpan
-	numOpCountAdd := func(count int64) bool {
+	numOpCountAdd := func(count IntType) bool {
 		e.NumOpCount += count
 		if ctx.Config.OpCountLimit > 0 && e.NumOpCount > ctx.Config.OpCountLimit {
 			ctx.Error = errors.New("允许算力上限")
@@ -138,23 +138,23 @@ func (e *Parser) Evaluate() {
 
 	diceStateIndex := -1
 	var diceStates []struct {
-		times    int64 // 次数，如 2d10，times为2
-		isKeepLH int64 // 为1对应取低个数，为2对应取高个数，3为丢弃低个数，4为丢弃高个数
-		lowNum   int64
-		highNum  int64
-		min      *int64
-		max      *int64
+		times    IntType // 次数，如 2d10，times为2
+		isKeepLH IntType // 为1对应取低个数，为2对应取高个数，3为丢弃低个数，4为丢弃高个数
+		lowNum   IntType
+		highNum  IntType
+		min      *IntType
+		max      *IntType
 	}
 
 	diceInit := func() {
 		diceStateIndex += 1
 		data := struct {
-			times    int64 // 次数，如 2d10，times为2
-			isKeepLH int64 // 为1对应取低个数，为2对应取高个数
-			lowNum   int64
-			highNum  int64
-			min      *int64
-			max      *int64
+			times    IntType // 次数，如 2d10，times为2
+			isKeepLH IntType // 为1对应取低个数，为2对应取高个数
+			lowNum   IntType
+			highNum  IntType
+			min      *IntType
+			max      *IntType
 		}{
 			times: 1,
 		}
@@ -168,9 +168,9 @@ func (e *Parser) Evaluate() {
 	}
 
 	var wodState struct {
-		pool      int64
-		points    int64
-		threshold int64
+		pool      IntType
+		points    IntType
+		threshold IntType
 		isGE      bool
 	}
 
@@ -182,8 +182,8 @@ func (e *Parser) Evaluate() {
 	}
 
 	var dcState struct {
-		pool   int64
-		points int64
+		pool   IntType
+		points IntType
 	}
 
 	dcInit := func() {
@@ -196,12 +196,12 @@ func (e *Parser) Evaluate() {
 			return
 		}
 		var m []struct {
-			begin int64
-			end   int64
+			begin IntType
+			end   IntType
 			spans []BufferSpan
 		}
-		curPoint := int64(-1) // nolint
-		lastEnd := int64(-1)  // nolint
+		curPoint := IntType(-1) // nolint
+		lastEnd := IntType(-1)  // nolint
 		sort.Sort(spanByBegin(details))
 
 		for _, i := range details {
@@ -209,8 +209,8 @@ func (e *Parser) Evaluate() {
 			if i.begin > lastEnd {
 				curPoint = i.begin
 				m = append(m, struct {
-					begin int64
-					end   int64
+					begin IntType
+					end   IntType
 					spans []BufferSpan
 				}{begin: curPoint, end: i.end, spans: []BufferSpan{i}})
 			} else {
@@ -279,9 +279,9 @@ func (e *Parser) Evaluate() {
 		return v1, v2
 	}
 
-	stackPopN := func(num int64) []*VMValue {
+	stackPopN := func(num IntType) []*VMValue {
 		var data []*VMValue
-		for i := int64(0); i < num; i++ {
+		for i := IntType(0); i < num; i++ {
 			data = append(data, stackPop().Clone()) // 复制一遍规避栈问题
 		}
 		for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
@@ -339,10 +339,10 @@ func (e *Parser) Evaluate() {
 			stack[e.top].Value = unquote
 			e.top++
 		case TypePushArray:
-			num := code.Value.(int64)
+			num := code.Value.(IntType)
 			stackPush(VMValueNewArray(stackPopN(num)...))
 		case TypePushDict:
-			num := code.Value.(int64)
+			num := code.Value.(IntType)
 			items := stackPopN(num * 2)
 			dict, err := VMValueNewDictWithArray(items...)
 			if err != nil {
@@ -369,7 +369,7 @@ func (e *Parser) Evaluate() {
 				return
 			}
 
-			step := int64(1)
+			step := IntType(1)
 			length := _b - _a
 			if length < 0 {
 				step = -1
@@ -442,7 +442,7 @@ func (e *Parser) Evaluate() {
 			}
 
 		case TypeInvoke:
-			paramsNum := code.Value.(int64)
+			paramsNum := code.Value.(IntType)
 			arr := stackPopN(paramsNum)
 			funcObj := stackPop()
 
@@ -477,7 +477,7 @@ func (e *Parser) Evaluate() {
 			val := stackPop()       // 右值
 			itemIndex := stackPop() // 下标
 			obj := stackPop()       // 数组 / 对象
-			obj.ItemSet(ctx, itemIndex, val)
+			obj.ItemSet(ctx, itemIndex, val.Clone())
 			if ctx.Error != nil {
 				return
 			}
@@ -485,7 +485,7 @@ func (e *Parser) Evaluate() {
 			attrVal, obj := stackPop2()
 			attrName := code.Value.(string)
 
-			ret := obj.AttrSet(ctx, attrName, attrVal)
+			ret := obj.AttrSet(ctx, attrName, attrVal.Clone())
 			if ctx.Error == nil && ret == nil {
 				ctx.Error = errors.New("不支持的类型：当前变量无法用.来设置属性")
 			}
@@ -543,7 +543,7 @@ func (e *Parser) Evaluate() {
 			return
 
 		case TypeLoadFormatString:
-			num := int(code.Value.(int64))
+			num := int(code.Value.(IntType))
 
 			outStr := ""
 			for index := 0; index < num; index++ {
@@ -600,7 +600,7 @@ func (e *Parser) Evaluate() {
 		case TypeJe, TypeJeDup:
 			v := stackPop()
 			if v.AsBool() {
-				opIndex += int(code.Value.(int64))
+				opIndex += int(code.Value.(IntType))
 				if code.T == TypeJeDup {
 					stackPush(v)
 				}
@@ -608,14 +608,14 @@ func (e *Parser) Evaluate() {
 		case TypeJne:
 			t := stackPop()
 			if !t.AsBool() {
-				opIndex += int(code.Value.(int64))
+				opIndex += int(code.Value.(IntType))
 			}
 		case TypeJmp:
-			opIndex += int(code.Value.(int64))
+			opIndex += int(code.Value.(IntType))
 		case TypePop:
 			stackPop()
 		case TypePopN:
-			stackPopN(code.Value.(int64))
+			stackPopN(code.Value.(IntType))
 
 		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation, TypeNullCoalescing,
 			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT,

@@ -9,15 +9,15 @@ import (
 	"strings"
 )
 
-func Roll(dicePoints int64) int64 {
+func Roll(dicePoints IntType) IntType {
 	if dicePoints == 0 {
 		return 0
 	}
-	val := rand.Int63()%dicePoints + 1
+	val := IntType(rand.Int63())%dicePoints + 1
 	return val
 }
 
-func wodCheck(e *Context, addLine int64, pool int64, points int64, threshold int64) bool {
+func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, threshold IntType) bool {
 	//makeE6 := func() {
 	//	e.Error = errors.New("E6: 类型错误")
 	//}
@@ -46,19 +46,19 @@ func wodCheck(e *Context, addLine int64, pool int64, points int64, threshold int
 }
 
 // RollWoD 返回: 成功数，总骰数，轮数，细节
-func RollWoD(addLine int64, pool int64, points int64, threshold int64, isGE bool) (int64, int64, int64, string) {
+func RollWoD(addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
 	isShowDetails := pool < 15
 	allRollCount := pool
-	successCount := int64(0)
+	successCount := IntType(0)
 
 	for times := 0; times < addTimes; times++ {
-		addCount := int64(0)
+		addCount := IntType(0)
 		detailsOne := []string{}
 
-		for i := int64(0); i < pool; i++ {
+		for i := IntType(0); i < pool; i++ {
 			var reachSuccess bool
 			var reachAddRound bool
 			one := Roll(points)
@@ -81,7 +81,7 @@ func RollWoD(addLine int64, pool int64, points int64, threshold int64, isGE bool
 			}
 
 			if isShowDetails {
-				baseText := strconv.FormatInt(one, 10)
+				baseText := strconv.FormatInt(int64(one), 10)
 				if reachSuccess {
 					baseText += "*"
 				}
@@ -123,10 +123,10 @@ func RollWoD(addLine int64, pool int64, points int64, threshold int64, isGE bool
 	detailText = fmt.Sprintf("成功%d/%d%s%s", successCount, allRollCount, roundsText, detailText)
 
 	// 成功数，总骰数，轮数，细节
-	return successCount, allRollCount, int64(addTimes), detailText
+	return successCount, allRollCount, IntType(addTimes), detailText
 }
 
-func doubleCrossCheck(ctx *Context, addLine, pool, points int64) bool {
+func doubleCrossCheck(ctx *Context, addLine, pool, points IntType) bool {
 	if pool < 1 || pool > 20000 {
 		ctx.Error = errors.New("E7: 非法数值, 骰池范围是1到20000")
 		return false
@@ -145,20 +145,20 @@ func doubleCrossCheck(ctx *Context, addLine, pool, points int64) bool {
 	return true
 }
 
-func RollDoubleCross(addLine int64, pool int64, points int64) (int64, int64, int64, string) {
+func RollDoubleCross(addLine IntType, pool IntType, points IntType) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
 	isShowDetails := pool < 15
 	allRollCount := pool
-	resultDice := int64(0)
+	resultDice := IntType(0)
 
 	for times := 0; times < addTimes; times++ {
-		addCount := int64(0)
+		addCount := IntType(0)
 		detailsOne := []string{}
-		maxDice := int64(0)
+		maxDice := IntType(0)
 
-		for i := int64(0); i < pool; i++ {
+		for i := IntType(0); i < pool; i++ {
 			one := Roll(points)
 			if one > maxDice {
 				maxDice = one
@@ -171,7 +171,7 @@ func RollDoubleCross(addLine int64, pool int64, points int64) (int64, int64, int
 			}
 
 			if isShowDetails {
-				baseText := strconv.FormatInt(one, 10)
+				baseText := strconv.FormatInt(int64(one), 10)
 				if reachAddRound {
 					baseText = "<" + baseText + ">"
 				}
@@ -218,13 +218,13 @@ func RollDoubleCross(addLine int64, pool int64, points int64) (int64, int64, int
 	}
 
 	// 成功数，总骰数，轮数，细节
-	return resultDice, allRollCount, int64(addTimes), lastDetail
+	return resultDice, allRollCount, IntType(addTimes), lastDetail
 }
 
 // RollCommon (times)d(dicePoints)kl(lowNum) 或 (times)d(dicePoints)kh(highNum)
-func RollCommon(times, dicePoints int64, diceMin, diceMax *int64, isKeepLH, lowNum, highNum int64) (int64, string) {
-	var nums []int64
-	for i := int64(0); i < times; i += 1 {
+func RollCommon(times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType) (IntType, string) {
+	var nums []IntType
+	for i := IntType(0); i < times; i += 1 {
 		die := Roll(dicePoints)
 		if diceMax != nil {
 			if die > *diceMax {
@@ -270,10 +270,10 @@ func RollCommon(times, dicePoints int64, diceMin, diceMax *int64, isKeepLH, lowN
 		}
 	}
 
-	num := int64(0)
-	for i := int64(0); i < pickNum; i++ {
+	num := IntType(0)
+	for i := IntType(0); i < pickNum; i++ {
 		// 当取数大于上限 跳过
-		if i >= int64(len(nums)) {
+		if i >= IntType(len(nums)) {
 			continue
 		}
 		num += nums[i]
@@ -292,7 +292,7 @@ func RollCommon(times, dicePoints int64, diceMin, diceMax *int64, isKeepLH, lowN
 		}
 	} else {
 		text = "{"
-		for i := int64(0); i < int64(len(nums)); i++ {
+		for i := IntType(0); i < IntType(len(nums)); i++ {
 			if i == pickNum {
 				text += "| "
 			}
@@ -307,17 +307,17 @@ func RollCommon(times, dicePoints int64, diceMin, diceMax *int64, isKeepLH, lowN
 	return num, text
 }
 
-func RollCoC(isBonus bool, diceNum int64) (int64, string) {
+func RollCoC(isBonus bool, diceNum IntType) (IntType, string) {
 	diceResult := Roll(100)
 	diceTens := diceResult / 10
 	diceUnits := diceResult % 10
 
-	nums := []string{}
+	var nums []string
 	diceMin := diceTens
 	diceMax := diceTens
 	num10Exists := false
 
-	for i := int64(0); i < diceNum; i++ {
+	for i := IntType(0); i < diceNum; i++ {
 		n := Roll(10)
 
 		if n == 10 {
@@ -325,7 +325,7 @@ func RollCoC(isBonus bool, diceNum int64) (int64, string) {
 			nums = append(nums, "0")
 			continue
 		} else {
-			nums = append(nums, strconv.FormatInt(n, 10))
+			nums = append(nums, strconv.FormatInt(int64(n), 10))
 		}
 
 		if n < diceMin {
@@ -357,11 +357,11 @@ func RollCoC(isBonus bool, diceNum int64) (int64, string) {
 	}
 }
 
-func RollFate() (int64, string) {
+func RollFate() (IntType, string) {
 	detail := ""
-	sum := int64(0)
+	sum := IntType(0)
 	for i := 0; i < 4; i++ {
-		n := rand.Int63()%3 - 1
+		n := IntType(rand.Int63())%3 - 1
 		sum += n
 		switch n {
 		case -1:

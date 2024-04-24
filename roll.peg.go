@@ -902,7 +902,7 @@ func (p *Parser) Execute() {
 		case ruleAction18:
 			num := p.CounterPop()
 			arr := []string{}
-			for i := int64(0); i < num; i++ {
+			for i := IntType(0); i < num; i++ {
 				arr = append(arr, p.NamePop())
 			}
 			p.AddStoreFunction(p.NamePop(), arr, string(text))
@@ -971,7 +971,7 @@ func (p *Parser) Execute() {
 		case ruleAction46:
 			p.PushStr("")
 			limit := p.CounterPop() + 1
-			for i := int64(0); i < limit; i++ {
+			for i := IntType(0); i < limit; i++ {
 				p.OffsetPopAndSet()
 			}
 		case ruleAction47:
@@ -1056,9 +1056,9 @@ func (p *Parser) Execute() {
 			p.AddOp(TypeDiceSetKeepLowNum)
 		case ruleAction80:
 			p.CounterPush()
-			p.CounterAdd(int64(token.begin))
+			p.CounterAdd(IntType(token.begin))
 		case ruleAction81:
-			p.AddDiceDetail(p.CounterPop(), int64(token.end))
+			p.AddDiceDetail(p.CounterPop(), IntType(token.end))
 		case ruleAction82:
 			p.AddOp(TypeDiceInit)
 			p.AddOp(TypeDiceSetTimes)
@@ -1176,7 +1176,7 @@ func (p *Parser) Execute() {
 		case ruleAction136:
 			num := p.CounterPop()
 			arr := []string{}
-			for i := int64(0); i < num; i++ {
+			for i := IntType(0); i < num; i++ {
 				arr = append(arr, p.NamePop())
 			}
 			p.AddStoreFunction("", arr, string(text))
@@ -9452,7 +9452,7 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 		/* 142 Action17 <- <{ p.CodePush() }> */
 		nil,
 		nil,
-		/* 144 Action18 <- <{  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction(p.NamePop(), arr, string(text)) }> */
+		/* 144 Action18 <- <{  num := p.CounterPop(); arr := []string{}; for i:=IntType(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction(p.NamePop(), arr, string(text)) }> */
 		nil,
 		/* 145 Action19 <- <{ p.NamePush(text) }> */
 		nil,
@@ -9508,7 +9508,7 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 		nil,
 		/* 171 Action45 <- <{p.CounterAdd(1)}> */
 		nil,
-		/* 172 Action46 <- <{ p.PushStr(""); limit:=p.CounterPop()+1; for i:=int64(0); i<limit; i++ { p.OffsetPopAndSet() } }> */
+		/* 172 Action46 <- <{ p.PushStr(""); limit:=p.CounterPop()+1; for i:=IntType(0); i<limit; i++ { p.OffsetPopAndSet() } }> */
 		nil,
 		/* 173 Action47 <- <{p.AddOp(TypeJeDup); p.OffsetPush()}> */
 		nil,
@@ -9576,9 +9576,9 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 		nil,
 		/* 205 Action79 <- <{ p.PushIntNumber("2"); p.AddOp(TypeDiceSetTimes); p.PushIntNumber("1"); p.AddOp(TypeDiceSetKeepLowNum) }> */
 		nil,
-		/* 206 Action80 <- <{ p.CounterPush(); p.CounterAdd(int64(token.begin)) }> */
+		/* 206 Action80 <- <{ p.CounterPush(); p.CounterAdd(IntType(token.begin)) }> */
 		nil,
-		/* 207 Action81 <- <{ p.AddDiceDetail(p.CounterPop(), int64(token.end)) }> */
+		/* 207 Action81 <- <{ p.AddDiceDetail(p.CounterPop(), IntType(token.end)) }> */
 		nil,
 		/* 208 Action82 <- <{ p.AddOp(TypeDiceInit); p.AddOp(TypeDiceSetTimes); }> */
 		nil,
@@ -9688,7 +9688,7 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 		nil,
 		/* 261 Action135 <- <{ p.CodePush() }> */
 		nil,
-		/* 262 Action136 <- <{  num := p.CounterPop(); arr := []string{}; for i:=int64(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction("", arr, string(text)) }> */
+		/* 262 Action136 <- <{  num := p.CounterPop(); arr := []string{}; for i:=IntType(0); i<num; i++ { arr = append(arr, p.NamePop()) }; p.AddStoreFunction("", arr, string(text)) }> */
 		nil,
 		/* 263 Action137 <- <{ p.PushIntNumber(string(text)) }> */
 		nil,

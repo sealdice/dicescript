@@ -2,11 +2,12 @@ package dicescript
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func vmValueEqual(vm *Context, aKey string, bValue *VMValue) bool {
@@ -147,7 +148,7 @@ func TestUnsupportedOperandType(t *testing.T) {
 	err := vm.Run("2 % 3.1")
 	if assert.Error(t, err) {
 		// VM Error: 这两种类型无法使用 mod 算符连接: int64, float64
-		assert.Equal(t, err.Error(), "这两种类型无法使用 mod 算符连接: int64, float64")
+		assert.Equal(t, err.Error(), "这两种类型无法使用 mod 算符连接: int, float")
 	}
 }
 
@@ -727,7 +728,7 @@ fib(11)
 
 func TestBytecodeToString(t *testing.T) {
 	ops := []ByteCode{
-		{TypePushIntNumber, int64(1)},
+		{TypePushIntNumber, IntType(1)},
 		{TypePushFloatNumber, float64(1.2)},
 		{TypePushString, "abc"},
 
@@ -763,9 +764,9 @@ func TestBytecodeToString(t *testing.T) {
 		{TypeDiceSetMin, nil},
 		{TypeDiceSetMax, nil},
 
-		{TypeJmp, int64(0)},
-		{TypeJe, int64(0)},
-		{TypeJne, int64(0)},
+		{TypeJmp, IntType(0)},
+		{TypeJe, IntType(0)},
+		{TypeJne, IntType(0)},
 	}
 
 	for _, i := range ops {
@@ -1390,4 +1391,40 @@ func TestLogicOrBug(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
+}
+
+func TestAttrSetBug(t *testing.T) {
+	// 这个问题是最后一个函数调用的第一个参数成了他自己
+	// 例如下面这个例子中，str(a.x)中，str拿到的参数是 &{2 nfunction str}
+	// 原因是 attr_set 在设置时未进行值复制，而是拿到了vm栈地址，栈被覆盖后问题就出现了
+	// 2024/04/23 绑定时发现
+	// ItemSet 也有同样问题
+	vm := NewVM()
+	err := vm.Run(`a = {}; a.x = 10; str(a.x)`)
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("10")))
+	}
+}
+
+func TestItemSetBug2(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run(`a = {}; a[1] = 10; str(a[1])`)
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("10")))
+	}
+}
+
+func TestStackTop(t *testing.T) {
+	vm := NewVM()
+	_ = vm.Run(`1;2;3`)
+	assert.Equal(t, vm.StackTop(), 3) // 暂时的设计是只在语句块弃栈
+
+	_ = vm.Run(`4`)
+	assert.Equal(t, vm.StackTop(), 1) // 二次运行清空栈
+
+	_ = vm.Run(`while (i<10) { i=i+1; 1;2;3 }`)
+	assert.Equal(t, vm.StackTop(), 0) // 语句块后空栈
+
+	_ = vm.Run(`1;2; while (i<10) { i=i+1; 1;2;3 }`)
+	assert.Equal(t, vm.StackTop(), 2) // 语句块弃栈不影响上级
 }

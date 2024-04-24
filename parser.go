@@ -6,16 +6,16 @@ import (
 )
 
 type ParserData struct {
-	counterStack  []int64  // f-string 嵌套计数，在解析时中起作用
-	varnameStack  []string // 另一个解析用栈
-	jmpStack      []int64
-	breakStack    []int64 // break，用时创建
-	continueStack []int64 // continue用，用时创建
+	counterStack  []IntType // f-string 嵌套计数，在解析时中起作用
+	varnameStack  []string  // 另一个解析用栈
+	jmpStack      []IntType
+	breakStack    []IntType // break，用时创建
+	continueStack []IntType // continue用，用时创建
 	loopInfo      []struct {
 		continueIndex int
 		breakIndex    int
 	}
-	loopLayer int64 // 当前loop层数
+	loopLayer int // 当前loop层数
 	codeStack []struct {
 		code  []ByteCode
 		index int
@@ -23,16 +23,16 @@ type ParserData struct {
 }
 
 type BufferSpan struct {
-	begin int64
-	end   int64
+	begin IntType
+	end   IntType
 	ret   *VMValue
 	text  string
 }
 
 func (pd *ParserData) init() {
-	pd.counterStack = []int64{}
+	pd.counterStack = []IntType{}
 	pd.varnameStack = []string{}
-	pd.jmpStack = []int64{} // 不复用counterStack的原因是在 ?: 算符中两个都有用到
+	pd.jmpStack = []IntType{} // 不复用counterStack的原因是在 ?: 算符中两个都有用到
 	pd.codeStack = []struct {
 		code  []ByteCode
 		index int
@@ -84,14 +84,14 @@ func (e *Parser) WriteCode(T CodeType, value interface{}) {
 	e.codeIndex += 1
 }
 
-func (p *Parser) AddDiceDetail(begin int64, end int64) {
+func (p *Parser) AddDiceDetail(begin IntType, end IntType) {
 	p.WriteCode(TypeDetailMark, BufferSpan{begin: begin, end: end})
 }
 
 func (e *Parser) AddOp(operator CodeType) {
 	var val interface{} = nil
 	if operator == TypeJne || operator == TypeJmp {
-		val = int64(0)
+		val = IntType(0)
 	}
 	e.WriteCode(operator, val)
 }
@@ -102,18 +102,18 @@ func (e *Parser) AddLoadName(value string) {
 
 func (e *Parser) PushIntNumber(value string) {
 	val, _ := strconv.ParseInt(value, 10, 64)
-	e.WriteCode(TypePushIntNumber, int64(val))
+	e.WriteCode(TypePushIntNumber, IntType(val))
 }
 
 func (e *Parser) PushStr(value string) {
 	e.WriteCode(TypePushString, value)
 }
 
-func (e *Parser) PushArray(value int64) {
+func (e *Parser) PushArray(value IntType) {
 	e.WriteCode(TypePushArray, value)
 }
 
-func (e *Parser) PushDict(value int64) {
+func (e *Parser) PushDict(value IntType) {
 	e.WriteCode(TypePushDict, value)
 }
 
@@ -129,7 +129,7 @@ func (e *Parser) PushGlobal() {
 	e.WriteCode(TypePushGlobal, nil)
 }
 
-func (e *Parser) AddFormatString(value string, num int64) {
+func (e *Parser) AddFormatString(value string, num IntType) {
 	//e.PushStr(value)
 	e.WriteCode(TypeLoadFormatString, num) // num
 }
@@ -176,16 +176,16 @@ func (e *Parser) NamePop() string {
 }
 
 func (e *Parser) OffsetPush() {
-	e.jmpStack = append(e.jmpStack, int64(e.codeIndex)-1)
+	e.jmpStack = append(e.jmpStack, IntType(e.codeIndex)-1)
 }
 
 func (p *Parser) ContinuePush() {
 	if p.loopLayer > 0 {
 		if p.continueStack == nil {
-			p.continueStack = []int64{}
+			p.continueStack = []IntType{}
 		}
 		p.AddOp(TypeJmp)
-		p.continueStack = append(p.continueStack, int64(p.codeIndex)-1)
+		p.continueStack = append(p.continueStack, IntType(p.codeIndex)-1)
 	} else {
 		p.Error = errors.New("循环外不能放置continue")
 	}
@@ -198,7 +198,7 @@ func (p *Parser) ContinueSet(offsetB int) {
 			lastB := len(p.jmpStack) - 1 - offsetB
 			jmpIndex := p.jmpStack[lastB]
 			// 试出来的，这个是对的，那么也许while那个是错的？？还是说因为while最后多push了一个jmp呢？
-			p.code[codeIndex].Value = -(int64(codeIndex) - jmpIndex)
+			p.code[codeIndex].Value = -(IntType(codeIndex) - jmpIndex)
 		}
 	}
 }
@@ -207,7 +207,7 @@ func (p *Parser) BreakSet() {
 	if p.breakStack != nil {
 		info := p.loopInfo[len(p.loopInfo)-1]
 		for _, codeIndex := range p.breakStack[info.breakIndex:] {
-			p.code[codeIndex].Value = int64(p.codeIndex) - codeIndex - 1
+			p.code[codeIndex].Value = IntType(p.codeIndex) - codeIndex - 1
 		}
 	}
 }
@@ -215,10 +215,10 @@ func (p *Parser) BreakSet() {
 func (p *Parser) BreakPush() {
 	if p.loopLayer > 0 {
 		if p.breakStack == nil {
-			p.breakStack = []int64{}
+			p.breakStack = []IntType{}
 		}
 		p.AddOp(TypeJmp)
-		p.breakStack = append(p.breakStack, int64(p.codeIndex)-1)
+		p.breakStack = append(p.breakStack, IntType(p.codeIndex)-1)
 	} else {
 		p.Error = errors.New("循环外不能放置break")
 	}
@@ -228,7 +228,7 @@ func (e *Parser) OffsetPopAndSet() {
 	last := len(e.jmpStack) - 1
 	codeIndex := e.jmpStack[last]
 	e.jmpStack = e.jmpStack[:last]
-	e.code[codeIndex].Value = int64(int64(e.codeIndex) - codeIndex - 1)
+	e.code[codeIndex].Value = IntType(IntType(e.codeIndex) - codeIndex - 1)
 	//fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
 }
 
@@ -245,9 +245,9 @@ func (e *Parser) OffsetJmpSetX(offsetA int, offsetB int, rev bool) {
 	jmpIndex := e.jmpStack[lastB]
 
 	if rev {
-		e.code[codeIndex].Value = -(int64(e.codeIndex) - jmpIndex - 1)
+		e.code[codeIndex].Value = -(IntType(e.codeIndex) - jmpIndex - 1)
 	} else {
-		e.code[codeIndex].Value = int64(e.codeIndex) - jmpIndex - 1
+		e.code[codeIndex].Value = IntType(e.codeIndex) - jmpIndex - 1
 	}
 }
 
@@ -255,14 +255,14 @@ func (e *Parser) CounterPush() {
 	e.counterStack = append(e.counterStack, 0)
 }
 
-func (e *Parser) CounterAdd(offset int64) {
+func (e *Parser) CounterAdd(offset IntType) {
 	last := len(e.counterStack) - 1
 	if last != -1 {
 		e.counterStack[last] += offset
 	}
 }
 
-func (e *Parser) CounterPop() int64 {
+func (e *Parser) CounterPop() IntType {
 	last := len(e.counterStack) - 1
 	num := e.counterStack[last]
 	e.counterStack = e.counterStack[:last]
@@ -279,12 +279,12 @@ func (e *Parser) FlagsPop() {
 	e.flagsStack = e.flagsStack[:last]
 }
 
-func (e *Parser) AddInvokeMethod(name string, paramsNum int64) {
+func (e *Parser) AddInvokeMethod(name string, paramsNum IntType) {
 	e.WriteCode(TypePushIntNumber, paramsNum)
 	e.WriteCode(TypeInvokeSelf, name)
 }
 
-func (e *Parser) AddInvoke(paramsNum int64) {
+func (e *Parser) AddInvoke(paramsNum IntType) {
 	//e.WriteCode(TypePushIntNumber, paramsNum)
 	e.WriteCode(TypeInvoke, paramsNum)
 }

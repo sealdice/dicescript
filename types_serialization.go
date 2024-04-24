@@ -169,7 +169,7 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 	switch v0.TypeId {
 	case VMTypeInt:
 		var v1 struct {
-			Value int64 `json:"value"`
+			Value IntType `json:"value"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {

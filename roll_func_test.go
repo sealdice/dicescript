@@ -7,7 +7,7 @@ import (
 
 func TestRollCommon(t *testing.T) {
 	ret, _ := RollCommon(5, 1, nil, nil, 0, 0, 0)
-	assert.Equal(t, ret, int64(5))
+	assert.Equal(t, ret, IntType(5))
 }
 
 func TestRollDoubleCross(t *testing.T) {
@@ -17,5 +17,5 @@ func TestRollDoubleCross(t *testing.T) {
 
 func TestRollWoD(t *testing.T) {
 	ret, _, _, _ := RollWoD(11, 8, 10, 1, true) // 8a11m10k1
-	assert.Equal(t, int64(8), ret)
+	assert.Equal(t, IntType(8), ret)
 }

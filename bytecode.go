@@ -114,7 +114,7 @@ const (
 func (code *ByteCode) CodeString() string {
 	switch code.T {
 	case TypePushIntNumber:
-		return "push.int " + strconv.FormatInt(code.Value.(int64), 10)
+		return "push.int " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
 	case TypePushFloatNumber:
 		return "push.flt " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
 	case TypePushString:
@@ -122,9 +122,9 @@ func (code *ByteCode) CodeString() string {
 	case TypePushRange:
 		return "push.range"
 	case TypePushArray:
-		return "push.arr " + strconv.FormatInt(code.Value.(int64), 10)
+		return "push.arr " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
 	case TypePushDict:
-		return "push.dict " + strconv.FormatInt(code.Value.(int64), 10)
+		return "push.dict " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
 	case TypePushComputed:
 		computed, _ := code.Value.(*VMValue).ReadComputed()
 		return "push.computed " + computed.Expr
@@ -141,7 +141,7 @@ func (code *ByteCode) CodeString() string {
 		return "push.func " + computed.Name
 
 	case TypeInvoke:
-		return "invoke " + strconv.FormatInt(code.Value.(int64), 10)
+		return "invoke " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
 
 	case TypeInvokeSelf:
 		return "invoke.self " + code.Value.(string)

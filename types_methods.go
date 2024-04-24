@@ -8,7 +8,7 @@ import (
 func funcArrayKeepLow(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	isAllInt, ret := this.ArrayFuncKeepLow(ctx, params[0].MustReadInt())
 	if isAllInt {
-		return VMValueNewInt(int64(ret))
+		return VMValueNewInt(IntType(ret))
 	} else {
 		return VMValueNewFloat(ret)
 	}
@@ -17,7 +17,7 @@ func funcArrayKeepLow(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 func funcArrayKeepHigh(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	isAllInt, ret := this.ArrayFuncKeepHigh(ctx, params[0].MustReadInt())
 	if isAllInt {
-		return VMValueNewInt(int64(ret))
+		return VMValueNewInt(IntType(ret))
 	} else {
 		return VMValueNewFloat(ret)
 	}
@@ -39,7 +39,7 @@ func funcArraySum(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	}
 
 	if isAllInt {
-		return VMValueNewInt(int64(sumNum))
+		return VMValueNewInt(IntType(sumNum))
 	} else {
 		return VMValueNewFloat(sumNum)
 	}
@@ -47,7 +47,7 @@ func funcArraySum(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 
 func funcArrayLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	arr, _ := this.ReadArray()
-	return VMValueNewInt(int64(len(arr.List)))
+	return VMValueNewInt(IntType(len(arr.List)))
 }
 
 func funcArrayShuttle(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
@@ -139,7 +139,7 @@ func funcDictItems(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 
 func funcDictLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	d := this.MustReadDictData()
-	var size int64
+	var size IntType
 	d.Dict.Range(func(key string, value *VMValue) bool {
 		size++
 		return true

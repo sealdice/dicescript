@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/peterh/liner"
-	dice "github.com/sealdice/dicescript"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/peterh/liner"
+	ds "github.com/sealdice/dicescript"
 )
 
 var (
@@ -29,17 +30,17 @@ func main() {
 		_ = f.Close()
 	}
 
-	attrs := map[string]*dice.VMValue{}
+	attrs := map[string]*ds.VMValue{}
 
 	fmt.Println("DiceScript Shell v0.0.1")
 	ccTimes := 0
-	vm := dice.NewVM()
+	vm := ds.NewVM()
 	vm.Config.EnableDiceWoD = true
 	vm.Config.EnableDiceCoC = true
 	vm.Config.EnableDiceFate = true
 	vm.Config.EnableDiceDoubleCross = true
 	vm.Config.PrintBytecode = true
-	vm.Config.CallbackSt = func(_type string, name string, val *dice.VMValue, extra *dice.VMValue, op string, detail string) {
+	vm.Config.CallbackSt = func(_type string, name string, val *ds.VMValue, extra *ds.VMValue, op string, detail string) {
 		fmt.Println("st:", _type, name, val.ToString(), extra.ToString(), op, detail)
 	}
 
@@ -47,7 +48,7 @@ func main() {
 	vm.Config.DefaultDiceSideExpr = "面数 ?? 50"
 	vm.Config.OpCountLimit = 30000
 
-	vm.Config.CallbackLoadVar = func(name string) (string, *dice.VMValue) {
+	vm.Config.CallbackLoadVar = func(name string) (string, *ds.VMValue) {
 		re := regexp.MustCompile(`^(困难|极难|大成功|常规|失败|困難|極難|常規|失敗)?([^\d]+)(\d+)?$`)
 		m := re.FindStringSubmatch(name)
 		var cocFlagVarPrefix string
@@ -62,7 +63,7 @@ func main() {
 			if m[3] != "" {
 				v, _ := strconv.ParseInt(m[3], 10, 64)
 				fmt.Println("COC值:", name, cocFlagVarPrefix)
-				return name, dice.VMValueNewInt(v)
+				return name, ds.VMValueNewInt(ds.IntType(v))
 			}
 		}
 
@@ -70,8 +71,8 @@ func main() {
 		return name, nil
 	}
 
-	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *dice.Context, groups []string) *dice.VMValue {
-		return dice.VMValueNewInt(2)
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *ds.Context, groups []string) *ds.VMValue {
+		return ds.VMValueNewInt(2)
 	})
 
 	//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
@@ -80,12 +81,12 @@ func main() {
 
 	re := regexp.MustCompile(`^(\D+)(\d+)$`)
 
-	vm.GlobalValueLoadFunc = func(name string) *dice.VMValue {
+	vm.GlobalValueLoadFunc = func(name string) *ds.VMValue {
 		m := re.FindStringSubmatch(name)
 		if len(m) > 1 {
 			//val, _ := strconv.ParseInt(m[2], 10, 64)
 			//return dice.VMValueNewInt(val)
-			return dice.VMValueNewInt(0)
+			return ds.VMValueNewInt(0)
 		}
 
 		if val, ok := attrs[name]; ok {
