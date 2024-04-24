@@ -1093,6 +1093,20 @@ func TestComment(t *testing.T) {
 	}
 }
 
+func TestComment2(t *testing.T) {
+	// 发现注释间无法空行，予以修复
+	vm := NewVM()
+	err := vm.Run(`
+//c1
+
+   
+//c2
+a = 1; a`)
+	assert.NoError(t, err)
+	assert.Equal(t, vm.RestInput, "")
+	assert.True(t, valueEqual(vm.Ret, ni(1)))
+}
+
 func TestDiceAndSpaceBug(t *testing.T) {
 	// 一个错误的代码逻辑: 部分算符后需要跟sp1，导致f +1可以工作，但f+1不行
 	// 但也不能让 f1 被解析为f，剩余文本1

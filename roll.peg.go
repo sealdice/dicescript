@@ -2169,7 +2169,7 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 			position, tokenIndex = position103, tokenIndex103
 			return false
 		},
-		/* 3 stmtLines <- <((&{!p.Config.DisableStmts} stmtWithBlock stmtLines?) / (flagsSwitch stmtLines?) / (comment stmtLines?) / (stmtWithSemicolon nextLine?) / ((';' sp)+ stmtLines?))> */
+		/* 3 stmtLines <- <((&{!p.Config.DisableStmts} stmtWithBlock stmtLines?) / (flagsSwitch stmtLines?) / (comment sp stmtLines?) / (stmtWithSemicolon nextLine?) / ((';' sp)+ stmtLines?))> */
 		func() bool {
 			position105, tokenIndex105 := position, tokenIndex
 			{
@@ -2821,6 +2821,9 @@ func (p *Parser) Init(options ...func(*Parser) error) error {
 						}
 					l170:
 						add(rulecomment, position166)
+					}
+					if !_rules[rulesp]() {
+						goto l165
 					}
 					{
 						position173, tokenIndex173 := position, tokenIndex

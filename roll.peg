@@ -28,7 +28,7 @@ stmtRoot <- stmtLines sp // stmtLines
 
 stmtLines <- &{!p.Config.DisableStmts} stmtWithBlock stmtLines?
            / flagsSwitch stmtLines?
-           / comment stmtLines?
+           / comment sp stmtLines?
            / stmtWithSemicolon nextLine?
            / (';' sp)+ stmtLines?
 
