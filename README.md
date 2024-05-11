@@ -81,6 +81,9 @@ DiceScript将使用和RollVM相同的技术栈，但会有更好的接口设计�
 
 ## 更新记录
 
+#### 2024.5.12
+* 使用 [自己修改的 pigeon](https://github.com/fy0/pigeon) 重构语法解析
+
 #### 2023.9.15
 
 * NativeObject 一种用于绑定Go对象的类型，行为类似于dict
@@ -202,4 +205,4 @@ DiceScript将使用和RollVM相同的技术栈，但会有更好的接口设计�
 ## TODO
 
 * d2d(4d4d5)d6 计算过程问题
-* 
+* 处理

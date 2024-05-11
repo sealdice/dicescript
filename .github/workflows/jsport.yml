@@ -18,8 +18,8 @@ jobs:
 
     - name: Install peg
       run: |
-        go get -u github.com/pointlander/peg@v1.0.1
-        go install github.com/pointlander/peg@v1.0.1
+        go get -u go install github.com/fy0/pigeon@latest
+        go install go install github.com/fy0/pigeon@latest
 
     - name: Install gopherjs
       run: |
@@ -27,7 +27,7 @@ jobs:
         go install github.com/gopherjs/gopherjs@v1.18.0-beta1
 
     - name: Code gen
-      run: peg -switch -inline roll.peg
+      run: pigeon -nolint -optimize-parser -o roll.peg.go roll.peg
 
     - name: Build
       run: gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.cjs

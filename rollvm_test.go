@@ -1,7 +1,6 @@
 package dicescript
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,15 +17,27 @@ func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
 	vm := NewVM()
 	err := vm.Run(expr)
 	if err != nil {
-		fmt.Println(vm.GetAsmText())
 		t.Errorf("VM Error: %s, %s", expr, err.Error())
 		return vm
 	}
 	if !valueEqual(vm.Ret, ret) {
-		fmt.Println(vm.GetAsmText())
 		t.Errorf("not equal: %s %s", ret.ToString(), vm.Ret.ToString())
 	}
 	return vm
+}
+
+func TestValueDefineBool(t *testing.T) {
+	simpleExecute(t, "true", ni(1))
+	simpleExecute(t, "false", ni(0))
+}
+
+func TestValueDefineNumber(t *testing.T) {
+	simpleExecute(t, "123", ni(123))
+	simpleExecute(t, "1.2", nf(1.2))
+}
+
+func TestValueIdentifier(t *testing.T) {
+	simpleExecute(t, "val", VMValueNewUndefined())
 }
 
 func TestSimpleRun(t *testing.T) {
@@ -35,7 +46,7 @@ func TestSimpleRun(t *testing.T) {
 	simpleExecute(t, ".5+1", nf(1.5))
 }
 
-func TestStr(t *testing.T) {
+func TestValueDefineStr(t *testing.T) {
 	simpleExecute(t, `""`, ns(""))
 	simpleExecute(t, `''`, ns(""))
 	simpleExecute(t, "``", ns(""))
@@ -728,45 +739,45 @@ fib(11)
 
 func TestBytecodeToString(t *testing.T) {
 	ops := []ByteCode{
-		{TypePushIntNumber, IntType(1)},
-		{TypePushFloatNumber, float64(1.2)},
-		{TypePushString, "abc"},
+		{typePushIntNumber, IntType(1)},
+		{typePushFloatNumber, float64(1.2)},
+		{typePushString, "abc"},
 
-		{TypeAdd, nil},
-		{TypeSubtract, nil},
-		{TypeMultiply, nil},
-		{TypeDivide, nil},
-		{TypeModulus, nil},
-		{TypeExponentiation, nil},
-		{TypeNullCoalescing, nil},
+		{typeAdd, nil},
+		{typeSubtract, nil},
+		{typeMultiply, nil},
+		{typeDivide, nil},
+		{typeModulus, nil},
+		{typeExponentiation, nil},
+		{typeNullCoalescing, nil},
 
-		{TypeCompLT, nil},
-		{TypeCompLE, nil},
-		{TypeCompEQ, nil},
-		{TypeCompNE, nil},
-		{TypeCompGE, nil},
-		{TypeCompGT, nil},
+		{typeCompLT, nil},
+		{typeCompLE, nil},
+		{typeCompEQ, nil},
+		{typeCompNE, nil},
+		{typeCompGE, nil},
+		{typeCompGT, nil},
 
-		{TypeLogicAnd, nil},
-		{TypeLogicOr, nil},
+		{typeLogicAnd, nil},
+		{typeLogicOr, nil},
 
-		{TypeNop, nil},
+		{typeNop, nil},
 
-		{TypeBitwiseAnd, nil},
-		{TypeBitwiseOr, nil},
+		{typeBitwiseAnd, nil},
+		{typeBitwiseOr, nil},
 
-		{TypeDiceInit, nil},
-		{TypeDiceSetTimes, nil},
-		{TypeDiceSetKeepLowNum, nil},
-		{TypeDiceSetKeepHighNum, nil},
-		{TypeDiceSetDropLowNum, nil},
-		{TypeDiceSetDropHighNum, nil},
-		{TypeDiceSetMin, nil},
-		{TypeDiceSetMax, nil},
+		{typeDiceInit, nil},
+		{typeDiceSetTimes, nil},
+		{typeDiceSetKeepLowNum, nil},
+		{typeDiceSetKeepHighNum, nil},
+		{typeDiceSetDropLowNum, nil},
+		{typeDiceSetDropHighNum, nil},
+		{typeDiceSetMin, nil},
+		{typeDiceSetMax, nil},
 
-		{TypeJmp, IntType(0)},
-		{TypeJe, IntType(0)},
-		{TypeJne, IntType(0)},
+		{typeJmp, IntType(0)},
+		{typeJe, IntType(0)},
+		{typeJne, IntType(0)},
 	}
 
 	for _, i := range ops {
@@ -780,9 +791,9 @@ func TestWriteCodeOverflow(t *testing.T) {
 	vm := NewVM()
 	_ = vm.Run("")
 	for i := 0; i < 8193; i++ {
-		vm.parser.WriteCode(TypeNop, nil)
+		vm.parser.cur.data.WriteCode(typeNop, nil)
 	}
-	if !vm.parser.checkStackOverflow() {
+	if !vm.parser.cur.data.checkStackOverflow() {
 		t.Errorf("Failed")
 	}
 }
@@ -879,9 +890,14 @@ func TestRange(t *testing.T) {
 
 func TestDictExpr(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("a = {'a': 1}") // nolint
-	// if assert.NoError(t, err) {
-	// }
+	err := vm.Run("{'a': 1}") // nolint
+	if assert.NoError(t, err) {
+	}
+
+	vm = NewVM()
+	err = vm.Run("a = {'a': 1}") // nolint
+	if assert.NoError(t, err) {
+	}
 
 	err = vm.Run("a.a")
 	if assert.NoError(t, err) {
@@ -897,8 +913,9 @@ func TestDictExpr(t *testing.T) {
 func TestDictExpr2(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("a = {'a': 1,}") // nolint
-	// if assert.NoError(t, err) {
-	// }
+	if assert.NoError(t, err) {
+	}
+
 	err = vm.Run("a.a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
@@ -941,12 +958,14 @@ func TestContinuousDiceExpr(t *testing.T) {
 
 func TestCrash1(t *testing.T) {
 	// 一种崩溃，崩溃条件是第二次调用vm.Run且第二次的tokens少于第一次的
+	// 注：重构后已经不会崩溃
 	vm := NewVM()
 	err := vm.Run("aa + 2//asd")
 	if assert.Error(t, err) {
 		err := vm.Run("/")
 		if assert.Error(t, err) {
-			assert.True(t, strings.Contains(err.Error(), "parse error near"))
+			// assert.True(t, strings.Contains(err.Error(), "parse error near"))
+			assert.True(t, strings.Contains(err.Error(), "no match found"))
 		}
 	}
 }
@@ -1009,13 +1028,15 @@ func TestDiceDoubleCrossExpr(t *testing.T) {
 
 func TestDiceFlagWodMacroExpr(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("// #EnableDiceWoD true")
+	err := vm.Run("// #EnableDice wod true\n")
 	if assert.NoError(t, err) {
+		vm.Config = vm.parser.cur.data.Config
 		err := vm.Run("10a11")
 		if assert.NoError(t, err) {
 			assert.Equal(t, "", vm.RestInput)
 
-			err := vm.Run("// #EnableDiceWoD false")
+			err := vm.Run("// #EnableDice wod false")
+			vm.Config = vm.parser.cur.data.Config
 			if assert.NoError(t, err) {
 				err := vm.Run("10a11")
 				if assert.NoError(t, err) {
@@ -1028,34 +1049,32 @@ func TestDiceFlagWodMacroExpr(t *testing.T) {
 
 func TestDiceFlagCoCMacroExpr(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("// #EnableDiceCoC true")
+	vm.Config.EnableDiceCoC = false
+	err := vm.Run("// #EnableDice coc true\nb2")
 	if assert.NoError(t, err) {
-		err := vm.Run("b2")
-		if assert.NoError(t, err) {
-			assert.Equal(t, "", vm.RestInput)
-			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
+		assert.Equal(t, "", vm.RestInput)
+		assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
 
-			err := vm.Run("// #EnableDiceCoC false")
-			if assert.NoError(t, err) {
-				err := vm.Run("b2")
-				if assert.NoError(t, err) {
-					assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
-				}
-			}
+		vm.Config.EnableDiceCoC = true
+		err := vm.Run("// #EnableDice coc false\nb2")
+		if assert.NoError(t, err) {
+			assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
 		}
 	}
 }
 
 func TestDiceFlagFateMacroExpr(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("// #EnableDiceFate true")
+	err := vm.Run("// #EnableDice fate true")
 	if assert.NoError(t, err) {
+		vm.Config = vm.parser.cur.data.Config
 		err := vm.Run("f")
 		if assert.NoError(t, err) {
 			assert.Equal(t, "", vm.RestInput)
 			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
 
-			err := vm.Run("// #EnableDiceFate false")
+			err := vm.Run("// #EnableDice fate false")
+			vm.Config = vm.parser.cur.data.Config
 			if assert.NoError(t, err) {
 				err := vm.Run("f")
 				if assert.NoError(t, err) {
@@ -1067,14 +1086,16 @@ func TestDiceFlagFateMacroExpr(t *testing.T) {
 }
 func TestDiceFlagDoubleCrossMacroExpr(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("// #EnableDiceDoubleCross true")
+	err := vm.Run("// #EnableDice doublecross true")
+	vm.Config = vm.parser.cur.data.Config
 	if assert.NoError(t, err) {
 		err := vm.Run("2c5")
 		if assert.NoError(t, err) {
 			assert.Equal(t, "", vm.RestInput)
 			assert.Equal(t, VMTypeInt, vm.Ret.TypeId)
 
-			err := vm.Run("// #EnableDiceDoubleCross false")
+			err := vm.Run("// #EnableDice doublecross false")
+			vm.Config = vm.parser.cur.data.Config
 			if assert.NoError(t, err) {
 				err := vm.Run("2c5")
 				if assert.NoError(t, err) {

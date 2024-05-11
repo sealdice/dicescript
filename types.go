@@ -98,7 +98,7 @@ type customDiceItem struct {
 }
 
 type Context struct {
-	parser         *Parser
+	parser         *parser
 	subThreadDepth int
 	attrs          *ValueMap
 	upCtx          *Context
@@ -1340,7 +1340,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	} else {
 		vm.code = cd.code
 		vm.codeIndex = cd.codeIndex
-		vm.parser.Evaluate()
+		vm.Evaluate()
 	}
 
 	if vm.Error != nil {
@@ -1399,7 +1399,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	} else {
 		vm.code = cd.code
 		vm.codeIndex = cd.codeIndex
-		vm.parser.Evaluate()
+		vm.Evaluate()
 	}
 
 	if vm.Error != nil {

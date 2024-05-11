@@ -6,6 +6,9 @@ import (
 )
 
 type ParserData struct {
+	code      []ByteCode
+	codeIndex int
+
 	counterStack  []IntType // f-string 嵌套计数，在解析时中起作用
 	varnameStack  []string  // 另一个解析用栈
 	jmpStack      []IntType
@@ -39,7 +42,7 @@ func (pd *ParserData) init() {
 	}{} // 用于处理函数
 }
 
-func (e *Parser) LoopBegin() {
+func (e *ParserData) LoopBegin() {
 	e.loopLayer += 1
 	e.loopInfo = append(e.loopInfo, struct {
 		continueIndex int
@@ -47,7 +50,7 @@ func (e *Parser) LoopBegin() {
 	}{continueIndex: len(e.continueStack), breakIndex: len(e.breakStack)})
 }
 
-func (e *Parser) LoopEnd() {
+func (e *ParserData) LoopEnd() {
 	e.loopLayer -= 1
 	info := e.loopInfo[len(e.loopInfo)-1]
 	e.continueStack = e.continueStack[:info.continueIndex]
@@ -55,10 +58,7 @@ func (e *Parser) LoopEnd() {
 	e.loopInfo = e.loopInfo[:len(e.loopInfo)-1]
 }
 
-func (e *Parser) checkStackOverflow() bool {
-	if e.Error != nil {
-		return true
-	}
+func (e *ParserData) checkStackOverflow() bool {
 	if e.codeIndex >= len(e.code) {
 		need := len(e.code) * 2
 		if need <= 8192 {
@@ -66,14 +66,14 @@ func (e *Parser) checkStackOverflow() bool {
 			copy(newCode, e.code)
 			e.code = newCode
 		} else {
-			e.Error = errors.New("E1:指令虚拟机栈溢出，请不要发送过长的指令")
+			//e.Error = errors.New("E1:指令虚拟机栈溢出，请不要发送过长的指令")
 			return true
 		}
 	}
 	return false
 }
 
-func (e *Parser) WriteCode(T CodeType, value interface{}) {
+func (e *ParserData) WriteCode(T CodeType, value any) {
 	if e.checkStackOverflow() {
 		return
 	}
@@ -84,63 +84,63 @@ func (e *Parser) WriteCode(T CodeType, value interface{}) {
 	e.codeIndex += 1
 }
 
-func (p *Parser) AddDiceDetail(begin IntType, end IntType) {
-	p.WriteCode(TypeDetailMark, BufferSpan{begin: begin, end: end})
+func (p *ParserData) AddDiceDetail(begin IntType, end IntType) {
+	p.WriteCode(typeDetailMark, BufferSpan{begin: begin, end: end})
 }
 
-func (e *Parser) AddOp(operator CodeType) {
+func (e *ParserData) AddOp(operator CodeType) {
 	var val interface{} = nil
-	if operator == TypeJne || operator == TypeJmp {
+	if operator == typeJne || operator == typeJmp {
 		val = IntType(0)
 	}
 	e.WriteCode(operator, val)
 }
 
-func (e *Parser) AddLoadName(value string) {
-	e.WriteCode(TypeLoadName, value)
+func (e *ParserData) AddLoadName(value string) {
+	e.WriteCode(typeLoadName, value)
 }
 
-func (e *Parser) PushIntNumber(value string) {
+func (e *ParserData) PushIntNumber(value string) {
 	val, _ := strconv.ParseInt(value, 10, 64)
-	e.WriteCode(TypePushIntNumber, IntType(val))
+	e.WriteCode(typePushIntNumber, IntType(val))
 }
 
-func (e *Parser) PushStr(value string) {
-	e.WriteCode(TypePushString, value)
+func (e *ParserData) PushStr(value string) {
+	e.WriteCode(typePushString, value)
 }
 
-func (e *Parser) PushArray(value IntType) {
-	e.WriteCode(TypePushArray, value)
+func (e *ParserData) PushArray(value IntType) {
+	e.WriteCode(typePushArray, value)
 }
 
-func (e *Parser) PushDict(value IntType) {
-	e.WriteCode(TypePushDict, value)
+func (e *ParserData) PushDict(value IntType) {
+	e.WriteCode(typePushDict, value)
 }
 
-func (e *Parser) PushUndefined() {
-	e.WriteCode(TypePushUndefined, nil)
+func (e *ParserData) PushUndefined() {
+	e.WriteCode(typePushUndefined, nil)
 }
 
-func (e *Parser) PushThis() {
-	e.WriteCode(TypePushThis, nil)
+func (e *ParserData) PushThis() {
+	e.WriteCode(typePushThis, nil)
 }
 
-func (e *Parser) PushGlobal() {
-	e.WriteCode(TypePushGlobal, nil)
+func (e *ParserData) PushGlobal() {
+	e.WriteCode(typePushGlobal, nil)
 }
 
-func (e *Parser) AddFormatString(value string, num IntType) {
+func (e *ParserData) AddFormatString(num IntType) {
 	//e.PushStr(value)
-	e.WriteCode(TypeLoadFormatString, num) // num
+	e.WriteCode(typeLoadFormatString, num) // num
 }
 
-func (e *Parser) PushFloatNumber(value string) {
+func (e *ParserData) PushFloatNumber(value string) {
 	val, _ := strconv.ParseFloat(value, 64)
-	e.WriteCode(TypePushFloatNumber, float64(val))
+	e.WriteCode(typePushFloatNumber, float64(val))
 }
 
-func (e *Parser) AddStName() {
-	e.WriteCode(TypeStSetName, nil)
+func (e *ParserData) AddStName() {
+	e.WriteCode(typeStSetName, nil)
 }
 
 type StInfo struct {
@@ -148,50 +148,51 @@ type StInfo struct {
 	Text string
 }
 
-func (e *Parser) AddStModify(op string, text string) {
-	e.WriteCode(TypeStModify, StInfo{op, text})
+func (e *ParserData) AddStModify(op string, text string) {
+	e.WriteCode(typeStModify, StInfo{op, text})
 }
 
-func (e *Parser) AddStore(text string) {
-	e.WriteCode(TypeStoreName, text)
+func (e *ParserData) AddStore(text string) {
+	e.WriteCode(typeStoreName, text)
 }
 
-func (e *Parser) AddStoreGlobal(text string) {
-	e.WriteCode(TypeStoreNameGlobal, text)
+func (e *ParserData) AddStoreGlobal(text string) {
+	e.WriteCode(typeStoreNameGlobal, text)
 }
 
-func (e *Parser) AddStoreLocal(text string) {
-	e.WriteCode(TypeStoreNameLocal, text)
+func (e *ParserData) AddStoreLocal(text string) {
+	e.WriteCode(typeStoreNameLocal, text)
 }
 
-func (e *Parser) NamePush(test string) {
+func (e *ParserData) NamePush(test string) {
 	e.varnameStack = append(e.varnameStack, test)
 }
 
-func (e *Parser) NamePop() string {
+func (e *ParserData) NamePop() string {
 	last := len(e.varnameStack) - 1
 	val := e.varnameStack[last]
 	e.varnameStack = e.varnameStack[:last]
 	return val
 }
 
-func (e *Parser) OffsetPush() {
+func (e *ParserData) OffsetPush() {
 	e.jmpStack = append(e.jmpStack, IntType(e.codeIndex)-1)
 }
 
-func (p *Parser) ContinuePush() {
+func (p *ParserData) ContinuePush() error {
 	if p.loopLayer > 0 {
 		if p.continueStack == nil {
 			p.continueStack = []IntType{}
 		}
-		p.AddOp(TypeJmp)
+		p.AddOp(typeJmp)
 		p.continueStack = append(p.continueStack, IntType(p.codeIndex)-1)
 	} else {
-		p.Error = errors.New("循环外不能放置continue")
+		return errors.New("循环外不能放置continue")
 	}
+	return nil
 }
 
-func (p *Parser) ContinueSet(offsetB int) {
+func (p *ParserData) ContinueSet(offsetB int) {
 	if p.continueStack != nil {
 		info := p.loopInfo[len(p.loopInfo)-1]
 		for _, codeIndex := range p.continueStack[info.continueIndex:] {
@@ -203,7 +204,7 @@ func (p *Parser) ContinueSet(offsetB int) {
 	}
 }
 
-func (p *Parser) BreakSet() {
+func (p *ParserData) BreakSet() {
 	if p.breakStack != nil {
 		info := p.loopInfo[len(p.loopInfo)-1]
 		for _, codeIndex := range p.breakStack[info.breakIndex:] {
@@ -212,19 +213,20 @@ func (p *Parser) BreakSet() {
 	}
 }
 
-func (p *Parser) BreakPush() {
+func (p *ParserData) BreakPush() error {
 	if p.loopLayer > 0 {
 		if p.breakStack == nil {
 			p.breakStack = []IntType{}
 		}
-		p.AddOp(TypeJmp)
+		p.AddOp(typeJmp)
 		p.breakStack = append(p.breakStack, IntType(p.codeIndex)-1)
+		return nil
 	} else {
-		p.Error = errors.New("循环外不能放置break")
+		return errors.New("循环外不能放置break")
 	}
 }
 
-func (e *Parser) OffsetPopAndSet() {
+func (e *ParserData) OffsetPopAndSet() {
 	last := len(e.jmpStack) - 1
 	codeIndex := e.jmpStack[last]
 	e.jmpStack = e.jmpStack[:last]
@@ -232,12 +234,12 @@ func (e *Parser) OffsetPopAndSet() {
 	//fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
 }
 
-func (e *Parser) OffsetPopN(num int) {
+func (e *ParserData) OffsetPopN(num int) {
 	last := len(e.jmpStack) - num
 	e.jmpStack = e.jmpStack[:last]
 }
 
-func (e *Parser) OffsetJmpSetX(offsetA int, offsetB int, rev bool) {
+func (e *ParserData) OffsetJmpSetX(offsetA int, offsetB int, rev bool) {
 	lastA := len(e.jmpStack) - 1 - offsetA
 	lastB := len(e.jmpStack) - 1 - offsetB
 
@@ -251,45 +253,45 @@ func (e *Parser) OffsetJmpSetX(offsetA int, offsetB int, rev bool) {
 	}
 }
 
-func (e *Parser) CounterPush() {
+func (e *ParserData) CounterPush() {
 	e.counterStack = append(e.counterStack, 0)
 }
 
-func (e *Parser) CounterAdd(offset IntType) {
+func (e *ParserData) CounterAdd(offset IntType) {
 	last := len(e.counterStack) - 1
 	if last != -1 {
 		e.counterStack[last] += offset
 	}
 }
 
-func (e *Parser) CounterPop() IntType {
+func (e *ParserData) CounterPop() IntType {
 	last := len(e.counterStack) - 1
 	num := e.counterStack[last]
 	e.counterStack = e.counterStack[:last]
 	return num
 }
 
-func (e *Parser) FlagsPush() {
-	e.flagsStack = append(e.flagsStack, e.Config)
+func (e *ParserData) FlagsPush() {
+	//e.flagsStack = append(e.flagsStack, e.Config)
 }
 
-func (e *Parser) FlagsPop() {
-	last := len(e.flagsStack) - 1
-	e.Config = e.flagsStack[last]
-	e.flagsStack = e.flagsStack[:last]
+func (e *ParserData) FlagsPop() {
+	//last := len(e.flagsStack) - 1
+	//e.Config = e.flagsStack[last]
+	//e.flagsStack = e.flagsStack[:last]
 }
 
-func (e *Parser) AddInvokeMethod(name string, paramsNum IntType) {
-	e.WriteCode(TypePushIntNumber, paramsNum)
-	e.WriteCode(TypeInvokeSelf, name)
+func (e *ParserData) AddInvokeMethod(name string, paramsNum IntType) {
+	e.WriteCode(typePushIntNumber, paramsNum)
+	e.WriteCode(typeInvokeSelf, name)
 }
 
-func (e *Parser) AddInvoke(paramsNum IntType) {
-	//e.WriteCode(TypePushIntNumber, paramsNum)
-	e.WriteCode(TypeInvoke, paramsNum)
+func (e *ParserData) AddInvoke(paramsNum IntType) {
+	//e.WriteCode(typePushIntNumber, paramsNum)
+	e.WriteCode(typeInvoke, paramsNum)
 }
 
-func (p *Parser) AddStoreComputed(name string, text string) {
+func (p *ParserData) AddStoreComputed(name string, text string) {
 	code, length := p.CodePop()
 	val := VMValueNewComputedRaw(&ComputedData{
 		Expr:      text,
@@ -297,11 +299,11 @@ func (p *Parser) AddStoreComputed(name string, text string) {
 		codeIndex: length,
 	})
 
-	p.WriteCode(TypePushComputed, val)
-	p.WriteCode(TypeStoreName, name)
+	p.WriteCode(typePushComputed, val)
+	p.WriteCode(typeStoreName, name)
 }
 
-func (p *Parser) AddStoreComputedOnStack(text string) {
+func (p *ParserData) AddStoreComputedOnStack(text string) {
 	code, length := p.CodePop()
 	val := VMValueNewComputedRaw(&ComputedData{
 		Expr:      text,
@@ -309,10 +311,10 @@ func (p *Parser) AddStoreComputedOnStack(text string) {
 		codeIndex: length,
 	})
 
-	p.WriteCode(TypePushComputed, val)
+	p.WriteCode(typePushComputed, val)
 }
 
-func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text string) {
+func (p *ParserData) AddStoreFunction(name string, paramsReversed []string, text string) {
 	code, length := p.CodePop()
 
 	// 翻转一次
@@ -328,22 +330,22 @@ func (p *Parser) AddStoreFunction(name string, paramsReversed []string, text str
 		codeIndex: length,
 	})
 
-	p.WriteCode(TypePushFunction, val)
+	p.WriteCode(typePushFunction, val)
 	if name != "" {
-		p.WriteCode(TypeStoreName, name)
+		p.WriteCode(typeStoreName, name)
 	}
 }
 
-func (p *Parser) AddAttrSet(objName string, attr string, isRaw bool) {
+func (p *ParserData) AddAttrSet(objName string, attr string, isRaw bool) {
 	if isRaw {
-		p.WriteCode(TypeLoadNameRaw, objName)
+		p.WriteCode(typeLoadNameRaw, objName)
 	} else {
-		p.WriteCode(TypeLoadName, objName)
+		p.WriteCode(typeLoadName, objName)
 	}
-	p.WriteCode(TypeAttrSet, attr)
+	p.WriteCode(typeAttrSet, attr)
 }
 
-func (p *Parser) CodePush() {
+func (p *ParserData) CodePush() {
 	p.codeStack = append(p.codeStack, struct {
 		code  []ByteCode
 		index int
@@ -352,7 +354,7 @@ func (p *Parser) CodePush() {
 	p.codeIndex = 0
 }
 
-func (p *Parser) CodePop() ([]ByteCode, int) {
+func (p *ParserData) CodePop() ([]ByteCode, int) {
 	lastCode, lastIndex := p.code, p.codeIndex
 
 	last := len(p.codeStack) - 1

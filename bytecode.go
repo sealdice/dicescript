@@ -13,285 +13,285 @@ type ByteCode struct {
 }
 
 const (
-	TypePushIntNumber CodeType = iota
-	TypePushFloatNumber
-	TypePushString
-	TypePushArray
-	TypePushDict
-	TypePushRange
-	TypePushComputed
-	TypePushUndefined
-	TypePushNone
-	TypePushThis
-	TypePushGlobal
-	TypePushFunction
-	TypePushLast
-	TypePushDefaultExpr
+	typePushIntNumber CodeType = iota
+	typePushFloatNumber
+	typePushString
+	typePushArray
+	typePushDict
+	typePushRange
+	typePushComputed
+	typePushUndefined
+	typePushNone
+	typePushThis
+	typePushGlobal
+	typePushFunction
+	typePushLast
+	typePushDefaultExpr
 
-	TypeLoadFormatString
-	TypeLoadName
-	TypeLoadNameWithDetail
-	TypeLoadNameRaw // 如遇到computed，这个版本不取出其内容
-	TypeStoreName
-	TypeStoreNameGlobal
-	TypeStoreNameLocal
+	typeLoadFormatString
+	typeLoadName
+	typeLoadNameWithDetail
+	typeLoadNameRaw // 如遇到computed，这个版本不取出其内容
+	typeStoreName
+	typeStoreNameGlobal
+	typeStoreNameLocal
 
-	TypeInvoke
-	TypeInvokeSelf
-	TypeItemGet
-	TypeItemSet
-	TypeAttrSet
-	TypeGetAttr
-	TypeSliceGet
-	TypeSliceSet
+	typeInvoke
+	typeInvokeSelf
+	typeItemGet
+	typeItemSet
+	typeAttrSet
+	typeGetAttr
+	typeSliceGet
+	typeSliceSet
 
-	TypeAdd // 注意，修改顺序时一定要顺带修改下面的数组
-	TypeSubtract
-	TypeMultiply
-	TypeDivide
-	TypeModulus
-	TypeExponentiation
-	TypeNullCoalescing
+	typeAdd // 注意，修改顺序时一定要顺带修改下面的数组
+	typeSubtract
+	typeMultiply
+	typeDivide
+	typeModulus
+	typeExponentiation
+	typeNullCoalescing
 
-	TypeCompLT
-	TypeCompLE
-	TypeCompEQ
-	TypeCompNE
-	TypeCompGE
-	TypeCompGT
+	typeCompLT
+	typeCompLE
+	typeCompEQ
+	typeCompNE
+	typeCompGE
+	typeCompGT
 
-	TypeBitwiseAnd
-	TypeBitwiseOr
-	TypeLogicAnd
-	TypeLogicOr
+	typeBitwiseAnd
+	typeBitwiseOr
+	typeLogicAnd
+	typeLogicOr
 
-	TypeNegation
-	TypePositive
+	typeNegation
+	typePositive
 
-	TypeDiceInit
-	TypeDiceSetTimes
-	TypeDiceSetKeepLowNum
-	TypeDiceSetKeepHighNum
-	TypeDiceSetDropLowNum
-	TypeDiceSetDropHighNum
-	TypeDiceSetMin
-	TypeDiceSetMax
-	TypeDice
+	typeDiceInit
+	typeDiceSetTimes
+	typeDiceSetKeepLowNum
+	typeDiceSetKeepHighNum
+	typeDiceSetDropLowNum
+	typeDiceSetDropHighNum
+	typeDiceSetMin
+	typeDiceSetMax
+	typeDice
 
-	TypeDiceCocPenalty
-	TypeDiceCocBonus
-	TypeDiceFate
-	TypeDiceWod
-	TypeWodSetInit       // 重置参数
-	TypeWodSetPool       // 设置骰池(骰数)
-	TypeWodSetPoints     // 面数
-	TypeWodSetThreshold  // 阈值 >=
-	TypeWodSetThresholdQ // 阈值 <=
-	TypeDiceDC
-	TypeDCSetInit
-	TypeDCSetPool   // 骰池
-	TypeDCSetPoints // 面数
-	TypeHalt
-	TypeDetailMark
+	typeDiceCocPenalty
+	typeDiceCocBonus
+	typeDiceFate
+	typeDiceWod
+	typeWodSetInit       // 重置参数
+	typeWodSetPool       // 设置骰池(骰数)
+	typeWodSetPoints     // 面数
+	typeWodSetThreshold  // 阈值 >=
+	typeWodSetThresholdQ // 阈值 <=
+	typeDiceDC
+	typeDCSetInit
+	typeDCSetPool   // 骰池
+	typeDCSetPoints // 面数
+	typeHalt
+	typeDetailMark
 
-	TypePop
-	TypePopN
+	typePop
+	typePopN
 
-	TypeNop
+	typeNop
 
-	TypeJmp
-	TypeJe
-	TypeJne
-	TypeJeDup
-	TypeReturn
+	typeJmp
+	typeJe
+	typeJne
+	typeJeDup
+	typeReturn
 
-	TypeStSetName
-	TypeStModify
-	TypeStX0
-	TypeStX1
+	typeStSetName
+	typeStModify
+	typeStX0
+	typeStX1
 )
 
 func (code *ByteCode) CodeString() string {
 	switch code.T {
-	case TypePushIntNumber:
+	case typePushIntNumber:
 		return "push.int " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
-	case TypePushFloatNumber:
+	case typePushFloatNumber:
 		return "push.flt " + strconv.FormatFloat(code.Value.(float64), 'f', 2, 64)
-	case TypePushString:
+	case typePushString:
 		return "push.str " + code.Value.(string)
-	case TypePushRange:
+	case typePushRange:
 		return "push.range"
-	case TypePushArray:
+	case typePushArray:
 		return "push.arr " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
-	case TypePushDict:
+	case typePushDict:
 		return "push.dict " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
-	case TypePushComputed:
+	case typePushComputed:
 		computed, _ := code.Value.(*VMValue).ReadComputed()
 		return "push.computed " + computed.Expr
-	case TypePushUndefined:
+	case typePushUndefined:
 		return "push.undefined"
-	case TypePushNone:
+	case typePushNone:
 		return "push.none"
-	case TypePushThis:
+	case typePushThis:
 		return "push.this"
-	case TypePushGlobal:
+	case typePushGlobal:
 		return "push.global"
-	case TypePushFunction:
+	case typePushFunction:
 		computed, _ := code.Value.(*VMValue).ReadFunctionData()
 		return "push.func " + computed.Name
 
-	case TypeInvoke:
+	case typeInvoke:
 		return "invoke " + strconv.FormatInt(int64(code.Value.(IntType)), 10)
 
-	case TypeInvokeSelf:
+	case typeInvokeSelf:
 		return "invoke.self " + code.Value.(string)
-	case TypeItemGet:
+	case typeItemGet:
 		return "item.get"
-	case TypeItemSet:
+	case typeItemSet:
 		return "item.set"
-	case TypeAttrSet:
+	case typeAttrSet:
 		return "attr.set " + code.Value.(string)
-	case TypeGetAttr:
+	case typeGetAttr:
 		return "attr.get " + code.Value.(string)
-	case TypeSliceGet:
+	case typeSliceGet:
 		return "slice.get"
-	case TypeSliceSet:
+	case typeSliceSet:
 		return "slice.set"
 
-	case TypeAdd:
+	case typeAdd:
 		return "add"
-	case TypeSubtract:
+	case typeSubtract:
 		return "sub"
-	case TypeMultiply:
+	case typeMultiply:
 		return "mul"
-	case TypeDivide:
+	case typeDivide:
 		return "div"
-	case TypeModulus:
+	case typeModulus:
 		return "mod"
-	case TypeExponentiation:
+	case typeExponentiation:
 		return "pow"
-	case TypeNullCoalescing:
+	case typeNullCoalescing:
 		return "nullCoalescing"
 
-	case TypeLogicAnd:
+	case typeLogicAnd:
 		return "and"
-	case TypeLogicOr:
+	case typeLogicOr:
 		return "or"
 
-	case TypeBitwiseAnd:
+	case typeBitwiseAnd:
 		return "&"
-	case TypeBitwiseOr:
+	case typeBitwiseOr:
 		return "|"
 
-	case TypeNegation:
+	case typeNegation:
 		return "neg"
-	case TypePositive:
+	case typePositive:
 		return "pos"
 
-	case TypeDiceInit:
+	case typeDiceInit:
 		return "dice.init"
-	case TypeDiceSetTimes:
+	case typeDiceSetTimes:
 		return "dice.setTimes"
-	case TypeDiceSetKeepLowNum:
+	case typeDiceSetKeepLowNum:
 		return "dice.setKeepLow"
-	case TypeDiceSetKeepHighNum:
+	case typeDiceSetKeepHighNum:
 		return "dice.setKeepHigh"
-	case TypeDiceSetDropLowNum:
+	case typeDiceSetDropLowNum:
 		return "dice.setDropLow"
-	case TypeDiceSetDropHighNum:
+	case typeDiceSetDropHighNum:
 		return "dice.setDropHigh"
-	case TypeDiceSetMin:
+	case typeDiceSetMin:
 		return "dice.setMin"
-	case TypeDiceSetMax:
+	case typeDiceSetMax:
 		return "dice.setMax"
-	case TypeDice:
+	case typeDice:
 		return "dice"
 
-	case TypeDiceCocPenalty:
+	case typeDiceCocPenalty:
 		return "coc.penalty"
-	case TypeDiceCocBonus:
+	case typeDiceCocBonus:
 		return "coc.bonus"
-	case TypeDiceFate:
+	case typeDiceFate:
 		return "dice.fate"
-	case TypeWodSetInit:
+	case typeWodSetInit:
 		return "wod.init"
-	case TypeWodSetPool:
+	case typeWodSetPool:
 		return "wod.pool"
-	case TypeWodSetPoints:
+	case typeWodSetPoints:
 		return "wod.points"
-	case TypeWodSetThreshold:
+	case typeWodSetThreshold:
 		return "wod.threshold"
-	case TypeWodSetThresholdQ:
+	case typeWodSetThresholdQ:
 		return "wod.thresholdQ"
-	case TypeDiceDC:
+	case typeDiceDC:
 		return "dice.dc"
-	case TypeDCSetInit:
+	case typeDCSetInit:
 		return "dc.setInit"
-	case TypeDCSetPool:
+	case typeDCSetPool:
 		return "dc.setPool"
-	case TypeDCSetPoints:
+	case typeDCSetPoints:
 		return "dc.setPoints"
-	case TypeDiceWod:
+	case typeDiceWod:
 		return "dice.wod"
-	case TypeLoadName:
+	case typeLoadName:
 		return "ld " + code.Value.(string)
-	case TypeLoadNameWithDetail:
+	case typeLoadNameWithDetail:
 		return "ld.d " + code.Value.(string)
-	case TypeLoadNameRaw:
+	case typeLoadNameRaw:
 		return "ld.raw " + code.Value.(string)
-	case TypeLoadFormatString:
+	case typeLoadFormatString:
 		return fmt.Sprintf("ld.fs %d", code.Value)
-	case TypeStoreName:
+	case typeStoreName:
 		return fmt.Sprintf("store %s", code.Value)
-	case TypeStoreNameGlobal:
+	case typeStoreNameGlobal:
 		return fmt.Sprintf("store.global %s", code.Value)
-	case TypeStoreNameLocal:
+	case typeStoreNameLocal:
 		return fmt.Sprintf("store.local %s", code.Value)
-	case TypeHalt:
+	case typeHalt:
 		return "halt"
-	case TypeDetailMark:
+	case typeDetailMark:
 		v := code.Value.(BufferSpan)
 		return fmt.Sprintf("mark.detail %d, %d", v.begin, v.end)
-	case TypeJmp:
+	case typeJmp:
 		return fmt.Sprintf("jmp %d", code.Value)
-	case TypeJe:
+	case typeJe:
 		return fmt.Sprintf("je %d", code.Value)
-	case TypeJeDup:
+	case typeJeDup:
 		return fmt.Sprintf("je.dup %d", code.Value)
-	case TypeJne:
+	case typeJne:
 		return fmt.Sprintf("jne %d", code.Value)
-	case TypeCompLT:
+	case typeCompLT:
 		return "comp.lt"
-	case TypeCompLE:
+	case typeCompLE:
 		return "comp.le"
-	case TypeCompEQ:
+	case typeCompEQ:
 		return "comp.eq"
-	case TypeCompNE:
+	case typeCompNE:
 		return "comp.ne"
-	case TypeCompGE:
+	case typeCompGE:
 		return "comp.ge"
-	case TypeCompGT:
+	case typeCompGT:
 		return "comp.gt"
-	case TypePushLast:
+	case typePushLast:
 		return "push.last"
-	case TypePushDefaultExpr:
+	case typePushDefaultExpr:
 		return "push.def_expr"
-	case TypePop:
+	case typePop:
 		return "pop"
-	case TypePopN:
+	case typePopN:
 		return fmt.Sprintf("popn %d", code.Value)
-	case TypeNop:
+	case typeNop:
 		return "nop"
-	case TypeReturn:
+	case typeReturn:
 		return "ret"
 
-	case TypeStSetName:
+	case typeStSetName:
 		return "st.set"
-	case TypeStModify:
+	case typeStModify:
 		return fmt.Sprintf("st.mod %s", code.Value)
-	case TypeStX0:
+	case typeStX0:
 		return "st.x0"
-	case TypeStX1:
+	case typeStX1:
 		return "st.x1"
 	}
 	return ""

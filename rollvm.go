@@ -27,12 +27,9 @@ import (
 
 func NewVM() *Context {
 	// 创建parser
-	p := &Parser{}
-	p.ParserData.init()
-	p.Context.Init()
-	p.parser = p
-
-	return &p.Context
+	p := &Context{}
+	p.Init()
+	return p
 }
 
 // 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
@@ -57,25 +54,30 @@ func (ctx *Context) Run(value string) error {
 	}
 	ctx.IsRunning = false
 
-	// 初始化Parser，这里是分词过程
-	p := ctx.parser
-	p.Buffer = value
-	p.Trim(0)       // 移动到下一行会报错
-	err := p.Init() // nolint
+	p := newParser("", []byte(value))
+	ctx.parser = p
+	d := p.cur.data
+	//p.debug = true
 
 	// 初始化指令栈，默认指令长度512条，会自动增长
-	p.code = make([]ByteCode, 512)
-	p.codeIndex = 0
+	d.code = make([]ByteCode, 512)
+	d.codeIndex = 0
+	d.Config = ctx.Config
 	ctx.Error = nil
 	ctx.NumOpCount = 0
 	ctx.Detail = ""
 
 	// 开始解析，编译字节码
-	err = p.Parse()
-	p.Execute()
+	_, err := p.parse(g)
+	if err != nil {
+		ctx.Error = err
+		return err
+	}
 
-	// 执行字节码
-	p.Evaluate()
+	ctx.code = p.cur.data.code
+	ctx.codeIndex = p.cur.data.codeIndex
+
+	ctx.Evaluate()
 	if ctx.Error != nil {
 		return ctx.Error
 	}
@@ -84,22 +86,12 @@ func (ctx *Context) Run(value string) error {
 	if ctx.top != 0 {
 		ctx.Ret = &ctx.stack[ctx.top-1]
 	} else {
-		ctx.Ret = VMValueNewUndefined()
+		ctx.Ret = VMValueNewNull()
 	}
 
 	// 给出VM解析完句子后的剩余文本
-	tks := p.Tokens()
-	if len(tks) > 0 {
-		// 注意，golang的string下标等同于[]byte下标，也就是说中文会被打断
-		// parser里有一个[]rune类型的，但问题是他句尾带了一个endsymbol
-		runeBuffer := []rune(value)
-		lastToken := tks[len(tks)-1]
-		ctx.RestInput = strings.TrimSpace(string(runeBuffer[lastToken.end:]))
-		ctx.Matched = strings.TrimSpace(string(runeBuffer[:lastToken.end]))
-	} else {
-		ctx.RestInput = ""
-		ctx.Matched = ""
-	}
+	ctx.RestInput = string(ctx.parser.data[ctx.parser.pt.offset:])
+	ctx.Matched = string(ctx.parser.data[:ctx.parser.pt.offset])
 
 	return err
 }
@@ -120,12 +112,13 @@ func (a spanByEnd) Less(i, j int) bool { return a[i].end < a[j].end }
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
 //}
 
-func (e *Parser) Evaluate() {
+func (e *Context) Evaluate() {
 	e.top = 0
 	e.stack = make([]VMValue, 1000)
 	stack := e.stack
 
-	ctx := &e.Context
+	ctx := e
+	//ctx := &e.Context
 	var details []BufferSpan
 	numOpCountAdd := func(count IntType) bool {
 		e.NumOpCount += count
@@ -225,7 +218,7 @@ func (e *Parser) Evaluate() {
 			}
 		}
 
-		runeBuffer := []rune(e.Buffer)
+		runeBuffer := e.parser.data
 		detailResult := runeBuffer
 
 		for i := len(m) - 1; i >= 0; i-- {
@@ -247,7 +240,7 @@ func (e *Parser) Evaluate() {
 
 			exprText := string(runeBuffer[item.begin:item.end])
 
-			var r []rune
+			var r []byte
 			r = append(r, detailResult[:item.begin]...)
 
 			// 主体结果部分，如 (10d3)d5=63[(10d3)d5=63=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
@@ -257,7 +250,7 @@ func (e *Parser) Evaluate() {
 			}
 			detail += subDetailsText + "]"
 
-			r = append(r, ([]rune)(last.ret.ToString()+detail)...)
+			r = append(r, ([]byte)(last.ret.ToString()+detail)...)
 			r = append(r, detailResult[item.end:]...)
 			detailResult = r
 		}
@@ -321,15 +314,15 @@ func (e *Parser) Evaluate() {
 		}
 
 		switch code.T {
-		case TypePushIntNumber:
+		case typePushIntNumber:
 			stack[e.top].TypeId = VMTypeInt
 			stack[e.top].Value = code.Value
 			e.top++
-		case TypePushFloatNumber:
+		case typePushFloatNumber:
 			stack[e.top].TypeId = VMTypeFloat
 			stack[e.top].Value = code.Value
 			e.top++
-		case TypePushString:
+		case typePushString:
 			s := code.Value.(string)
 			unquote, err := strconv.Unquote(`"` + strings.ReplaceAll(s, `"`, `\"`) + `"`)
 			if err != nil {
@@ -338,10 +331,10 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = unquote
 			e.top++
-		case TypePushArray:
+		case typePushArray:
 			num := code.Value.(IntType)
 			stackPush(VMValueNewArray(stackPopN(num)...))
-		case TypePushDict:
+		case typePushDict:
 			num := code.Value.(IntType)
 			items := stackPopN(num * 2)
 			dict, err := VMValueNewDictWithArray(items...)
@@ -350,17 +343,17 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(dict.V())
-		case TypePushComputed, TypePushFunction:
+		case typePushComputed, typePushFunction:
 			val := code.Value.(*VMValue)
 			stackPush(val)
-		case TypePushUndefined:
+		case typePushUndefined:
 			stackPush(VMValueNewUndefined())
-		case TypePushThis:
+		case typePushThis:
 			stackPush(vmValueNewLocal())
-		//case TypePushGlobal:
+		//case typePushGlobal:
 		//	stackPush(vmValueNewGlobal())
 
-		case TypePushRange:
+		case typePushRange:
 			a, b := stackPop2()
 			_a, ok1 := a.ReadInt()
 			_b, ok2 := b.ReadInt()
@@ -392,13 +385,13 @@ func (e *Parser) Evaluate() {
 				}
 			}
 			stackPush(VMValueNewArray(arr...))
-		case TypePushLast:
+		case typePushLast:
 			if lastPop == nil {
 				ctx.Error = errors.New("非法调用指令 push.last")
 				return
 			}
 			stackPush(lastPop)
-		case TypePushDefaultExpr:
+		case typePushDefaultExpr:
 			// 创建一个函数对象，然后调用它
 			if ctx.Config.DefaultDiceSideExpr != "" {
 				var val *VMValue
@@ -433,7 +426,7 @@ func (e *Parser) Evaluate() {
 				stackPush(VMValueNewInt(100))
 			}
 
-		case TypeLogicAnd:
+		case typeLogicAnd:
 			a, b := stackPop2()
 			if !a.AsBool() {
 				stackPush(a)
@@ -441,7 +434,7 @@ func (e *Parser) Evaluate() {
 				stackPush(b)
 			}
 
-		case TypeInvoke:
+		case typeInvoke:
 			paramsNum := code.Value.(IntType)
 			arr := stackPopN(paramsNum)
 			funcObj := stackPop()
@@ -462,7 +455,7 @@ func (e *Parser) Evaluate() {
 				ctx.Error = errors.New("类型错误: 无法调用，必须是一个函数")
 			}
 
-		case TypeItemGet:
+		case typeItemGet:
 			itemIndex := stackPop()
 			obj := stackPop()
 			ret := obj.ItemGet(ctx, itemIndex)
@@ -473,7 +466,7 @@ func (e *Parser) Evaluate() {
 				ret = VMValueNewUndefined()
 			}
 			stackPush(ret)
-		case TypeItemSet:
+		case typeItemSet:
 			val := stackPop()       // 右值
 			itemIndex := stackPop() // 下标
 			obj := stackPop()       // 数组 / 对象
@@ -481,7 +474,7 @@ func (e *Parser) Evaluate() {
 			if ctx.Error != nil {
 				return
 			}
-		case TypeAttrSet:
+		case typeAttrSet:
 			attrVal, obj := stackPop2()
 			attrName := code.Value.(string)
 
@@ -492,7 +485,7 @@ func (e *Parser) Evaluate() {
 			if ctx.Error != nil {
 				return
 			}
-		case TypeGetAttr:
+		case typeGetAttr:
 			obj := stackPop()
 			attrName := code.Value.(string)
 			ret := obj.AttrGet(ctx, attrName)
@@ -504,7 +497,7 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(ret)
-		case TypeSliceGet:
+		case typeSliceGet:
 			step := stackPop() // step
 			if step.TypeId != VMTypeUndefined {
 				ctx.Error = errors.New("尚不支持分片步长")
@@ -518,7 +511,7 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			stackPush(ret)
-		case TypeSliceSet:
+		case typeSliceSet:
 			val := stackPop()
 			step := stackPop() // step
 			if step.TypeId != VMTypeUndefined {
@@ -533,16 +526,16 @@ func (e *Parser) Evaluate() {
 				return
 			}
 
-		case TypeReturn:
+		case typeReturn:
 			solveDetail()
 			ctx.IsRunning = false
 			return
-		case TypeHalt:
+		case typeHalt:
 			solveDetail()
 			ctx.IsRunning = false
 			return
 
-		case TypeLoadFormatString:
+		case typeLoadFormatString:
 			num := int(code.Value.(IntType))
 
 			outStr := ""
@@ -561,7 +554,7 @@ func (e *Parser) Evaluate() {
 			stack[e.top].TypeId = VMTypeString
 			stack[e.top].Value = outStr
 			e.top++
-		case TypeLoadName, TypeLoadNameRaw, TypeLoadNameWithDetail:
+		case typeLoadName, typeLoadNameRaw, typeLoadNameWithDetail:
 			name := code.Value.(string)
 			if e.Config.CallbackLoadVar != nil {
 				var val *VMValue
@@ -569,7 +562,7 @@ func (e *Parser) Evaluate() {
 
 				if val != nil {
 					// 使用弄进来的替代值进行计算
-					if TypeLoadNameWithDetail == code.T {
+					if typeLoadNameWithDetail == code.T {
 						details[len(details)-1].ret = val
 						details[len(details)-1].text = ""
 					}
@@ -578,17 +571,17 @@ func (e *Parser) Evaluate() {
 				}
 			}
 
-			val := ctx.LoadName(name, TypeLoadNameRaw == code.T)
+			val := ctx.LoadName(name, typeLoadNameRaw == code.T)
 			if ctx.Error != nil {
 				return
 			}
-			if TypeLoadNameWithDetail == code.T {
+			if typeLoadNameWithDetail == code.T {
 				details[len(details)-1].ret = val
 				details[len(details)-1].text = ""
 			}
 			stackPush(val)
 
-		case TypeStoreName:
+		case typeStoreName:
 			v := stackPop()
 			name := code.Value.(string)
 
@@ -597,32 +590,32 @@ func (e *Parser) Evaluate() {
 				return
 			}
 
-		case TypeJe, TypeJeDup:
+		case typeJe, typeJeDup:
 			v := stackPop()
 			if v.AsBool() {
 				opIndex += int(code.Value.(IntType))
-				if code.T == TypeJeDup {
+				if code.T == typeJeDup {
 					stackPush(v)
 				}
 			}
-		case TypeJne:
+		case typeJne:
 			t := stackPop()
 			if !t.AsBool() {
 				opIndex += int(code.Value.(IntType))
 			}
-		case TypeJmp:
+		case typeJmp:
 			opIndex += int(code.Value.(IntType))
-		case TypePop:
+		case typePop:
 			stackPop()
-		case TypePopN:
+		case typePopN:
 			stackPopN(code.Value.(IntType))
 
-		case TypeAdd, TypeSubtract, TypeMultiply, TypeDivide, TypeModulus, TypeExponentiation, TypeNullCoalescing,
-			TypeCompLT, TypeCompLE, TypeCompEQ, TypeCompNE, TypeCompGE, TypeCompGT,
-			TypeBitwiseAnd, TypeBitwiseOr:
+		case typeAdd, typeSubtract, typeMultiply, typeDivide, typeModulus, typeExponentiation, typeNullCoalescing,
+			typeCompLT, typeCompLE, typeCompEQ, typeCompNE, typeCompGE, typeCompGT,
+			typeBitwiseAnd, typeBitwiseOr:
 			// 所有二元运算符
 			v1, v2 := stackPop2()
-			opFunc := binOperator[code.T-TypeAdd]
+			opFunc := binOperator[code.T-typeAdd]
 			ret := opFunc(v1, ctx, v2)
 			if ctx.Error == nil && ret == nil {
 				// TODO: 整理所有错误类型
@@ -634,10 +627,10 @@ func (e *Parser) Evaluate() {
 			}
 			stackPush(ret)
 
-		case TypePositive, TypeNegation:
+		case typePositive, typeNegation:
 			v := stackPop()
 			var ret *VMValue
-			if code.T == TypePositive {
+			if code.T == typePositive {
 				ret = v.OpPositive()
 			} else {
 				ret = v.OpNegation()
@@ -652,9 +645,9 @@ func (e *Parser) Evaluate() {
 			}
 			stackPush(ret)
 
-		case TypeDiceInit:
+		case typeDiceInit:
 			diceInit()
-		case TypeDiceSetTimes:
+		case typeDiceSetTimes:
 			v := stackPop()
 			times, ok := v.ReadInt()
 			if !ok || times <= 0 {
@@ -662,34 +655,34 @@ func (e *Parser) Evaluate() {
 				return
 			}
 			diceStates[diceStateIndex].times = times
-		case TypeDiceSetKeepLowNum:
+		case typeDiceSetKeepLowNum:
 			v := stackPop()
 			diceStates[diceStateIndex].isKeepLH = 1
 			diceStates[diceStateIndex].lowNum, _ = v.ReadInt()
-		case TypeDiceSetKeepHighNum:
+		case typeDiceSetKeepHighNum:
 			v := stackPop()
 			diceStates[diceStateIndex].isKeepLH = 2
 			diceStates[diceStateIndex].highNum, _ = v.ReadInt()
-		case TypeDiceSetDropLowNum:
+		case typeDiceSetDropLowNum:
 			v := stackPop()
 			diceStates[diceStateIndex].isKeepLH = 3
 			diceStates[diceStateIndex].lowNum, _ = v.ReadInt()
-		case TypeDiceSetDropHighNum:
+		case typeDiceSetDropHighNum:
 			v := stackPop()
 			diceStates[diceStateIndex].isKeepLH = 4
 			diceStates[diceStateIndex].highNum, _ = v.ReadInt()
-		case TypeDiceSetMin:
+		case typeDiceSetMin:
 			v := stackPop()
 			i, _ := v.ReadInt()
 			diceStates[diceStateIndex].min = &i
-		case TypeDiceSetMax:
+		case typeDiceSetMax:
 			v := stackPop()
 			i, _ := v.ReadInt()
 			diceStates[diceStateIndex].max = &i
-		case TypeDetailMark:
+		case typeDetailMark:
 			span := code.Value.(BufferSpan)
 			details = append(details, span)
-		case TypeDice:
+		case typeDice:
 			diceState := diceStates[diceStateIndex]
 
 			val := stackPop()
@@ -720,14 +713,14 @@ func (e *Parser) Evaluate() {
 			details[len(details)-1].text = detail
 			stackPush(ret)
 
-		case TypeDiceFate:
+		case typeDiceFate:
 			sum, detail := RollFate()
 			ret := VMValueNewInt(sum)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detail
 			stackPush(ret)
 
-		case TypeDiceCocBonus, TypeDiceCocPenalty:
+		case typeDiceCocBonus, typeDiceCocPenalty:
 			t := stackPop()
 			diceNum := t.MustReadInt()
 
@@ -735,33 +728,33 @@ func (e *Parser) Evaluate() {
 				return
 			}
 
-			r, detailText := RollCoC(code.T == TypeDiceCocBonus, diceNum)
+			r, detailText := RollCoC(code.T == typeDiceCocBonus, diceNum)
 			ret := VMValueNewInt(r)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
 			stackPush(ret)
 
-		case TypeWodSetInit:
+		case typeWodSetInit:
 			// WOD 系列
 			wodInit()
-		case TypeWodSetPoints:
+		case typeWodSetPoints:
 			v := stackPop()
 			// if v.TypeId != VMTypeInt {
 			//   // ...
 			// }
 			wodState.points = v.MustReadInt()
-		case TypeWodSetThreshold:
+		case typeWodSetThreshold:
 			v := stackPop()
 			wodState.threshold = v.MustReadInt()
 			wodState.isGE = true
-		case TypeWodSetThresholdQ:
+		case typeWodSetThresholdQ:
 			v := stackPop()
 			wodState.threshold = v.MustReadInt()
 			wodState.isGE = false
-		case TypeWodSetPool:
+		case typeWodSetPool:
 			v := stackPop()
 			wodState.pool = v.MustReadInt()
-		case TypeDiceWod:
+		case typeDiceWod:
 			v := stackPop() // 加骰线
 
 			// 变量检查
@@ -775,16 +768,16 @@ func (e *Parser) Evaluate() {
 			details[len(details)-1].text = detailText
 			stackPush(ret)
 
-		case TypeDCSetInit:
+		case typeDCSetInit:
 			// Double Cross
 			dcInit()
-		case TypeDCSetPool:
+		case typeDCSetPool:
 			v := stackPop()
 			dcState.pool = v.MustReadInt()
-		case TypeDCSetPoints:
+		case typeDCSetPoints:
 			v := stackPop()
 			dcState.points = v.MustReadInt()
-		case TypeDiceDC:
+		case typeDiceDC:
 			v := stackPop() // 暴击值 / 也可以理解为加骰线
 			if !doubleCrossCheck(ctx, v.MustReadInt(), dcState.pool, dcState.points) {
 				return
@@ -795,13 +788,13 @@ func (e *Parser) Evaluate() {
 			details[len(details)-1].text = detailText
 			stackPush(ret)
 
-		case TypeStSetName:
+		case typeStSetName:
 			stName, stVal := stackPop2()
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
 				e.Config.CallbackSt("set", name, stVal, nil, "", "")
 			}
-		case TypeStModify:
+		case typeStModify:
 			stName, stVal := stackPop2()
 			stInfo := code.Value.(StInfo)
 
@@ -809,13 +802,13 @@ func (e *Parser) Evaluate() {
 				name, _ := stName.ReadString()
 				e.Config.CallbackSt("mod", name, stVal, nil, stInfo.Op, stInfo.Text)
 			}
-		case TypeStX0:
+		case typeStX0:
 			stName, stVal := stackPop2()
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
 				e.Config.CallbackSt("set.x0", name, stVal, nil, "", "")
 			}
-		case TypeStX1:
+		case typeStX1:
 			stVal := stackPop()
 			stExtra := stackPop()
 			stName := stackPop()
@@ -832,6 +825,24 @@ func (e *Context) GetAsmText() string {
 	ret += "=== VM Code ===\n"
 	for index, i := range e.code {
 		if index >= e.codeIndex {
+			break
+		}
+		s := i.CodeString()
+		if s != "" {
+			ret += s + "\n"
+		} else {
+			ret += "@raw: " + strconv.FormatInt(int64(i.T), 10) + "\n"
+		}
+	}
+	ret += "=== VM Code End===\n"
+	return ret
+}
+
+func GetAsmText(code []ByteCode, codeIndex int) string {
+	ret := ""
+	ret += "=== VM Code ===\n"
+	for index, i := range code {
+		if index >= codeIndex {
 			break
 		}
 		s := i.CodeString()
