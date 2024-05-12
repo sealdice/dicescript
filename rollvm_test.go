@@ -891,13 +891,11 @@ func TestRange(t *testing.T) {
 func TestDictExpr(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("{'a': 1}") // nolint
-	if assert.NoError(t, err) {
-	}
+	assert.NoError(t, err)
 
 	vm = NewVM()
 	err = vm.Run("a = {'a': 1}") // nolint
-	if assert.NoError(t, err) {
-	}
+	assert.NoError(t, err)
 
 	err = vm.Run("a.a")
 	if assert.NoError(t, err) {
@@ -913,8 +911,7 @@ func TestDictExpr(t *testing.T) {
 func TestDictExpr2(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("a = {'a': 1,}") // nolint
-	if assert.NoError(t, err) {
-	}
+	assert.NoError(t, err)
 
 	err = vm.Run("a.a")
 	if assert.NoError(t, err) {

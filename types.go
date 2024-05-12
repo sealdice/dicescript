@@ -123,8 +123,7 @@ type Context struct {
 
 	//seed      int64 // 随机种子，之后换PCG算法
 
-	IsRunning  bool // 是否正在运行，Run时会置为true，halt时会置为false
-	flagsStack []RollConfig
+	IsRunning bool // 是否正在运行，Run时会置为true，halt时会置为false
 
 	CustomDiceInfo []*customDiceItem
 

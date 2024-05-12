@@ -9,6 +9,8 @@ type ParserData struct {
 	code      []ByteCode
 	codeIndex int
 
+	Config        RollConfig
+	flagsStack    []RollConfig
 	counterStack  []IntType // f-string 嵌套计数，在解析时中起作用
 	varnameStack  []string  // 另一个解析用栈
 	jmpStack      []IntType
@@ -272,13 +274,13 @@ func (e *ParserData) CounterPop() IntType {
 }
 
 func (e *ParserData) FlagsPush() {
-	//e.flagsStack = append(e.flagsStack, e.Config)
+	e.flagsStack = append(e.flagsStack, e.Config)
 }
 
 func (e *ParserData) FlagsPop() {
-	//last := len(e.flagsStack) - 1
-	//e.Config = e.flagsStack[last]
-	//e.flagsStack = e.flagsStack[:last]
+	last := len(e.flagsStack) - 1
+	e.Config = e.flagsStack[last]
+	e.flagsStack = e.flagsStack[:last]
 }
 
 func (e *ParserData) AddInvokeMethod(name string, paramsNum IntType) {

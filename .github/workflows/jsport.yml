@@ -18,8 +18,7 @@ jobs:
 
     - name: Install peg
       run: |
-        go get -u go install github.com/fy0/pigeon@latest
-        go install go install github.com/fy0/pigeon@latest
+        go install github.com/fy0/pigeon@latest
 
     - name: Install gopherjs
       run: |
