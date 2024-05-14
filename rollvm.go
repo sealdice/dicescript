@@ -68,7 +68,7 @@ func (ctx *Context) Run(value string) error {
 	ctx.Detail = ""
 
 	// 开始解析，编译字节码
-	_, err := p.parse(g)
+	_, err := p.parse(nil)
 	if err != nil {
 		ctx.Error = err
 		return err
@@ -77,6 +77,7 @@ func (ctx *Context) Run(value string) error {
 	ctx.code = p.cur.data.code
 	ctx.codeIndex = p.cur.data.codeIndex
 
+	// println(_times)
 	ctx.Evaluate()
 	if ctx.Error != nil {
 		return ctx.Error

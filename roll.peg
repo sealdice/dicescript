@@ -238,7 +238,7 @@ _diceType3 <- nos [dD]
 _diceType4 <- [dD]
 
 // XdY 中的 dy 部分，跟上面 _diceTypeX 一一对应
-_diceExpr1 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes); return nil; } nos _diceMod? _diceModType2?
+_diceExpr1 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes);  } nos _diceMod? _diceModType2?
 _diceExpr2 <- [dD] { c.data.AddOp(typeDiceInit); } nos (_dicePearMod / _diceMod)? _diceModType2?
 _diceExpr3 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes); } (_dicePearMod / _diceMod)? _diceModType2?
 
