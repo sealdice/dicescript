@@ -206,3 +206,11 @@ DiceScript将使用和RollVM相同的技术栈，但会有更好的接口设计�
 
 * d2d(4d4d5)d6 计算过程问题
 * 处理
+
+## 开发
+
+如果修改了文法:
+```
+go install github.com/fy0/pigeon@latest
+pigeon -nolint  -optimize-parser -optimize-ref-expr-by-index -o .\roll.peg.go .\roll.peg
+```

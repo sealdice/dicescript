@@ -1,14 +1,6 @@
 on:
   push:
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - '**.peg'
-  pull_request:
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - '**.peg'
+    branches: [ "main" ]
 
 name: Test & Lint
 
@@ -22,8 +14,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: stable
-      - run: go install github.com/fy0/pigeon@latest
-      - run: pigeon -nolint -optimize-parser -o roll.peg.go roll.peg
       - run: go mod tidy
       - run: go get
       - run: go generate ./...
@@ -39,8 +29,6 @@ jobs:
         with:
           go-version: '1.18'
 
-      - run: go install github.com/fy0/pigeon@latest
-      - run: pigeon -nolint -optimize-parser -o roll.peg.go roll.peg
       - run: go mod tidy
       - run: go get
       - run: go generate ./...

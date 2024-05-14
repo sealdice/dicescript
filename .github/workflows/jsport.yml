@@ -16,17 +16,10 @@ jobs:
       with:
         go-version: 1.18
 
-    - name: Install peg
-      run: |
-        go install github.com/fy0/pigeon@latest
-
     - name: Install gopherjs
       run: |
         go get -u github.com/gopherjs/gopherjs@v1.18.0-beta1
         go install github.com/gopherjs/gopherjs@v1.18.0-beta1
-
-    - name: Code gen
-      run: pigeon -nolint -optimize-parser -o roll.peg.go roll.peg
 
     - name: Build
       run: gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.cjs
