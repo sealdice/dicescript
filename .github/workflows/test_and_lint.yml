@@ -17,7 +17,19 @@ jobs:
       - run: go mod tidy
       - run: go get
       - run: go generate ./...
-      - run: go test -v -race -cover ./...
+
+      # https://blog.jetbrains.com/go/2019/04/03/profiling-go-applications-and-tests/
+      - run: go test -v -bench=^BenchmarkInBoundsChannels$ -cpuprofile=cpu.out -memprofile mem.out .
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-profile
+          path: ./cpu.out
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: mem-profile
+          path: ./mem.out
 
   lint:
     runs-on: ubuntu-latest
