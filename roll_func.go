@@ -13,7 +13,8 @@ func Roll(dicePoints IntType) IntType {
 	if dicePoints == 0 {
 		return 0
 	}
-	val := IntType(rand.Int63())%dicePoints + 1
+	// js端有bug，如果当前IntType为32位，Int63会得到负数
+	val := IntType(rand.Int31())%dicePoints + 1
 	return val
 }
 
@@ -361,7 +362,7 @@ func RollFate() (IntType, string) {
 	detail := ""
 	sum := IntType(0)
 	for i := 0; i < 4; i++ {
-		n := IntType(rand.Int63())%3 - 1
+		n := Roll(3) - 2
 		sum += n
 		switch n {
 		case -1:

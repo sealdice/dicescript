@@ -3069,7 +3069,7 @@ var g = &grammar{
 											},
 										},
 										&anyMatcher{
-											line: 324, col: 37, offset: 16023,
+											line: 327, col: 37, offset: 16046,
 										},
 									},
 								},
@@ -3101,7 +3101,7 @@ var g = &grammar{
 											},
 										},
 										&anyMatcher{
-											line: 325, col: 41, offset: 16126,
+											line: 328, col: 41, offset: 16149,
 										},
 									},
 								},
@@ -3133,7 +3133,7 @@ var g = &grammar{
 											},
 										},
 										&anyMatcher{
-											line: 326, col: 42, offset: 16230,
+											line: 329, col: 42, offset: 16253,
 										},
 									},
 								},
@@ -3165,7 +3165,7 @@ var g = &grammar{
 											},
 										},
 										&anyMatcher{
-											line: 327, col: 42, offset: 16334,
+											line: 330, col: 42, offset: 16357,
 										},
 									},
 								},
@@ -3932,7 +3932,7 @@ var g = &grammar{
 					},
 					&notExpr{
 						expr: &anyMatcher{
-							line: 394, col: 37, offset: 18597,
+							line: 397, col: 37, offset: 18620,
 						},
 					},
 				},
@@ -3988,7 +3988,7 @@ var g = &grammar{
 									},
 								},
 								&anyMatcher{
-									line: 398, col: 29, offset: 18698,
+									line: 401, col: 29, offset: 18721,
 								},
 							},
 						},
@@ -4003,7 +4003,7 @@ var g = &grammar{
 							},
 							&notExpr{
 								expr: &anyMatcher{
-									line: 398, col: 44, offset: 18713,
+									line: 401, col: 44, offset: 18736,
 								},
 							},
 						},
@@ -4027,7 +4027,7 @@ var g = &grammar{
 									},
 								},
 								&anyMatcher{
-									line: 399, col: 30, offset: 18745,
+									line: 402, col: 30, offset: 18768,
 								},
 							},
 						},
@@ -4727,33 +4727,21 @@ var g = &grammar{
 }
 
 func (p *parser) call_ondicescript_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeHalt)
 		return nil
-		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtLines_3() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return !c.data.Config.DisableStmts
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onflagsSwitch_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, on any) any {
+	return (func(c *current, id, on any) any {
 		onVal := on == "true"
 		switch id.(string) {
 		case "wod":
@@ -4766,92 +4754,64 @@ func (p *parser) call_onflagsSwitch_1() any {
 			c.data.Config.EnableDiceDoubleCross = onVal
 		}
 		return nil
-	})(stack["id"], stack["on"])
+	})(&p.cur, stack["id"], stack["on"])
 }
 
 func (p *parser) call_onstmtBreak_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		if c.data.loopLayer == 0 {
 			panic("`break` is not allowed outside loop.")
 		} else {
 			c.data.BreakPush()
 		}
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtContinue_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		if c.data.loopLayer == 0 {
 			panic("`continue` is not allowed outside loop.")
 		} else {
 			c.data.ContinuePush()
 		}
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtReturn_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeReturn)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtReturn_7() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushUndefined()
 		c.data.AddOp(typeReturn)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtWhile_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.LoopBegin()
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtWhile_4() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtWhile_8() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJmp)
 		c.data.OffsetPush()
 		c.data.OffsetJmpSetX(0, 2, true)
@@ -4861,129 +4821,91 @@ func (p *parser) call_onstmtWhile_8() any {
 		c.data.OffsetPopN(3)
 		c.data.LoopEnd()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtIf_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtIf_7() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJmp)
 		c.data.OffsetPopAndSet()
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtIf_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.OffsetPopAndSet()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfunc_def_params_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfunc_def_params_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfunc_def_params_13() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onfunc_def_params_21() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id2 any) any {
+	return (func(c *current, id2 any) any {
 		c.data.NamePush(id2.(string))
 		return nil
-	})(stack["id2"])
+	})(&p.cur, stack["id2"])
 }
 
 func (p *parser) call_onfunc_def_params_28() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id2 any) any {
+	return (func(c *current, id2 any) any {
 		c.data.CounterAdd(1)
 		return nil
-	})(stack["id2"])
+	})(&p.cur, stack["id2"])
 }
 
 func (p *parser) call_onstmtFunc_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtFunc_9() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.CodePush()
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtFunc_14() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, exprText any) any {
+	return (func(c *current, id, exprText any) any {
 		num := c.data.CounterPop()
 		arr := []string{}
 		for i := IntType(0); i < num; i++ {
@@ -4991,1902 +4913,1259 @@ func (p *parser) call_onstmtFunc_14() any {
 		}
 		c.data.AddStoreFunction(c.data.NamePop(), arr, exprText.(string))
 		return nil
-	})(stack["id"], stack["exprText"])
+	})(&p.cur, stack["id"], stack["exprText"])
 }
 
 func (p *parser) call_onstmtAssignType1_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType1_7() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.AddStore(c.data.NamePop())
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType2_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType2_8() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.CodePush()
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType2_12() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, expr any) any {
+	return (func(c *current, id, expr any) any {
 		c.data.AddStoreComputed(c.data.NamePop(), expr.(string))
 		return nil
-	})(stack["id"], stack["expr"])
+	})(&p.cur, stack["id"], stack["expr"])
 }
 
 func (p *parser) call_onstmtAssignType3_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType3_8() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, id2 any) any {
+	return (func(c *current, id, id2 any) any {
 		c.data.NamePush(id2.(string))
 		return nil
-	})(stack["id"], stack["id2"])
+	})(&p.cur, stack["id"], stack["id2"])
 }
 
 func (p *parser) call_onstmtAssignType3_14() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, id2 any) any {
+	return (func(c *current, id, id2 any) any {
 		attr, objName := c.data.NamePop(), c.data.NamePop()
 		c.data.AddAttrSet(objName, attr, true)
 		return nil
-	})(stack["id"], stack["id2"])
+	})(&p.cur, stack["id"], stack["id2"])
 }
 
 func (p *parser) call_onstmtAssignType4_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType4_11() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.AddStoreLocal(c.data.NamePop())
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType5_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.NamePush(id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onstmtAssignType5_7() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, id2 any) any {
+	return (func(c *current, id, id2 any) any {
 		c.data.NamePush(id2.(string))
 		return nil
-	})(stack["id"], stack["id2"])
+	})(&p.cur, stack["id"], stack["id2"])
 }
 
 func (p *parser) call_onstmtAssignType5_14() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id, id2 any) any {
+	return (func(c *current, id, id2 any) any {
 		attr, objName := c.data.NamePop(), c.data.NamePop()
 		c.data.AddAttrSet(objName, attr, false)
 		return nil
-	})(stack["id"], stack["id2"])
+	})(&p.cur, stack["id"], stack["id2"])
 }
 
 func (p *parser) call_onstmtAssignType6_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeItemSet)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstmtAssignType7_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeSliceSet)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_step_7() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushUndefined()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_step_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushUndefined()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_sliceSuffix_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushUndefined()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_sliceSuffix_12() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushUndefined()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprSliceType1_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeSliceGet)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprValueIfExists_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprValueIfExists_8() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJmp)
 		c.data.OffsetPopAndSet()
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprTernaryType1_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprTernaryType1_8() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJmp)
 		c.data.OffsetPopAndSet()
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprTernaryType1_14() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.OffsetPopAndSet()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprTernaryType2_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprTernaryType2_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprTernaryType2_4() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushStr("")
 		limit := c.data.CounterPop() + 1
 		for i := IntType(0); i < limit; i++ {
 			c.data.OffsetPopAndSet()
 		}
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprLogicOr_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJeDup)
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprLogicOr_8() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeJeDup)
 		c.data.OffsetPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprLogicOr_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typePushLast)
 		c.data.OffsetPopAndSet()
 		c.data.OffsetPopAndSet()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprLogicAnd_5() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeLogicAnd)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprBitwiseOr_3() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return c.data.Config.DisableBitwiseOp
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprBitwiseOr_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeBitwiseOr)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprBitwiseAnd_5() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeBitwiseAnd)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprCompare_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeCompLT)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprCompare_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeCompLE)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprCompare_14() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeCompEQ)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprCompare_18() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeCompNE)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprCompare_22() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeCompGE)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprCompare_26() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeCompGT)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprAdditive_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeAdd)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprAdditive_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeSubtract)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprMultiplicative_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeMultiply)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprMultiplicative_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDivide)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprMultiplicative_14() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeModulus)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprNullCoalescing_5() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeNullCoalescing)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprExp_5() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeExponentiation)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprUnaryNeg_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeNegation)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprUnaryPos_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typePositive)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_ondetailStart_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		c.data.CounterAdd(IntType(p.pt.offset))
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_ondetailEnd_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddDiceDetail(c.data.CounterPop(), IntType(p.pt.offset))
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceSetKeepLowNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_8() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		c.data.AddOp(typeDiceSetKeepLowNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_12() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceSetKeepHighNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_18() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		c.data.AddOp(typeDiceSetKeepHighNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_22() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceSetDropHighNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_26() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		c.data.AddOp(typeDiceSetDropHighNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_28() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceSetDropLowNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceMod_32() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		c.data.AddOp(typeDiceSetDropLowNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceModType2_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceSetMin)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceModType2_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceSetMax)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_dicePearMod_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("2")
 		c.data.AddOp(typeDiceSetTimes)
 		c.data.PushIntNumber("1")
 		c.data.AddOp(typeDiceSetKeepHighNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_dicePearMod_4() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("2")
 		c.data.AddOp(typeDiceSetTimes)
 		c.data.PushIntNumber("1")
 		c.data.AddOp(typeDiceSetKeepLowNum)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceExpr1_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceInit)
 		c.data.AddOp(typeDiceSetTimes)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceExpr2_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceInit)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceExpr3_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceInit)
 		c.data.AddOp(typeDiceSetTimes)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceExprX_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDice)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_wodMain_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeWodSetPoints)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_wodMain_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeWodSetThreshold)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_wodMain_14() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeWodSetThresholdQ)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceCocBonus_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceCocBonus_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceCocBonus)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceCocPenalty_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_on_diceCocPenalty_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceCocPenalty)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_3() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDice)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_14() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDice)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_26() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return !c.data.Config.DisableNDice
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_24() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typePushDefaultExpr)
 		c.data.AddOp(typeDice)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_38() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return !c.data.Config.DisableNDice
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_36() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_42() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typePushDefaultExpr)
 		c.data.AddOp(typeDice)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_49() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return c.data.Config.EnableDiceCoC
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_59() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return c.data.Config.EnableDiceWoD
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_57() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeWodSetInit)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_67() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeWodSetPool)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_63() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceWod)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_78() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return c.data.Config.EnableDiceDoubleCross
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_76() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDCSetInit)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_82() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDCSetPool)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_89() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDCSetPoints)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_84() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceDC)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_96() bool {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() bool {
+	return (func(c *current) bool {
 		return c.data.Config.EnableDiceFate
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onexprDice_94() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeDiceFate)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_3() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.WriteCode(typeGetAttr, string("kh"))
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddInvoke(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_8() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddInvoke(0)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.WriteCode(typeGetAttr, string("kl"))
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_13() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddInvoke(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_15() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddInvoke(0)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onarray_call_17() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeItemGet)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onitem_getX_3() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeItemGet)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onattr_getX_4() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.WriteCode(typeGetAttr, id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onfunc_invoke_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddInvoke(0)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfunc_invoke_9() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfunc_invoke_17() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfunc_invoke_13() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddInvoke(c.data.CounterPop())
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_ondict_item_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_id_without_colon_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.WriteCode(typeLoadName, string(id.(string)))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onvalue_array_range_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typePushRange)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_array_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_array_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_array_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushArray(c.data.CounterPop())
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_6() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber("0")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushUndefined()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_15() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushThis()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_23() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.WriteCode(typeLoadNameRaw, id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onvalue_33() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(id any) any {
+	return (func(c *current, id any) any {
 		c.data.WriteCode(typeLoadNameWithDetail, id.(string))
 		return nil
-	})(stack["id"])
+	})(&p.cur, stack["id"])
 }
 
 func (p *parser) call_onvalue_55() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushArray(0)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_80() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushDict(0)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_90() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onvalue_94() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushDict(c.data.CounterPop())
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onnumber_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushIntNumber(toStr(c.text))
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfloat_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushFloatNumber(toStr(c.text))
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onstrPart_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		c.data.CounterAdd(1)
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onstrPart1_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		c.data.CounterAdd(1)
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onstrPart2_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		c.data.CounterAdd(1)
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onstrPart3_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		c.data.CounterAdd(1)
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onfstring_3() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushStr("")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_7() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushStr("")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_11() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushStr("")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_15() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.PushStr("")
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_20() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_27() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_34() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_22() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddFormatString(c.data.CounterPop())
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_43() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_50() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_57() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_45() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddFormatString(c.data.CounterPop())
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_66() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_68() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPop()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_74() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onfstring_76() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CounterPop()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onidentifier_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		return toStr(c.text)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onidentifierWithoutColon_1() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		return toStr(c.text)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onest_7() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.FlagsPush()
 		c.data.Config.DisableStmts = true
 		c.data.Config.DisableNDice = true
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onest_10() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.FlagsPop()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_2() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddStName()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_11() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddStName()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_15() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeStX1)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_26() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddOp(typeStX0)
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_37() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddStName()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_46() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.AddStName()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_51() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CodePush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_60() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.CodePop()
 		c.data.AddStoreComputedOnStack(text.(string))
 		c.data.AddStName()
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_assign_64() any {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func() any {
+	return (func(c *current) any {
 		c.data.CodePush()
 		return nil
-	})()
+	})(&p.cur)
 }
 
 func (p *parser) call_onst_assign_73() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.CodePop()
 		c.data.AddStoreComputedOnStack(text.(string))
 		c.data.AddStName()
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_modify_rest1_4() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.AddStModify("+", text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_modify_rest1_10() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.AddStModify("-", text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_modify_rest_4() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.AddStModify("+", text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_modify_rest_12() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.AddStModify("-", text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_modify_rest_19() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.AddStModify("-", text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_name1_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_name1r_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_name2_1() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_name2r_2() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 func (p *parser) call_onst_name2r_8() any {
 	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	c := p.cur
-
-	return (func(text any) any {
+	return (func(c *current, text any) any {
 		c.data.PushStr(text.(string))
 		return nil
-	})(stack["text"])
+	})(&p.cur, stack["text"])
 }
 
 var (
@@ -6906,72 +6185,49 @@ var (
 	errMaxExprCnt = errors.New("max number of expressions parsed")
 )
 
-// Option is a function that can set an option on the parser. It returns
-// the previous setting as an Option.
-type Option func(*parser) Option
+type parserStack struct {
+	data  []savepoint
+	index int
+	size  int
+}
 
-// maxExpressions creates an Option to stop parsing after the provided
-// number of expressions have been parsed, if the value is 0 then the parser will
-// parse for as many steps as needed (possibly an infinite number).
-//
-// The default for maxExprCnt is 0.
-func maxExpressions(maxExprCnt uint64) Option {
-	return func(p *parser) Option {
-		oldMaxExprCnt := p.maxExprCnt
-		p.maxExprCnt = maxExprCnt
-		return maxExpressions(oldMaxExprCnt)
+func (ss *parserStack) init(size int) {
+	ss.index = -1
+	ss.data = make([]savepoint, size)
+	ss.size = size
+}
+
+func (ss *parserStack) push(v *savepoint) {
+	ss.index += 1
+	if ss.index == ss.size {
+		ss.data = append(ss.data, *v)
+		ss.size = len(ss.data)
+	} else {
+		ss.data[ss.index] = *v
 	}
 }
 
-// entrypoint creates an Option to set the rule exprType to use as entrypoint.
-// The rule exprType must have been specified in the -alternate-entrypoints
-// if generating the parser with the -optimize-grammar flag, otherwise
-// it may have been optimized out. Passing an empty string sets the
-// entrypoint to the first rule in the grammar.
-//
-// The default is to start parsing at the first rule in the grammar.
-func entrypoint(ruleName string) Option {
-	return func(p *parser) Option {
-		oldEntrypoint := p.entrypoint
-		p.entrypoint = ruleName
-		if ruleName == "" {
-			p.entrypoint = "dicescript"
-		}
-		return entrypoint(oldEntrypoint)
-	}
+func (ss *parserStack) pop() *savepoint {
+	ref := &ss.data[ss.index]
+	ss.index--
+	return ref
 }
 
-// allowInvalidUTF8 creates an Option to allow invalid UTF-8 bytes.
-// Every invalid UTF-8 byte is treated as a utf8.RuneError (U+FFFD)
-// by character class matchers and is matched by the any matcher.
-// The returned matched value, c.text and c.offset are NOT affected.
-//
-// The default is false.
-func allowInvalidUTF8(b bool) Option {
-	return func(p *parser) Option {
-		old := p.allowInvalidUTF8
-		p.allowInvalidUTF8 = b
-		return allowInvalidUTF8(old)
-	}
+func (ss *parserStack) setTop(t savepoint) {
+	ss.data[ss.index] = t
 }
 
-// recover creates an Option to set the recover flag to b. When set to
-// true, this causes the parser to recover from panics and convert it
-// to an error. Setting it to false can be useful while debugging to
-// access the full stack trace.
-//
-// The default is true.
-func recoverOption(b bool) Option {
-	return func(p *parser) Option {
-		old := p.recover
-		p.recover = b
-		return recoverOption(old)
-	}
+func (ss *parserStack) top() *savepoint {
+	return &ss.data[ss.index]
 }
+
+// option is a function that can set an option on the parser. It returns
+// the previous setting as an option.
+type option func(*parser) option
 
 // Parse parses the data from b using filename as information in the
 // error messages.
-func parse(filename string, b []byte, opts ...Option) (any, error) {
+func parse(filename string, b []byte, opts ...option) (any, error) {
 	return newParser(filename, b, opts...).parse(g)
 }
 
@@ -6995,18 +6251,8 @@ type savepoint struct {
 type current struct {
 	pos  position // start position of the match
 	text []byte   // raw text of the match
-
-	// globalStore is a general store for the user to store arbitrary key-value
-	// pairs that they need to manage and that they do not want tied to the
-	// backtracking of the parser. This is only modified by the user and never
-	// rolled back by the parser. It is always up to the user to keep this in a
-	// consistent state.
-	globalStore storeDict
-
 	data *ParserCustomData
 }
-
-type storeDict map[string]any
 
 // the AST types...
 
@@ -7083,12 +6329,6 @@ type ruleIRefExpr struct {
 }
 
 // nolint: structcheck
-type ruleIRefExprX struct {
-	index int
-	call  func(p *parser, expr any) (any, bool)
-}
-
-// nolint: structcheck
 type andCodeExpr struct {
 	run func(*parser) bool
 }
@@ -7113,13 +6353,12 @@ type codeExpr struct {
 
 // nolint: structcheck
 type charClassMatcher struct {
-	val             string
-	basicLatinChars [128]bool
-	chars           []rune
-	ranges          []rune
-	classes         []*unicode.RangeTable
-	ignoreCase      bool
-	inverted        bool
+	val        string
+	chars      []rune
+	ranges     []rune
+	classes    []*unicode.RangeTable
+	ignoreCase bool
+	inverted   bool
 }
 
 type anyMatcher position // nolint: structcheck
@@ -7185,7 +6424,7 @@ func (p *parserError) Error() string {
 }
 
 // newParser creates a parser with the specified input source and options.
-func newParser(filename string, b []byte, opts ...Option) *parser {
+func newParser(filename string, b []byte, opts ...option) *parser {
 	stats := Stats{
 		ChoiceAltCnt: make(map[string]map[string]int),
 	}
@@ -7197,8 +6436,7 @@ func newParser(filename string, b []byte, opts ...Option) *parser {
 		pt:       savepoint{position: position{line: 1}},
 		recover:  true,
 		cur: current{
-			globalStore: make(storeDict),
-			data:        &ParserCustomData{},
+			data: &ParserCustomData{},
 		},
 		maxFailPos:      position{col: 1, line: 1},
 		maxFailExpected: make([]string, 0, 20),
@@ -7207,6 +6445,8 @@ func newParser(filename string, b []byte, opts ...Option) *parser {
 		entrypoint: "dicescript",
 		scStack:    []bool{false},
 	}
+
+	p.spStack.init(5)
 	p.setOptions(opts)
 
 	if p.maxExprCnt == 0 {
@@ -7216,16 +6456,16 @@ func newParser(filename string, b []byte, opts ...Option) *parser {
 	return p
 }
 
-// setCustomData to the parser.
-func (p *parser) setCustomData(data *ParserCustomData) {
-	p.cur.data = data
-}
-
 // setOptions applies the options to the parser.
-func (p *parser) setOptions(opts []Option) {
+func (p *parser) setOptions(opts []option) {
 	for _, opt := range opts {
 		opt(p)
 	}
+}
+
+// setCustomData to the parser.
+func (p *parser) setCustomData(data *ParserCustomData) {
+	p.cur.data = data
 }
 
 func (p *parser) checkSkipCode() bool {
@@ -7304,8 +6544,9 @@ type parser struct {
 
 	_errPos *position
 	// skip code stack
-	scStack    []bool
-	startCache savepoint
+	scStack []bool
+	// save point stack
+	spStack parserStack
 }
 
 // push a variable set on the vstack.
@@ -7397,7 +6638,7 @@ func (p *parser) addErrAt(err error, pos position, expected []string) {
 	p.errs.add(pe)
 }
 
-func (p *parser) failAt(fail bool, pos position, want string) {
+func (p *parser) failAt(fail bool, pos *position, want string) {
 	// process fail if parsing fails and not inverted or parsing succeeds and invert is set
 	if fail == p.maxFailInvertExpected {
 		if pos.offset < p.maxFailPos.offset {
@@ -7405,7 +6646,7 @@ func (p *parser) failAt(fail bool, pos position, want string) {
 		}
 
 		if pos.offset > p.maxFailPos.offset {
-			p.maxFailPos = pos
+			p.maxFailPos = *pos
 			p.maxFailExpected = p.maxFailExpected[:0]
 		}
 
@@ -7444,11 +6685,14 @@ func (p *parser) restore(pt savepoint) {
 }
 
 // get the slice of bytes from the savepoint start to the current position.
-func (p *parser) sliceFrom(start savepoint) []byte {
+func (p *parser) sliceFrom(start *savepoint) []byte {
 	return p.data[start.position.offset:p.pt.position.offset]
 }
 
-//
+// get the slice of bytes from the savepoint start to the current position.
+func (p *parser) sliceFromOffset(offset int) []byte {
+	return p.data[offset:p.pt.position.offset]
+}
 
 func (p *parser) buildRulesTable(g *grammar) {
 	p.rules = make(map[string]*rule, len(g.rules))
@@ -7462,7 +6706,7 @@ func (p *parser) parse(grammar *grammar) (val any, err error) {
 	if grammar == nil {
 		grammar = g
 	}
-	if len(g.rules) == 0 {
+	if len(grammar.rules) == 0 {
 		p.addErr(errNoRule)
 		return nil, p.errs.err()
 	}
@@ -7537,17 +6781,6 @@ func listJoin(list []string, sep string, lastSep string) string {
 }
 
 func (p *parser) parseRuleWrap(rule *rule) (any, bool) {
-	var (
-		val any
-		ok  bool
-	)
-
-	val, ok = p.parseRule(rule)
-
-	return val, ok
-}
-
-func (p *parser) parseRule(rule *rule) (any, bool) {
 	p.rstack = append(p.rstack, rule)
 	p.pushV()
 	val, ok := p.parseExprWrap(rule.expr)
@@ -7556,14 +6789,8 @@ func (p *parser) parseRule(rule *rule) (any, bool) {
 	return val, ok
 }
 
-func (p *parser) parseExprWrap(expr any) (any, bool) {
-	val, ok := p.parseExpr(expr)
-
-	return val, ok
-}
-
 // nolint: gocyclo
-func (p *parser) parseExpr(expr any) (any, bool) {
+func (p *parser) parseExprWrap(expr any) (any, bool) {
 	p.ExprCnt++
 	if p.ExprCnt > p.maxExprCnt {
 		panic(errMaxExprCnt)
@@ -7604,7 +6831,6 @@ func (p *parser) parseExpr(expr any) (any, bool) {
 		val, ok = p.parseRecoveryExpr(expr)
 	case *ruleRefExpr:
 		val, ok = p.parseRuleRefExpr(expr)
-	//
 	case *ruleIRefExpr:
 		val, ok = p.parseRuleIRefExpr(expr)
 	case *seqExpr:
@@ -7624,16 +6850,17 @@ func (p *parser) parseExpr(expr any) (any, bool) {
 func (p *parser) parseActionExpr(act *actionExpr) (any, bool) {
 	skipCode := p.checkSkipCode()
 	if !skipCode {
-		p.startCache = p.pt
+		p.spStack.push(&p.pt)
 	}
 	val, ok := p.parseExprWrap(act.expr)
 	if ok {
 		if skipCode {
 			return nil, true
 		}
-		p.cur.pos = p.startCache.position
-		p.cur.text = p.sliceFrom(p.startCache)
-		p._errPos = &p.startCache.position
+		start := p.spStack.pop()
+		p.cur.pos = start.position
+		p.cur.text = p.sliceFrom(start)
+		p._errPos = &start.position
 		actVal := act.run(p)
 		p._errPos = nil
 
@@ -7668,23 +6895,22 @@ func (p *parser) parseAndExpr(and *andExpr, logical bool) (any, bool) {
 func (p *parser) parseAnyMatcher(any *anyMatcher) (any, bool) {
 	if p.pt.rn == utf8.RuneError && p.pt.w == 0 {
 		// EOF - see utf8.DecodeRune
-		p.failAt(false, p.pt.position, ".")
+		p.failAt(false, &p.pt.position, ".")
 		return nil, false
 	}
-	start := p.pt
+	startOffset := p.pt.offset
+	p.failAt(true, &p.pt.position, ".")
 	p.read()
-	p.failAt(true, start.position, ".")
-	return p.sliceFrom(start), true
+	return p.sliceFromOffset(startOffset), true
 }
 
 // nolint: gocyclo
 func (p *parser) parseCharClassMatcher(chr *charClassMatcher) (any, bool) {
 	cur := p.pt.rn
-	start := p.pt
 
 	// can't match EOF
 	if cur == utf8.RuneError && p.pt.w == 0 { // see utf8.DecodeRune
-		p.failAt(false, start.position, chr.val)
+		p.failAt(false, &p.pt.position, chr.val)
 		return nil, false
 	}
 
@@ -7696,12 +6922,13 @@ func (p *parser) parseCharClassMatcher(chr *charClassMatcher) (any, bool) {
 	for _, rn := range chr.chars {
 		if rn == cur {
 			if chr.inverted {
-				p.failAt(false, start.position, chr.val)
+				p.failAt(false, &p.pt.position, chr.val)
 				return nil, false
 			}
+			offset := p.pt.position.offset
+			p.failAt(true, &p.pt.position, chr.val)
 			p.read()
-			p.failAt(true, start.position, chr.val)
-			return p.sliceFrom(start), true
+			return p.sliceFromOffset(offset), true
 		}
 	}
 
@@ -7709,12 +6936,13 @@ func (p *parser) parseCharClassMatcher(chr *charClassMatcher) (any, bool) {
 	for i := 0; i < len(chr.ranges); i += 2 {
 		if cur >= chr.ranges[i] && cur <= chr.ranges[i+1] {
 			if chr.inverted {
-				p.failAt(false, start.position, chr.val)
+				p.failAt(false, &p.pt.position, chr.val)
 				return nil, false
 			}
+			offset := p.pt.position.offset
+			p.failAt(true, &p.pt.position, chr.val)
 			p.read()
-			p.failAt(true, start.position, chr.val)
-			return p.sliceFrom(start), true
+			return p.sliceFromOffset(offset), true
 		}
 	}
 
@@ -7722,26 +6950,27 @@ func (p *parser) parseCharClassMatcher(chr *charClassMatcher) (any, bool) {
 	for _, cl := range chr.classes {
 		if unicode.Is(cl, cur) {
 			if chr.inverted {
-				p.failAt(false, start.position, chr.val)
+				p.failAt(false, &p.pt.position, chr.val)
 				return nil, false
 			}
+			offset := p.pt.position.offset
+			p.failAt(true, &p.pt.position, chr.val)
 			p.read()
-			p.failAt(true, start.position, chr.val)
-			return p.sliceFrom(start), true
+			return p.sliceFromOffset(offset), true
 		}
 	}
 
 	if chr.inverted {
+		offset := p.pt.position.offset
+		p.failAt(true, &p.pt.position, chr.val)
 		p.read()
-		p.failAt(true, start.position, chr.val)
-		return p.sliceFrom(start), true
+		return p.sliceFromOffset(offset), true
 	}
-	p.failAt(false, start.position, chr.val)
+	p.failAt(false, &p.pt.position, chr.val)
 	return nil, false
 }
 
 func (p *parser) parseChoiceExpr(ch *choiceExpr) (any, bool) {
-
 	for altI, alt := range ch.alternatives {
 		// dummy assignment to prevent compile error if optimized
 		_ = altI
@@ -7757,26 +6986,16 @@ func (p *parser) parseChoiceExpr(ch *choiceExpr) (any, bool) {
 }
 
 func (p *parser) parseLabeledExpr(lab *labeledExpr) (any, bool) {
-	start := p.pt
+	startOffset := p.pt.position.offset
 	var val any
 	var ok bool
-	if lab.textCapture {
-		// state := p.cloneState()
-		p.pushV()
-		// p.scStack = append(p.scStack, true)
-		val, ok = p.parseExprWrap(lab.expr)
-		// p.scStack = p.scStack[:len(p.scStack)-1]
-		p.popV()
-		// p.restoreState(state)
-	} else {
-		p.pushV()
-		val, ok = p.parseExprWrap(lab.expr)
-		p.popV()
-	}
+	p.pushV()
+	val, ok = p.parseExprWrap(lab.expr)
+	p.popV()
 	if ok && lab.label != "" {
 		m := p.vstack[len(p.vstack)-1]
 		if lab.textCapture {
-			m[lab.label] = string(p.sliceFrom(start))
+			m[lab.label] = string(p.sliceFromOffset(startOffset))
 		} else {
 			m[lab.label] = val
 		}
@@ -7788,7 +7007,6 @@ func (p *parser) parseCodeExpr(code *codeExpr) (any, bool) {
 	if !code.notSkip && p.checkSkipCode() {
 		return nil, true
 	}
-
 	return code.run(p), true
 }
 
@@ -7800,14 +7018,14 @@ func (p *parser) parseLitMatcher(lit *litMatcher) (any, bool) {
 			cur = unicode.ToLower(cur)
 		}
 		if cur != want {
-			p.failAt(false, start.position, lit.want)
+			p.failAt(false, &start.position, lit.want)
 			p.restore(start)
 			return nil, false
 		}
 		p.read()
 	}
-	p.failAt(true, start.position, lit.want)
-	return p.sliceFrom(start), true
+	p.failAt(true, &start.position, lit.want)
+	return p.sliceFrom(&start), true
 }
 
 func (p *parser) parseNotCodeExpr(not *notCodeExpr) (any, bool) {
@@ -7837,7 +7055,6 @@ func (p *parser) parseNotExpr(not *notExpr, logical bool) (any, bool) {
 
 func (p *parser) parseOneOrMoreExpr(expr *oneOrMoreExpr) (any, bool) {
 	var vals []any
-
 	for {
 		p.pushV()
 		val, ok := p.parseExprWrap(expr.expr)
@@ -7854,7 +7071,6 @@ func (p *parser) parseOneOrMoreExpr(expr *oneOrMoreExpr) (any, bool) {
 }
 
 func (p *parser) parseRecoveryExpr(recover *recoveryExpr) (any, bool) {
-
 	p.pushRecovery(recover.failureLabel, recover.recoverExpr)
 	val, ok := p.parseExprWrap(recover.expr)
 	p.popRecovery()
@@ -7893,7 +7109,6 @@ func (p *parser) parseSeqExpr(seq *seqExpr) (any, bool) {
 }
 
 func (p *parser) parseThrowExpr(expr *throwExpr) (any, bool) {
-
 	for i := len(p.recoveryStack) - 1; i >= 0; i-- {
 		if recoverExpr, ok := p.recoveryStack[i][expr.label]; ok {
 			if val, ok := p.parseExprWrap(recoverExpr); ok {
@@ -7901,13 +7116,11 @@ func (p *parser) parseThrowExpr(expr *throwExpr) (any, bool) {
 			}
 		}
 	}
-
 	return nil, false
 }
 
 func (p *parser) parseZeroOrMoreExpr(expr *zeroOrMoreExpr) (any, bool) {
 	var vals []any
-
 	for {
 		p.pushV()
 		val, ok := p.parseExprWrap(expr.expr)

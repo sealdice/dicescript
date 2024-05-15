@@ -16,6 +16,8 @@
 //nolint:unreachable
 package dicescript
 
+{{ if not .grammarOnly }}
+
 type ParserCustomData struct {
     ParserData
 }
@@ -24,12 +26,12 @@ func toStr(x []byte) string {
 	return string(x)
 }
 
+{{ end }}
 }
 
 // 出口
 dicescript <- sp stmtRoot sp {
     c.data.AddOp(typeHalt)
-    return nil
 }
 
 stmtRoot <- stmtLines sp
