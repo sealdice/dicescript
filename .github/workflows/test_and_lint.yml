@@ -20,6 +20,11 @@ jobs:
       - run: go get
       - run: go generate ./...
       - run: go test -v -bench=^BenchmarkInBoundsChannels$ -cpuprofile=cpu.out -memprofile mem.out .
+      # 第一遍是冷启动，再进行一次测试
+      - run: go test -v . -count=1
+      - run: go test -v . -count=1
+      - run: go test -v . -count=1
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
