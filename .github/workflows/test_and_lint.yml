@@ -1,16 +1,8 @@
 on:
   push:
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - '**.peg'
-  pull_request:
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - '**.peg'
+    branches: [ "performance-compare" ]
 
-name: Test & Lint
+name: Test & Lint peg version
 
 jobs:
   test:
@@ -27,7 +19,17 @@ jobs:
       - run: go mod tidy
       - run: go get
       - run: go generate ./...
-      - run: go test -v -race -cover ./...
+      - run: go test -v -bench=^BenchmarkInBoundsChannels$ -cpuprofile=cpu.out -memprofile mem.out .
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-profile
+          path: ./cpu.out
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: mem-profile
+          path: ./mem.out
 
   lint:
     runs-on: ubuntu-latest
