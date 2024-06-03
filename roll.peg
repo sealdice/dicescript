@@ -79,7 +79,7 @@ stmtContinue <- "continue" sp {
 }
 
 stmtReturn <- "return" sp1x exprRoot { c.data.AddOp(typeReturn); }
-            / "return" sp { c.data.PushUndefined(); c.data.AddOp(typeReturn); }
+            / "return" sp { c.data.PushNull(); c.data.AddOp(typeReturn); }
 
 stmtWhile <- "while" { c.data.LoopBegin(); c.data.OffsetPush() } sp1x exprRoot { c.data.AddOp(typeJne); c.data.OffsetPush() }
              block { c.data.AddOp(typeJmp); c.data.OffsetPush(); c.data.OffsetJmpSetX(0, 2, true); c.data.OffsetJmpSetX(1, 1, false); c.data.ContinueSet(2); c.data.BreakSet(); c.data.OffsetPopN(3);c.data.LoopEnd(); }
@@ -131,8 +131,8 @@ stmtAssign <- &stmtAssignType1 stmtAssignType1
 
 exprRoot <- exprSlice sp
 
-_step <- (':' sp (exprRoot / sp { c.data.PushUndefined() }) / sp { c.data.PushUndefined() })
-_sliceSuffix <- '[' sp (exprRoot / sp { c.data.PushUndefined() }) ':' sp (exprRoot / sp { c.data.PushUndefined() }) _step ']' sp
+_step <- (':' sp (exprRoot / sp { c.data.PushNull() }) / sp { c.data.PushNull() })
+_sliceSuffix <- '[' sp (exprRoot / sp { c.data.PushNull() }) ':' sp (exprRoot / sp { c.data.PushNull() }) _step ']' sp
 
 exprSliceType1 <- exprTernary _sliceSuffix (!'=') { c.data.AddOp(typeSliceGet) }
 exprSlice <- &exprSliceType1 exprSliceType1
@@ -300,7 +300,7 @@ value_array <- '[' sp { c.data.CounterPush(); c.data.CounterAdd(1) } exprRoot ('
 
 value <- "true" sp { c.data.PushIntNumber("1"); }
        / "false" sp { c.data.PushIntNumber("0"); }
-       / "undefined" sp { c.data.PushUndefined() }
+       / "null" sp { c.data.PushNull() }
        / "this" sp { c.data.PushThis() } item_get attr_get
        / '&' id:identifier sp { c.data.WriteCode(typeLoadNameRaw, id.(string)); } attr_get
 

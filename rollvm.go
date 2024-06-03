@@ -34,7 +34,7 @@ func NewVM() *Context {
 
 // 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
 func (ctx *Context) RunExpr(value string) (*VMValue, error) {
-	val := VMValueNewFunctionRaw(&FunctionData{
+	val := NewFunctionValRaw(&FunctionData{
 		Expr:      ctx.Config.DefaultDiceSideExpr,
 		Name:      "",
 		Params:    nil,
@@ -87,7 +87,7 @@ func (ctx *Context) Run(value string) error {
 	if ctx.top != 0 {
 		ctx.Ret = &ctx.stack[ctx.top-1]
 	} else {
-		ctx.Ret = VMValueNewNull()
+		ctx.Ret = NewNullVal()
 	}
 
 	// 给出VM解析完句子后的剩余文本
@@ -334,11 +334,11 @@ func (e *Context) Evaluate() {
 			e.top++
 		case typePushArray:
 			num := code.Value.(IntType)
-			stackPush(VMValueNewArray(stackPopN(num)...))
+			stackPush(NewArrayVal(stackPopN(num)...))
 		case typePushDict:
 			num := code.Value.(IntType)
 			items := stackPopN(num * 2)
-			dict, err := VMValueNewDictWithArray(items...)
+			dict, err := NewDictValWithArray(items...)
 			if err != nil {
 				e.Error = err
 				return
@@ -347,8 +347,8 @@ func (e *Context) Evaluate() {
 		case typePushComputed, typePushFunction:
 			val := code.Value.(*VMValue)
 			stackPush(val)
-		case typePushUndefined:
-			stackPush(VMValueNewUndefined())
+		case typePushNull:
+			stackPush(NewNullVal())
 		case typePushThis:
 			stackPush(vmValueNewLocal())
 		//case typePushGlobal:
@@ -379,13 +379,13 @@ func (e *Context) Evaluate() {
 			arr := make([]*VMValue, length)
 			index := 0
 			for i := _a; ; i += step {
-				arr[index] = VMValueNewInt(i)
+				arr[index] = NewIntVal(i)
 				index++
 				if i == _b {
 					break
 				}
 			}
-			stackPush(VMValueNewArray(arr...))
+			stackPush(NewArrayVal(arr...))
 		case typePushLast:
 			if lastPop == nil {
 				ctx.Error = errors.New("非法调用指令 push.last")
@@ -408,7 +408,7 @@ func (e *Context) Evaluate() {
 				}
 
 				if val == nil {
-					val = VMValueNewFunctionRaw(&FunctionData{
+					val = NewFunctionValRaw(&FunctionData{
 						Expr:      ctx.Config.DefaultDiceSideExpr,
 						Name:      "",
 						Params:    nil,
@@ -424,7 +424,7 @@ func (e *Context) Evaluate() {
 				}
 				stackPush(v)
 			} else {
-				stackPush(VMValueNewInt(100))
+				stackPush(NewIntVal(100))
 			}
 
 		case typeLogicAnd:
@@ -464,7 +464,7 @@ func (e *Context) Evaluate() {
 				return
 			}
 			if ret == nil {
-				ret = VMValueNewUndefined()
+				ret = NewNullVal()
 			}
 			stackPush(ret)
 		case typeItemSet:
@@ -500,7 +500,7 @@ func (e *Context) Evaluate() {
 			stackPush(ret)
 		case typeSliceGet:
 			step := stackPop() // step
-			if step.TypeId != VMTypeUndefined {
+			if step.TypeId != VMTypeNull {
 				ctx.Error = errors.New("尚不支持分片步长")
 				return
 			}
@@ -515,7 +515,7 @@ func (e *Context) Evaluate() {
 		case typeSliceSet:
 			val := stackPop()
 			step := stackPop() // step
-			if step.TypeId != VMTypeUndefined {
+			if step.TypeId != VMTypeNull {
 				ctx.Error = errors.New("尚不支持分片步长")
 				return
 			}
@@ -709,14 +709,14 @@ func (e *Context) Evaluate() {
 			num, detail := RollCommon(diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
 			diceStateIndex -= 1
 
-			ret := VMValueNewInt(num)
+			ret := NewIntVal(num)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detail
 			stackPush(ret)
 
 		case typeDiceFate:
 			sum, detail := RollFate()
-			ret := VMValueNewInt(sum)
+			ret := NewIntVal(sum)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detail
 			stackPush(ret)
@@ -730,7 +730,7 @@ func (e *Context) Evaluate() {
 			}
 
 			r, detailText := RollCoC(code.T == typeDiceCocBonus, diceNum)
-			ret := VMValueNewInt(r)
+			ret := NewIntVal(r)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
 			stackPush(ret)
@@ -764,7 +764,7 @@ func (e *Context) Evaluate() {
 			}
 
 			num, _, _, detailText := RollWoD(v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE)
-			ret := VMValueNewInt(num)
+			ret := NewIntVal(num)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
 			stackPush(ret)
@@ -784,7 +784,7 @@ func (e *Context) Evaluate() {
 				return
 			}
 			success, _, _, detailText := RollDoubleCross(v.MustReadInt(), dcState.pool, dcState.points)
-			ret := VMValueNewInt(success)
+			ret := NewIntVal(success)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
 			stackPush(ret)

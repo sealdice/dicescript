@@ -119,8 +119,8 @@ func (e *ParserData) PushDict(value IntType) {
 	e.WriteCode(typePushDict, value)
 }
 
-func (e *ParserData) PushUndefined() {
-	e.WriteCode(typePushUndefined, nil)
+func (e *ParserData) PushNull() {
+	e.WriteCode(typePushNull, nil)
 }
 
 func (e *ParserData) PushThis() {
@@ -295,7 +295,7 @@ func (e *ParserData) AddInvoke(paramsNum IntType) {
 
 func (p *ParserData) AddStoreComputed(name string, text string) {
 	code, length := p.CodePop()
-	val := VMValueNewComputedRaw(&ComputedData{
+	val := NewComputedValRaw(&ComputedData{
 		Expr:      text,
 		code:      code,
 		codeIndex: length,
@@ -307,7 +307,7 @@ func (p *ParserData) AddStoreComputed(name string, text string) {
 
 func (p *ParserData) AddStoreComputedOnStack(text string) {
 	code, length := p.CodePop()
-	val := VMValueNewComputedRaw(&ComputedData{
+	val := NewComputedValRaw(&ComputedData{
 		Expr:      text,
 		code:      code,
 		codeIndex: length,
@@ -324,7 +324,7 @@ func (p *ParserData) AddStoreFunction(name string, paramsReversed []string, text
 		paramsReversed[i], paramsReversed[j] = paramsReversed[j], paramsReversed[i]
 	}
 
-	val := VMValueNewFunctionRaw(&FunctionData{
+	val := NewFunctionValRaw(&FunctionData{
 		Expr:      text,
 		Name:      name,
 		Params:    paramsReversed,

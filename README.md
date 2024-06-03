@@ -81,11 +81,15 @@ DiceScript将使用和RollVM相同的技术栈，但会有更好的接口设计�
 
 ## 更新记录
 
+#### 2024.6.3
+* 修改API，新建变量更为简洁
+* 移除了undefined
+* 修复了ToJSON的一个bug
+
 #### 2024.5.12
 * 使用 [自己修改的 pigeon](https://github.com/fy0/pigeon) 重构语法解析
 
 #### 2023.9.15
-
 * NativeObject 一种用于绑定Go对象的类型，行为类似于dict
 * 为字典类型增加了 keys() values() items() 方法
 * dir 函数，和python的dir函数类似，用于获取对象的所有属性

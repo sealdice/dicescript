@@ -18,20 +18,18 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 	case VMTypeString:
 		return json.Marshal(v)
 
-	case VMTypeUndefined:
-		fallthrough
 	case VMTypeNull:
 		return json.Marshal(struct {
-			TypeId VMValueType `json:"typeId"`
+			TypeId VMValueType `json:"t"`
 		}{v.TypeId})
 
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
 		return json.Marshal(struct {
-			TypeId VMValueType `json:"typeId"`
+			TypeId VMValueType `json:"t"`
 			Value  struct {
 				Expr string `json:"expr"`
-			} `json:"value"`
+			} `json:"v"`
 		}{
 			v.TypeId,
 			struct {
@@ -57,7 +55,7 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 			lst = append(lst, json_data)
 		}
 
-		lst2 := [][]byte{[]byte(`{"typeId":6,"value":{"list":[`)}
+		lst2 := [][]byte{[]byte(`{"t":6,"v":{"list":[`)}
 		lst2 = append(lst2, bytes.Join(lst, []byte(",")))
 		lst2 = append(lst2, []byte("]}}"))
 
@@ -80,24 +78,24 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 			var jsonData []byte
 			jsonData, err = value.ToJSONRaw(save)
 			if err != nil {
-				return true
+				return false
 			}
 			jsonKey, err = json.Marshal(key)
 			if err != nil {
-				return true
+				return false
 			}
 
 			b := append(jsonKey, []byte(":")...)
 			b = append(b, jsonData...)
 
 			lst = append(lst, b)
-			return false
+			return true
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		lst2 := [][]byte{[]byte(`{"typeId":7,"value":{"dict":{`)}
+		lst2 := [][]byte{[]byte(`{"t":7,"v":{"dict":{`)}
 		lst2 = append(lst2, bytes.Join(lst, []byte(",")))
 		lst2 = append(lst2, []byte("}}}"))
 
@@ -106,12 +104,12 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 	case VMTypeFunction:
 		cd, _ := v.ReadFunctionData()
 		return json.Marshal(struct {
-			TypeId VMValueType `json:"typeId"`
+			TypeId VMValueType `json:"t"`
 			Value  struct {
 				Expr   string   `json:"expr"`
 				Name   string   `json:"name"`
 				Params []string `json:"params"`
-			} `json:"value"`
+			} `json:"v"`
 		}{
 			v.TypeId,
 			struct {
@@ -124,10 +122,10 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 	case VMTypeNativeFunction:
 		fd, _ := v.ReadNativeFunctionData()
 		return json.Marshal(struct {
-			TypeId VMValueType `json:"typeId"`
+			TypeId VMValueType `json:"t"`
 			Value  struct {
 				Name string `json:"name"`
-			} `json:"value"`
+			} `json:"v"`
 		}{
 			v.TypeId,
 			struct {
@@ -137,10 +135,10 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 	case VMTypeNativeObject:
 		fd, _ := v.ReadNativeObjectData()
 		return json.Marshal(struct {
-			TypeId VMValueType `json:"typeId"`
+			TypeId VMValueType `json:"t"`
 			Value  struct {
 				Name string `json:"name"`
-			} `json:"value"`
+			} `json:"v"`
 		}{
 			v.TypeId,
 			struct {
@@ -157,7 +155,7 @@ func (v *VMValue) ToJSON() ([]byte, error) {
 
 func (v *VMValue) UnmarshalJSON(input []byte) error {
 	var v0 struct {
-		TypeId VMValueType `json:"typeId"`
+		TypeId VMValueType `json:"t"`
 	}
 
 	err := json.Unmarshal(input, &v0)
@@ -169,63 +167,61 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 	switch v0.TypeId {
 	case VMTypeInt:
 		var v1 struct {
-			Value IntType `json:"value"`
+			Value IntType `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
 			// 这里浪费了一点性能，但是流程的一致性会更好
-			v.Value = VMValueNewInt(v1.Value).Value
+			v.Value = NewIntVal(v1.Value).Value
 		}
 		return err
 	case VMTypeFloat:
 		var v1 struct {
-			Value float64 `json:"value"`
+			Value float64 `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			v.Value = VMValueNewFloat(v1.Value).Value
+			v.Value = NewFloatVal(v1.Value).Value
 		}
 		return err
 	case VMTypeString:
 		var v1 struct {
-			Value string `json:"value"`
+			Value string `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			v.Value = VMValueNewStr(v1.Value).Value
+			v.Value = NewStrVal(v1.Value).Value
 		}
 		return err
-	case VMTypeUndefined:
-		return nil
 	case VMTypeNull:
 		return nil
 	case VMTypeComputedValue:
 		var v1 struct {
 			Value struct {
 				Expr string `json:"expr"`
-			} `json:"value"`
+			} `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			v.Value = VMValueNewComputed(v1.Value.Expr).Value
+			v.Value = NewComputedVal(v1.Value.Expr).Value
 		}
 		return err
 	case VMTypeArray:
 		var v1 struct {
 			Value struct {
 				List []*VMValue `json:"list"`
-			} `json:"value"`
+			} `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			v.Value = VMValueNewArrayRaw(v1.Value.List).Value
+			v.Value = NewArrayValRaw(v1.Value.List).Value
 		}
 		return err
 	case VMTypeDict:
 		var v1 struct {
 			Value struct {
 				Dict map[string]*VMValue `json:"dict"`
-			} `json:"value"`
+			} `json:"v"`
 		}
 
 		err := json.Unmarshal(input, &v1)
@@ -234,7 +230,7 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 			for k, v := range v1.Value.Dict {
 				m.Store(k, v)
 			}
-			v.Value = VMValueNewDict(m).Value
+			v.Value = NewDictVal(m).Value
 		}
 		return err
 
@@ -244,7 +240,7 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 				Expr   string   `json:"expr"`
 				Name   string   `json:"name"`
 				Params []string `json:"params"`
-			} `json:"value"`
+			} `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
@@ -258,7 +254,7 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 		var v1 struct {
 			Value struct {
 				Name string `json:"name"`
-			} `json:"value"`
+			} `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
@@ -272,13 +268,13 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 		var v1 struct {
 			Value struct {
 				Name string `json:"name"`
-			} `json:"value"`
+			} `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
 			od := &NativeObjectData{Name: v1.Value.Name}
 			// 只能创建一个空壳，也许反序列化时跳过会更好
-			v.Value = VMValueNewNativeObject(od).Value
+			v.Value = NewNativeObjectVal(od).Value
 			return nil
 		}
 		return err

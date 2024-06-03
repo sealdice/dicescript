@@ -31,11 +31,11 @@ func valueEqual(a *VMValue, b *VMValue) bool {
 	return ValueEqual(a, b, false)
 }
 
-var ni = VMValueNewInt
-var nf = VMValueNewFloat
-var ns = VMValueNewStr
-var na = VMValueNewArray
-var nd = VMValueMustNewDictWithArray
+var ni = NewIntVal
+var nf = NewFloatVal
+var ns = NewStrVal
+var na = NewArrayVal
+var nd = NewDictValWithArrayMust
 
 func TestCompare(t *testing.T) {
 	ctx := NewVM()
@@ -341,7 +341,7 @@ func TestAttrGet(t *testing.T) {
 	err := vm.Run("&a = d + 1; &a.d = 2; &a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "d"), ni(2)))
-		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), VMValueNewUndefined()))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), NewNullVal()))
 	}
 }
 
@@ -350,7 +350,7 @@ func TestDict(t *testing.T) {
 	err := vm.Run("&a = d + 1; &a.d = 2; &a")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "d"), ni(2)))
-		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), VMValueNewUndefined()))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), NewNullVal()))
 	}
 }
 
@@ -375,8 +375,8 @@ func TestNativeObject(t *testing.T) {
 			return []*VMValue{ns("x")}
 		},
 	}
-	v := VMValueNewNativeObject(od)
-	assert.True(t, valueEqual(v.AttrGet(vm, "a"), VMValueNewUndefined()))
+	v := NewNativeObjectVal(od)
+	assert.True(t, valueEqual(v.AttrGet(vm, "a"), NewNullVal()))
 	v.AttrSet(vm, "a", ni(1))
 	assert.True(t, valueEqual(v.AttrGet(vm, "a"), ni(1)))
 

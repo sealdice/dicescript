@@ -6,7 +6,7 @@ import (
 )
 
 func TestTypesFuncDict(t *testing.T) {
-	d := VMValueNewDict(nil)
+	d := NewDictVal(nil)
 	d.Store("a", ni(1))
 
 	v, _ := d.Load("a")
@@ -25,7 +25,7 @@ func TestTypesFuncDict(t *testing.T) {
 func TestTypesFuncDictToStr(t *testing.T) {
 	data := &ValueMap{}
 	data.Store("a", ni(1))
-	d := VMValueNewDict(data)
+	d := NewDictVal(data)
 	assert.Equal(t, d.ToString(), "{'a': 1}")
 }
 

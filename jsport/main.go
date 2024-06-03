@@ -4,8 +4,8 @@
 package main
 
 import (
-	"regexp"
-	"strconv"
+	//"regexp"
+	//"strconv"
 
 	"github.com/gopherjs/gopherjs/js"
 	ds "github.com/sealdice/dicescript"
@@ -25,23 +25,23 @@ func newVM(name string) *js.Object {
 	//	scope[name] = v
 	//}
 
-	re := regexp.MustCompile(`^_(\D+)(\d+)$`)
-	vm.GlobalValueLoadFunc = func(name string) *ds.VMValue {
-		m := re.FindStringSubmatch(name)
-		if len(m) > 1 {
-			val, _ := strconv.ParseInt(m[2], 10, 64)
-			return ds.VMValueNewInt(ds.IntType(val))
-		}
-
-		if v, exists := player.Load(name); exists {
-			return v
-		}
-
-		if val, ok := scope[name]; ok {
-			return val
-		}
-		return nil
-	}
+	//re := regexp.MustCompile(`^_(\D+)(\d+)$`)
+	//vm.GlobalValueLoadFunc = func(name string) *ds.VMValue {
+	//	m := re.FindStringSubmatch(name)
+	//	if len(m) > 1 {
+	//		val, _ := strconv.ParseInt(m[2], 10, 64)
+	//		return ds.VMValueNewInt(ds.IntType(val))
+	//	}
+	//
+	//	if v, exists := player.Load(name); exists {
+	//		return v
+	//	}
+	//
+	//	if val, ok := scope[name]; ok {
+	//		return val
+	//	}
+	//	return nil
+	//}
 
 	return js.MakeFullWrapper(vm)
 }

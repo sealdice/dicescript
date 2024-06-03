@@ -37,7 +37,7 @@ func TestValueDefineNumber(t *testing.T) {
 }
 
 func TestValueIdentifier(t *testing.T) {
-	simpleExecute(t, "val", VMValueNewUndefined())
+	simpleExecute(t, "val", NewNullVal())
 }
 
 func TestSimpleRun(t *testing.T) {
@@ -207,7 +207,7 @@ func TestValueStore(t *testing.T) {
 	if err != nil {
 		t.Errorf("VM Error: %s", err.Error())
 	}
-	assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
+	assert.True(t, valueEqual(vm.Ret, NewNullVal()))
 
 	// 栈指针bug(两个变量实际都指向了栈的某一个位置，导致值相同)
 	vm = NewVM()
@@ -368,7 +368,7 @@ func TestItemSetBug(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("a = [0,0,0]; i=0; while i<3 { a[i] = i+1; i=i+1 }  a")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(3))))
 	}
 }
 
@@ -500,7 +500,7 @@ func TestArray(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("[1,2,3]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(3))))
 	}
 
 	vm = NewVM()
@@ -656,7 +656,7 @@ func TestComputed(t *testing.T) {
 	vm = NewVM()
 	err = vm.Run("&a = undefined; a")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewUndefined()))
+		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
 	}
 }
 
@@ -811,39 +811,39 @@ func TestSliceGet(t *testing.T) {
 
 	err = vm.Run("a[:]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3), ni(4))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(3), ni(4))))
 	}
 
 	err = vm.Run("a[:2]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2))))
 	}
 
 	err = vm.Run("a[0:-1]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(3))))
 	}
 
 	err = vm.Run("a[-3:-1]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
 	}
 
 	err = vm.Run("a[-3:-1:1]")
 	assert.Error(t, err)
 	// 尚不支持分片步长
 	//if assert.NoError(t, err) {
-	//	assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+	//	assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
 	//}
 
 	err = vm.Run("a[-3:-1]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
 	}
 
 	err = vm.Run("b = a[-3:-1]; b[0] = 9; a[-3:-1]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
 	}
 
 	vm = NewVM()
@@ -860,17 +860,17 @@ func TestSliceSet(t *testing.T) {
 
 	err = vm.Run("a[:] = [1,2,3]; a")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(3))))
 	}
 
 	err = vm.Run("a = [1,2,3]; a[:1] = [4,5];a")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(4), ni(5), ni(2), ni(3))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(4), ni(5), ni(2), ni(3))))
 	}
 
 	err = vm.Run("a = [1,2,3]; a[2:] = [4,5];a")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(4), ni(5))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(4), ni(5))))
 	}
 }
 
@@ -878,13 +878,13 @@ func TestRange(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("[1..4]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(1), ni(2), ni(3), ni(4))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(1), ni(2), ni(3), ni(4))))
 	}
 
 	vm = NewVM()
 	err = vm.Run("[4..1]")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, VMValueNewArray(ni(4), ni(3), ni(2), ni(1))))
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(4), ni(3), ni(2), ni(1))))
 	}
 }
 
@@ -1055,7 +1055,7 @@ func TestDiceFlagCoCMacroExpr(t *testing.T) {
 		vm.Config.EnableDiceCoC = true
 		err := vm.Run("// #EnableDice coc false\nb2")
 		if assert.NoError(t, err) {
-			assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+			assert.Equal(t, VMTypeNull, vm.Ret.TypeId)
 		}
 	}
 }
@@ -1075,7 +1075,7 @@ func TestDiceFlagFateMacroExpr(t *testing.T) {
 			if assert.NoError(t, err) {
 				err := vm.Run("f")
 				if assert.NoError(t, err) {
-					assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+					assert.Equal(t, VMTypeNull, vm.Ret.TypeId)
 				}
 			}
 		}
@@ -1143,7 +1143,7 @@ func TestDiceAndSpaceBug(t *testing.T) {
 	err = vm.Run("f1")
 	if assert.NoError(t, err) {
 		assert.Equal(t, "", vm.RestInput)
-		assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+		assert.Equal(t, VMTypeNull, vm.Ret.TypeId)
 	}
 }
 
@@ -1175,7 +1175,7 @@ func TestDiceAndSpaceBug2(t *testing.T) {
 		err = vm.Run(e3)
 		if assert.NoError(t, err) {
 			assert.Equal(t, "", vm.RestInput)
-			assert.Equal(t, VMTypeUndefined, vm.Ret.TypeId)
+			assert.Equal(t, VMTypeNull, vm.Ret.TypeId)
 		}
 	}
 

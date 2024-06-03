@@ -63,7 +63,7 @@ func main() {
 			if m[3] != "" {
 				v, _ := strconv.ParseInt(m[3], 10, 64)
 				fmt.Println("COC值:", name, cocFlagVarPrefix)
-				return name, ds.VMValueNewInt(ds.IntType(v))
+				return name, ds.NewIntVal(ds.IntType(v))
 			}
 		}
 
@@ -72,7 +72,7 @@ func main() {
 	}
 
 	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *ds.Context, groups []string) *ds.VMValue {
-		return ds.VMValueNewInt(2)
+		return ds.NewIntVal(2)
 	})
 
 	//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
@@ -85,8 +85,8 @@ func main() {
 		m := re.FindStringSubmatch(name)
 		if len(m) > 1 {
 			//val, _ := strconv.ParseInt(m[2], 10, 64)
-			//return dice.VMValueNewInt(val)
-			return ds.VMValueNewInt(0)
+			//return dice.NewIntVal(val)
+			return ds.NewIntVal(0)
 		}
 
 		if val, ok := attrs[name]; ok {

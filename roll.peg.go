@@ -90,11 +90,7 @@ var g = &grammar{
 							&oneOrMoreExpr{
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        ";",
-											ignoreCase: false,
-											want:       "\";\"",
-										},
+										&litMatcher{val: ";", want: "\";\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -108,22 +104,15 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "flagsSwitch",
+			name:      "flagsSwitch",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onflagsSwitch_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&litMatcher{
-							val:        "//",
-							ignoreCase: false,
-							want:       "\"//\"",
-						},
+						&litMatcher{val: "//", want: "\"//\""},
 						&ruleIRefExpr{index: 112 /* sp */},
-						&litMatcher{
-							val:        "#EnableDice",
-							ignoreCase: false,
-							want:       "\"#EnableDice\"",
-						},
+						&litMatcher{val: "#EnableDice", want: "\"#EnableDice\""},
 						&ruleIRefExpr{index: 114 /* sp1x */},
 						&labeledExpr{
 							label: "id",
@@ -134,16 +123,8 @@ var g = &grammar{
 							label: "on",
 							expr: &choiceExpr{
 								alternatives: []any{
-									&litMatcher{
-										val:        "true",
-										ignoreCase: false,
-										want:       "\"true\"",
-									},
-									&litMatcher{
-										val:        "false",
-										ignoreCase: false,
-										want:       "\"false\"",
-									},
+									&litMatcher{val: "true", want: "\"true\""},
+									&litMatcher{val: "false", want: "\"false\""},
 								},
 							},
 							textCapture: true,
@@ -187,21 +168,13 @@ var g = &grammar{
 										&seqExpr{
 											exprs: []any{
 												&ruleIRefExpr{index: 115 /* spNoCR */},
-												&litMatcher{
-													val:        "\n",
-													ignoreCase: false,
-													want:       "\"\\n\"",
-												},
+												&litMatcher{val: "\n", want: "\"\\n\""},
 											},
 										},
 										&seqExpr{
 											exprs: []any{
 												&ruleIRefExpr{index: 112 /* sp */},
-												&litMatcher{
-													val:        ";",
-													ignoreCase: false,
-													want:       "\";\"",
-												},
+												&litMatcher{val: ";", want: "\";\""},
 											},
 										},
 									},
@@ -222,11 +195,7 @@ var g = &grammar{
 				run: (*parser).call_onstmtBreak_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&litMatcher{
-							val:        "break",
-							ignoreCase: false,
-							want:       "\"break\"",
-						},
+						&litMatcher{val: "break", want: "\"break\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 					},
 				},
@@ -238,11 +207,7 @@ var g = &grammar{
 				run: (*parser).call_onstmtContinue_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&litMatcher{
-							val:        "continue",
-							ignoreCase: false,
-							want:       "\"continue\"",
-						},
+						&litMatcher{val: "continue", want: "\"continue\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 					},
 				},
@@ -256,11 +221,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtReturn_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "return",
-									ignoreCase: false,
-									want:       "\"return\"",
-								},
+								&litMatcher{val: "return", want: "\"return\""},
 								&ruleIRefExpr{index: 114 /* sp1x */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -270,11 +231,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtReturn_7,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "return",
-									ignoreCase: false,
-									want:       "\"return\"",
-								},
+								&litMatcher{val: "return", want: "\"return\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -287,12 +244,8 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
-						run: (*parser).call_onstmtWhile_2,
-						expr: &litMatcher{
-							val:        "while",
-							ignoreCase: false,
-							want:       "\"while\"",
-						},
+						run:  (*parser).call_onstmtWhile_2,
+						expr: &litMatcher{val: "while", want: "\"while\""},
 					},
 					&actionExpr{
 						run: (*parser).call_onstmtWhile_4,
@@ -318,33 +271,17 @@ var g = &grammar{
 						alternatives: []any{
 							&seqExpr{
 								exprs: []any{
-									&litMatcher{
-										val:        "{",
-										ignoreCase: false,
-										want:       "\"{\"",
-									},
+									&litMatcher{val: "{", want: "\"{\""},
 									&ruleIRefExpr{index: 112 /* sp */},
-									&litMatcher{
-										val:        "}",
-										ignoreCase: false,
-										want:       "\"}\"",
-									},
+									&litMatcher{val: "}", want: "\"}\""},
 								},
 							},
 							&seqExpr{
 								exprs: []any{
-									&litMatcher{
-										val:        "{",
-										ignoreCase: false,
-										want:       "\"{\"",
-									},
+									&litMatcher{val: "{", want: "\"{\""},
 									&ruleIRefExpr{index: 112 /* sp */},
 									&ruleIRefExpr{index: 1 /* stmtRoot */},
-									&litMatcher{
-										val:        "}",
-										ignoreCase: false,
-										want:       "\"}\"",
-									},
+									&litMatcher{val: "}", want: "\"}\""},
 								},
 							},
 						},
@@ -357,11 +294,7 @@ var g = &grammar{
 			name: "stmtElse",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "else",
-						ignoreCase: false,
-						want:       "\"else\"",
-					},
+					&litMatcher{val: "else", want: "\"else\""},
 					&choiceExpr{
 						alternatives: []any{
 							&seqExpr{
@@ -389,11 +322,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtIf_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "if",
-									ignoreCase: false,
-									want:       "\"if\"",
-								},
+								&litMatcher{val: "if", want: "\"if\""},
 								&ruleIRefExpr{index: 114 /* sp1x */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -413,24 +342,17 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "func_def_params",
+			name:      "func_def_params",
+			varExists: true,
 			expr: &choiceExpr{
 				alternatives: []any{
 					&actionExpr{
 						run: (*parser).call_onfunc_def_params_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "(",
-									ignoreCase: false,
-									want:       "\"(\"",
-								},
+								&litMatcher{val: "(", want: "\"(\""},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        ")",
-									ignoreCase: false,
-									want:       "\")\"",
-								},
+								&litMatcher{val: ")", want: "\")\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -441,11 +363,7 @@ var g = &grammar{
 								run: (*parser).call_onfunc_def_params_9,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "(",
-											ignoreCase: false,
-											want:       "\"(\"",
-										},
+										&litMatcher{val: "(", want: "\"(\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -471,11 +389,7 @@ var g = &grammar{
 													run: (*parser).call_onfunc_def_params_21,
 													expr: &seqExpr{
 														exprs: []any{
-															&litMatcher{
-																val:        ",",
-																ignoreCase: false,
-																want:       "\",\"",
-															},
+															&litMatcher{val: ",", want: "\",\""},
 															&ruleIRefExpr{index: 112 /* sp */},
 															&labeledExpr{
 																label: "id2",
@@ -491,11 +405,7 @@ var g = &grammar{
 											},
 										},
 									},
-									&litMatcher{
-										val:        ")",
-										ignoreCase: false,
-										want:       "\")\"",
-									},
+									&litMatcher{val: ")", want: "\")\""},
 									&ruleIRefExpr{index: 112 /* sp */},
 								},
 							},
@@ -505,18 +415,15 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "stmtFunc",
+			name:      "stmtFunc",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
 						run: (*parser).call_onstmtFunc_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "func",
-									ignoreCase: false,
-									want:       "\"func\"",
-								},
+								&litMatcher{val: "func", want: "\"func\""},
 								&ruleIRefExpr{index: 114 /* sp1x */},
 								&labeledExpr{
 									label: "id",
@@ -531,11 +438,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 14 /* func_def_params */},
-								&litMatcher{
-									val:        "{",
-									ignoreCase: false,
-									want:       "\"{\"",
-								},
+								&litMatcher{val: "{", want: "\"{\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -551,11 +454,7 @@ var g = &grammar{
 									},
 									textCapture: true,
 								},
-								&litMatcher{
-									val:        "}",
-									ignoreCase: false,
-									want:       "\"}\"",
-								},
+								&litMatcher{val: "}", want: "\"}\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -564,7 +463,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "stmtAssignType1",
+			name:      "stmtAssignType1",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
@@ -583,11 +483,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType1_7,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "=",
-									ignoreCase: false,
-									want:       "\"=\"",
-								},
+								&litMatcher{val: "=", want: "\"=\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -597,18 +493,15 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "stmtAssignType2",
+			name:      "stmtAssignType2",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
 						run: (*parser).call_onstmtAssignType2_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "&",
-									ignoreCase: false,
-									want:       "\"&\"",
-								},
+								&litMatcher{val: "&", want: "\"&\""},
 								&labeledExpr{
 									label: "id",
 									expr:  &ruleIRefExpr{index: 88 /* identifier */},
@@ -621,11 +514,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType2_8,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "=",
-									ignoreCase: false,
-									want:       "\"=\"",
-								},
+								&litMatcher{val: "=", want: "\"=\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -642,18 +531,15 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "stmtAssignType3",
+			name:      "stmtAssignType3",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
 						run: (*parser).call_onstmtAssignType3_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "&",
-									ignoreCase: false,
-									want:       "\"&\"",
-								},
+								&litMatcher{val: "&", want: "\"&\""},
 								&labeledExpr{
 									label: "id",
 									expr:  &ruleIRefExpr{index: 88 /* identifier */},
@@ -666,11 +552,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType3_8,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        ".",
-									ignoreCase: false,
-									want:       "\".\"",
-								},
+								&litMatcher{val: ".", want: "\".\""},
 								&labeledExpr{
 									label: "id2",
 									expr:  &ruleIRefExpr{index: 88 /* identifier */},
@@ -684,11 +566,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        "=",
-									ignoreCase: false,
-									want:       "\"=\"",
-								},
+								&litMatcher{val: "=", want: "\"=\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -698,24 +576,17 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "stmtAssignType4",
+			name:      "stmtAssignType4",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
 						run: (*parser).call_onstmtAssignType4_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "this",
-									ignoreCase: false,
-									want:       "\"this\"",
-								},
+								&litMatcher{val: "this", want: "\"this\""},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        ".",
-									ignoreCase: false,
-									want:       "\".\"",
-								},
+								&litMatcher{val: ".", want: "\".\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&labeledExpr{
 									label: "id",
@@ -729,11 +600,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType4_11,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "=",
-									ignoreCase: false,
-									want:       "\"=\"",
-								},
+								&litMatcher{val: "=", want: "\"=\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -743,7 +610,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "stmtAssignType5",
+			name:      "stmtAssignType5",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
@@ -762,11 +630,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType5_7,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        ".",
-									ignoreCase: false,
-									want:       "\".\"",
-								},
+								&litMatcher{val: ".", want: "\".\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&labeledExpr{
 									label: "id2",
@@ -780,11 +644,7 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType5_14,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "=",
-									ignoreCase: false,
-									want:       "\"=\"",
-								},
+								&litMatcher{val: "=", want: "\"=\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -800,24 +660,12 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&ruleIRefExpr{index: 24 /* exprRoot */},
-						&litMatcher{
-							val:        "[",
-							ignoreCase: false,
-							want:       "\"[\"",
-						},
+						&litMatcher{val: "[", want: "\"[\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&ruleIRefExpr{index: 24 /* exprRoot */},
-						&litMatcher{
-							val:        "]",
-							ignoreCase: false,
-							want:       "\"]\"",
-						},
+						&litMatcher{val: "]", want: "\"]\""},
 						&ruleIRefExpr{index: 112 /* sp */},
-						&litMatcher{
-							val:        "=",
-							ignoreCase: false,
-							want:       "\"=\"",
-						},
+						&litMatcher{val: "=", want: "\"=\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&ruleIRefExpr{index: 24 /* exprRoot */},
 					},
@@ -832,11 +680,7 @@ var g = &grammar{
 					exprs: []any{
 						&ruleIRefExpr{index: 24 /* exprRoot */},
 						&ruleIRefExpr{index: 26 /* _sliceSuffix */},
-						&litMatcher{
-							val:        "=",
-							ignoreCase: false,
-							want:       "\"=\"",
-						},
+						&litMatcher{val: "=", want: "\"=\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&ruleIRefExpr{index: 24 /* exprRoot */},
 					},
@@ -921,11 +765,7 @@ var g = &grammar{
 				alternatives: []any{
 					&seqExpr{
 						exprs: []any{
-							&litMatcher{
-								val:        ":",
-								ignoreCase: false,
-								want:       "\":\"",
-							},
+							&litMatcher{val: ":", want: "\":\""},
 							&ruleIRefExpr{index: 112 /* sp */},
 							&choiceExpr{
 								alternatives: []any{
@@ -949,11 +789,7 @@ var g = &grammar{
 			name: "_sliceSuffix",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "[",
-						ignoreCase: false,
-						want:       "\"[\"",
-					},
+					&litMatcher{val: "[", want: "\"[\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
@@ -964,11 +800,7 @@ var g = &grammar{
 							},
 						},
 					},
-					&litMatcher{
-						val:        ":",
-						ignoreCase: false,
-						want:       "\":\"",
-					},
+					&litMatcher{val: ":", want: "\":\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
@@ -980,11 +812,7 @@ var g = &grammar{
 						},
 					},
 					&ruleIRefExpr{index: 25 /* _step */},
-					&litMatcher{
-						val:        "]",
-						ignoreCase: false,
-						want:       "\"]\"",
-					},
+					&litMatcher{val: "]", want: "\"]\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -998,11 +826,7 @@ var g = &grammar{
 						&ruleIRefExpr{index: 32 /* exprTernary */},
 						&ruleIRefExpr{index: 26 /* _sliceSuffix */},
 						&notExpr{
-							expr: &litMatcher{
-								val:        "=",
-								ignoreCase: false,
-								want:       "\"=\"",
-							},
+							expr: &litMatcher{val: "=", want: "\"=\""},
 						},
 					},
 				},
@@ -1034,11 +858,7 @@ var g = &grammar{
 							exprs: []any{
 								&ruleIRefExpr{index: 33 /* exprLogicOr */},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        "?",
-									ignoreCase: false,
-									want:       "\"?\"",
-								},
+								&litMatcher{val: "?", want: "\"?\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -1065,11 +885,7 @@ var g = &grammar{
 							exprs: []any{
 								&ruleIRefExpr{index: 33 /* exprLogicOr */},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        "?",
-									ignoreCase: false,
-									want:       "\"?\"",
-								},
+								&litMatcher{val: "?", want: "\"?\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -1080,11 +896,7 @@ var g = &grammar{
 							exprs: []any{
 								&ruleIRefExpr{index: 33 /* exprLogicOr */},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        ":",
-									ignoreCase: false,
-									want:       "\":\"",
-								},
+								&litMatcher{val: ":", want: "\":\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -1116,11 +928,7 @@ var g = &grammar{
 								run: (*parser).call_onexprTernaryType2_6,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        ",",
-											ignoreCase: false,
-											want:       "\",\"",
-										},
+										&litMatcher{val: ",", want: "\",\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&ruleIRefExpr{index: 29 /* exprValueIfExists */},
 									},
@@ -1500,16 +1308,10 @@ var g = &grammar{
 							exprs: []any{
 								&choiceExpr{
 									alternatives: []any{
-										&litMatcher{
-											val:        "kl",
-											ignoreCase: false,
-											want:       "\"kl\"",
-										},
+										&litMatcher{val: "kl", want: "\"kl\""},
 										&charClassMatcher{
-											val:        "[qQ]",
-											chars:      []rune{'q', 'Q'},
-											ignoreCase: false,
-											inverted:   false,
+											val:   "[qQ]",
+											chars: []rune{'q', 'Q'},
 										},
 									},
 								},
@@ -1521,16 +1323,10 @@ var g = &grammar{
 						run: (*parser).call_on_diceMod_8,
 						expr: &choiceExpr{
 							alternatives: []any{
-								&litMatcher{
-									val:        "kl",
-									ignoreCase: false,
-									want:       "\"kl\"",
-								},
+								&litMatcher{val: "kl", want: "\"kl\""},
 								&charClassMatcher{
-									val:        "[qQ]",
-									chars:      []rune{'q', 'Q'},
-									ignoreCase: false,
-									inverted:   false,
+									val:   "[qQ]",
+									chars: []rune{'q', 'Q'},
 								},
 							},
 						},
@@ -1541,16 +1337,10 @@ var g = &grammar{
 							exprs: []any{
 								&choiceExpr{
 									alternatives: []any{
-										&litMatcher{
-											val:        "kh",
-											ignoreCase: false,
-											want:       "\"kh\"",
-										},
+										&litMatcher{val: "kh", want: "\"kh\""},
 										&charClassMatcher{
-											val:        "[kK]",
-											chars:      []rune{'k', 'K'},
-											ignoreCase: false,
-											inverted:   false,
+											val:   "[kK]",
+											chars: []rune{'k', 'K'},
 										},
 									},
 								},
@@ -1562,16 +1352,10 @@ var g = &grammar{
 						run: (*parser).call_on_diceMod_18,
 						expr: &choiceExpr{
 							alternatives: []any{
-								&litMatcher{
-									val:        "kh",
-									ignoreCase: false,
-									want:       "\"kh\"",
-								},
+								&litMatcher{val: "kh", want: "\"kh\""},
 								&charClassMatcher{
-									val:        "[kK]",
-									chars:      []rune{'k', 'K'},
-									ignoreCase: false,
-									inverted:   false,
+									val:   "[kK]",
+									chars: []rune{'k', 'K'},
 								},
 							},
 						},
@@ -1580,43 +1364,27 @@ var g = &grammar{
 						run: (*parser).call_on_diceMod_22,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "dh",
-									ignoreCase: false,
-									want:       "\"dh\"",
-								},
+								&litMatcher{val: "dh", want: "\"dh\""},
 								&ruleIRefExpr{index: 44 /* nos */},
 							},
 						},
 					},
 					&actionExpr{
-						run: (*parser).call_on_diceMod_26,
-						expr: &litMatcher{
-							val:        "dh",
-							ignoreCase: false,
-							want:       "\"dh\"",
-						},
+						run:  (*parser).call_on_diceMod_26,
+						expr: &litMatcher{val: "dh", want: "\"dh\""},
 					},
 					&actionExpr{
 						run: (*parser).call_on_diceMod_28,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "dl",
-									ignoreCase: false,
-									want:       "\"dl\"",
-								},
+								&litMatcher{val: "dl", want: "\"dl\""},
 								&ruleIRefExpr{index: 44 /* nos */},
 							},
 						},
 					},
 					&actionExpr{
-						run: (*parser).call_on_diceMod_32,
-						expr: &litMatcher{
-							val:        "dl",
-							ignoreCase: false,
-							want:       "\"dl\"",
-						},
+						run:  (*parser).call_on_diceMod_32,
+						expr: &litMatcher{val: "dl", want: "\"dl\""},
 					},
 				},
 			},
@@ -1629,11 +1397,7 @@ var g = &grammar{
 						run: (*parser).call_on_diceModType2_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "min",
-									ignoreCase: false,
-									want:       "\"min\"",
-								},
+								&litMatcher{val: "min", want: "\"min\""},
 								&ruleIRefExpr{index: 44 /* nos */},
 							},
 						},
@@ -1642,11 +1406,7 @@ var g = &grammar{
 						run: (*parser).call_on_diceModType2_6,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "max",
-									ignoreCase: false,
-									want:       "\"max\"",
-								},
+								&litMatcher{val: "max", want: "\"max\""},
 								&ruleIRefExpr{index: 44 /* nos */},
 							},
 						},
@@ -1659,20 +1419,12 @@ var g = &grammar{
 			expr: &choiceExpr{
 				alternatives: []any{
 					&actionExpr{
-						run: (*parser).call_on_dicePearMod_2,
-						expr: &litMatcher{
-							val:        "优势",
-							ignoreCase: false,
-							want:       "\"优势\"",
-						},
+						run:  (*parser).call_on_dicePearMod_2,
+						expr: &litMatcher{val: "优势", want: "\"优势\""},
 					},
 					&actionExpr{
-						run: (*parser).call_on_dicePearMod_4,
-						expr: &litMatcher{
-							val:        "劣势",
-							ignoreCase: false,
-							want:       "\"劣势\"",
-						},
+						run:  (*parser).call_on_dicePearMod_4,
+						expr: &litMatcher{val: "劣势", want: "\"劣势\""},
 					},
 				},
 			},
@@ -1683,10 +1435,8 @@ var g = &grammar{
 				exprs: []any{
 					&ruleIRefExpr{index: 44 /* nos */},
 					&charClassMatcher{
-						val:        "[dD]",
-						chars:      []rune{'d', 'D'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[dD]",
+						chars: []rune{'d', 'D'},
 					},
 					&ruleIRefExpr{index: 44 /* nos */},
 				},
@@ -1697,10 +1447,8 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&charClassMatcher{
-						val:        "[dD]",
-						chars:      []rune{'d', 'D'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[dD]",
+						chars: []rune{'d', 'D'},
 					},
 					&ruleIRefExpr{index: 44 /* nos */},
 				},
@@ -1712,10 +1460,8 @@ var g = &grammar{
 				exprs: []any{
 					&ruleIRefExpr{index: 44 /* nos */},
 					&charClassMatcher{
-						val:        "[dD]",
-						chars:      []rune{'d', 'D'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[dD]",
+						chars: []rune{'d', 'D'},
 					},
 				},
 			},
@@ -1723,10 +1469,8 @@ var g = &grammar{
 		{
 			name: "_diceType4",
 			expr: &charClassMatcher{
-				val:        "[dD]",
-				chars:      []rune{'d', 'D'},
-				ignoreCase: false,
-				inverted:   false,
+				val:   "[dD]",
+				chars: []rune{'d', 'D'},
 			},
 		},
 		{
@@ -1736,10 +1480,8 @@ var g = &grammar{
 					&actionExpr{
 						run: (*parser).call_on_diceExpr1_2,
 						expr: &charClassMatcher{
-							val:        "[dD]",
-							chars:      []rune{'d', 'D'},
-							ignoreCase: false,
-							inverted:   false,
+							val:   "[dD]",
+							chars: []rune{'d', 'D'},
 						},
 					},
 					&seqExpr{
@@ -1763,10 +1505,8 @@ var g = &grammar{
 					&actionExpr{
 						run: (*parser).call_on_diceExpr2_2,
 						expr: &charClassMatcher{
-							val:        "[dD]",
-							chars:      []rune{'d', 'D'},
-							ignoreCase: false,
-							inverted:   false,
+							val:   "[dD]",
+							chars: []rune{'d', 'D'},
 						},
 					},
 					&seqExpr{
@@ -1795,10 +1535,8 @@ var g = &grammar{
 					&actionExpr{
 						run: (*parser).call_on_diceExpr3_2,
 						expr: &charClassMatcher{
-							val:        "[dD]",
-							chars:      []rune{'d', 'D'},
-							ignoreCase: false,
-							inverted:   false,
+							val:   "[dD]",
+							chars: []rune{'d', 'D'},
 						},
 					},
 					&seqExpr{
@@ -1840,10 +1578,8 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&charClassMatcher{
-						val:        "[aA]",
-						chars:      []rune{'a', 'A'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[aA]",
+						chars: []rune{'a', 'A'},
 					},
 					&ruleIRefExpr{index: 44 /* nos */},
 					&zeroOrMoreExpr{
@@ -1852,10 +1588,8 @@ var g = &grammar{
 								&seqExpr{
 									exprs: []any{
 										&charClassMatcher{
-											val:        "[mM]",
-											chars:      []rune{'m', 'M'},
-											ignoreCase: false,
-											inverted:   false,
+											val:   "[mM]",
+											chars: []rune{'m', 'M'},
 										},
 										&ruleIRefExpr{index: 44 /* nos */},
 									},
@@ -1863,10 +1597,8 @@ var g = &grammar{
 								&seqExpr{
 									exprs: []any{
 										&charClassMatcher{
-											val:        "[kK]",
-											chars:      []rune{'k', 'K'},
-											ignoreCase: false,
-											inverted:   false,
+											val:   "[kK]",
+											chars: []rune{'k', 'K'},
 										},
 										&ruleIRefExpr{index: 44 /* nos */},
 									},
@@ -1874,10 +1606,8 @@ var g = &grammar{
 								&seqExpr{
 									exprs: []any{
 										&charClassMatcher{
-											val:        "[qQ]",
-											chars:      []rune{'q', 'Q'},
-											ignoreCase: false,
-											inverted:   false,
+											val:   "[qQ]",
+											chars: []rune{'q', 'Q'},
 										},
 										&ruleIRefExpr{index: 44 /* nos */},
 									},
@@ -1914,10 +1644,8 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&charClassMatcher{
-						val:        "[aA]",
-						chars:      []rune{'a', 'A'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[aA]",
+						chars: []rune{'a', 'A'},
 					},
 					&ruleIRefExpr{index: 44 /* nos */},
 					&zeroOrMoreExpr{
@@ -1928,10 +1656,8 @@ var g = &grammar{
 									expr: &seqExpr{
 										exprs: []any{
 											&charClassMatcher{
-												val:        "[mM]",
-												chars:      []rune{'m', 'M'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[mM]",
+												chars: []rune{'m', 'M'},
 											},
 											&ruleIRefExpr{index: 44 /* nos */},
 										},
@@ -1942,10 +1668,8 @@ var g = &grammar{
 									expr: &seqExpr{
 										exprs: []any{
 											&charClassMatcher{
-												val:        "[kK]",
-												chars:      []rune{'k', 'K'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[kK]",
+												chars: []rune{'k', 'K'},
 											},
 											&ruleIRefExpr{index: 44 /* nos */},
 										},
@@ -1956,10 +1680,8 @@ var g = &grammar{
 									expr: &seqExpr{
 										exprs: []any{
 											&charClassMatcher{
-												val:        "[qQ]",
-												chars:      []rune{'q', 'Q'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[qQ]",
+												chars: []rune{'q', 'Q'},
 											},
 											&ruleIRefExpr{index: 44 /* nos */},
 										},
@@ -1976,10 +1698,8 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&charClassMatcher{
-						val:        "[pPbB]",
-						chars:      []rune{'p', 'P', 'b', 'B'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[pPbB]",
+						chars: []rune{'p', 'P', 'b', 'B'},
 					},
 					&choiceExpr{
 						alternatives: []any{
@@ -2006,10 +1726,8 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&charClassMatcher{
-							val:        "[bB]",
-							chars:      []rune{'b', 'B'},
-							ignoreCase: false,
-							inverted:   false,
+							val:   "[bB]",
+							chars: []rune{'b', 'B'},
 						},
 						&choiceExpr{
 							alternatives: []any{
@@ -2041,10 +1759,8 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&charClassMatcher{
-							val:        "[pP]",
-							chars:      []rune{'p', 'P'},
-							ignoreCase: false,
-							inverted:   false,
+							val:   "[pP]",
+							chars: []rune{'p', 'P'},
 						},
 						&choiceExpr{
 							alternatives: []any{
@@ -2075,20 +1791,16 @@ var g = &grammar{
 				exprs: []any{
 					&ruleIRefExpr{index: 44 /* nos */},
 					&charClassMatcher{
-						val:        "[cC]",
-						chars:      []rune{'c', 'C'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[cC]",
+						chars: []rune{'c', 'C'},
 					},
 					&ruleIRefExpr{index: 44 /* nos */},
 					&zeroOrMoreExpr{
 						expr: &seqExpr{
 							exprs: []any{
 								&charClassMatcher{
-									val:        "[mM]",
-									chars:      []rune{'m', 'M'},
-									ignoreCase: false,
-									inverted:   false,
+									val:   "[mM]",
+									chars: []rune{'m', 'M'},
 								},
 								&ruleIRefExpr{index: 44 /* nos */},
 							},
@@ -2102,10 +1814,8 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&charClassMatcher{
-						val:        "[fF]",
-						chars:      []rune{'f', 'F'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[fF]",
+						chars: []rune{'f', 'F'},
 					},
 					&notExpr{
 						expr: &ruleIRefExpr{index: 91 /* xidContinue */},
@@ -2291,10 +2001,8 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&charClassMatcher{
-											val:        "[cC]",
-											chars:      []rune{'c', 'C'},
-											ignoreCase: false,
-											inverted:   false,
+											val:   "[cC]",
+											chars: []rune{'c', 'C'},
 										},
 										&ruleIRefExpr{index: 44 /* nos */},
 										&zeroOrMoreExpr{
@@ -2303,10 +2011,8 @@ var g = &grammar{
 												expr: &seqExpr{
 													exprs: []any{
 														&charClassMatcher{
-															val:        "[mM]",
-															chars:      []rune{'m', 'M'},
-															ignoreCase: false,
-															inverted:   false,
+															val:   "[mM]",
+															chars: []rune{'m', 'M'},
 														},
 														&ruleIRefExpr{index: 44 /* nos */},
 													},
@@ -2329,10 +2035,8 @@ var g = &grammar{
 								},
 								&ruleIRefExpr{index: 45 /* detailStart */},
 								&charClassMatcher{
-									val:        "[fF]",
-									chars:      []rune{'f', 'F'},
-									ignoreCase: false,
-									inverted:   false,
+									val:   "[fF]",
+									chars: []rune{'f', 'F'},
 								},
 								&notExpr{
 									expr: &ruleIRefExpr{index: 91 /* xidContinue */},
@@ -2352,12 +2056,8 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onarray_call_3,
-								expr: &litMatcher{
-									val:        "kh",
-									ignoreCase: false,
-									want:       "\"kh\"",
-								},
+								run:  (*parser).call_onarray_call_3,
+								expr: &litMatcher{val: "kh", want: "\"kh\""},
 							},
 							&choiceExpr{
 								alternatives: []any{
@@ -2375,12 +2075,8 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onarray_call_10,
-								expr: &litMatcher{
-									val:        "kl",
-									ignoreCase: false,
-									want:       "\"kl\"",
-								},
+								run:  (*parser).call_onarray_call_10,
+								expr: &litMatcher{val: "kl", want: "\"kl\""},
 							},
 							&choiceExpr{
 								alternatives: []any{
@@ -2400,18 +2096,10 @@ var g = &grammar{
 							run: (*parser).call_onarray_call_17,
 							expr: &seqExpr{
 								exprs: []any{
-									&litMatcher{
-										val:        "[",
-										ignoreCase: false,
-										want:       "\"[\"",
-									},
+									&litMatcher{val: "[", want: "\"[\""},
 									&ruleIRefExpr{index: 112 /* sp */},
 									&ruleIRefExpr{index: 24 /* exprRoot */},
-									&litMatcher{
-										val:        "]",
-										ignoreCase: false,
-										want:       "\"]\"",
-									},
+									&litMatcher{val: "]", want: "\"]\""},
 									&ruleIRefExpr{index: 112 /* sp */},
 								},
 							},
@@ -2429,26 +2117,14 @@ var g = &grammar{
 							run: (*parser).call_onitem_getX_3,
 							expr: &seqExpr{
 								exprs: []any{
-									&litMatcher{
-										val:        "[",
-										ignoreCase: false,
-										want:       "\"[\"",
-									},
+									&litMatcher{val: "[", want: "\"[\""},
 									&ruleIRefExpr{index: 112 /* sp */},
 									&ruleIRefExpr{index: 24 /* exprRoot */},
 									&ruleIRefExpr{index: 112 /* sp */},
-									&litMatcher{
-										val:        "]",
-										ignoreCase: false,
-										want:       "\"]\"",
-									},
+									&litMatcher{val: "]", want: "\"]\""},
 									&ruleIRefExpr{index: 112 /* sp */},
 									&notExpr{
-										expr: &litMatcher{
-											val:        "=",
-											ignoreCase: false,
-											want:       "\"=\"",
-										},
+										expr: &litMatcher{val: "=", want: "\"=\""},
 									},
 								},
 							},
@@ -2474,15 +2150,12 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "attr_getX",
+			name:      "attr_getX",
+			varExists: true,
 			expr: &zeroOrMoreExpr{
 				expr: &seqExpr{
 					exprs: []any{
-						&litMatcher{
-							val:        ".",
-							ignoreCase: false,
-							want:       "\".\"",
-						},
+						&litMatcher{val: ".", want: "\".\""},
 						&actionExpr{
 							run: (*parser).call_onattr_getX_4,
 							expr: &seqExpr{
@@ -2524,17 +2197,9 @@ var g = &grammar{
 						run: (*parser).call_onfunc_invoke_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "(",
-									ignoreCase: false,
-									want:       "\"(\"",
-								},
+								&litMatcher{val: "(", want: "\"(\""},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        ")",
-									ignoreCase: false,
-									want:       "\")\"",
-								},
+								&litMatcher{val: ")", want: "\")\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -2545,11 +2210,7 @@ var g = &grammar{
 								run: (*parser).call_onfunc_invoke_9,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "(",
-											ignoreCase: false,
-											want:       "\"(\"",
-										},
+										&litMatcher{val: "(", want: "\"(\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -2564,22 +2225,14 @@ var g = &grammar{
 												run: (*parser).call_onfunc_invoke_17,
 												expr: &seqExpr{
 													exprs: []any{
-														&litMatcher{
-															val:        ",",
-															ignoreCase: false,
-															want:       "\",\"",
-														},
+														&litMatcher{val: ",", want: "\",\""},
 														&ruleIRefExpr{index: 112 /* sp */},
 														&ruleIRefExpr{index: 24 /* exprRoot */},
 													},
 												},
 											},
 										},
-										&litMatcher{
-											val:        ")",
-											ignoreCase: false,
-											want:       "\")\"",
-										},
+										&litMatcher{val: ")", want: "\")\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -2604,11 +2257,7 @@ var g = &grammar{
 									},
 								},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        ":",
-									ignoreCase: false,
-									want:       "\":\"",
-								},
+								&litMatcher{val: ":", want: "\":\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&ruleIRefExpr{index: 24 /* exprRoot */},
 							},
@@ -2619,7 +2268,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "value_id_without_colon",
+			name:      "value_id_without_colon",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
@@ -2652,25 +2302,13 @@ var g = &grammar{
 				run: (*parser).call_onvalue_array_range_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&litMatcher{
-							val:        "[",
-							ignoreCase: false,
-							want:       "\"[\"",
-						},
+						&litMatcher{val: "[", want: "\"[\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&ruleIRefExpr{index: 24 /* exprRoot */},
-						&litMatcher{
-							val:        "..",
-							ignoreCase: false,
-							want:       "\"..\"",
-						},
+						&litMatcher{val: "..", want: "\"..\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&ruleIRefExpr{index: 24 /* exprRoot */},
-						&litMatcher{
-							val:        "]",
-							ignoreCase: false,
-							want:       "\"]\"",
-						},
+						&litMatcher{val: "]", want: "\"]\""},
 						&ruleIRefExpr{index: 112 /* sp */},
 					},
 				},
@@ -2684,11 +2322,7 @@ var g = &grammar{
 						run: (*parser).call_onvalue_array_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "[",
-									ignoreCase: false,
-									want:       "\"[\"",
-								},
+								&litMatcher{val: "[", want: "\"[\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -2703,22 +2337,14 @@ var g = &grammar{
 										run: (*parser).call_onvalue_array_10,
 										expr: &seqExpr{
 											exprs: []any{
-												&litMatcher{
-													val:        ",",
-													ignoreCase: false,
-													want:       "\",\"",
-												},
+												&litMatcher{val: ",", want: "\",\""},
 												&ruleIRefExpr{index: 112 /* sp */},
 												&ruleIRefExpr{index: 24 /* exprRoot */},
 											},
 										},
 									},
 								},
-								&litMatcher{
-									val:        "]",
-									ignoreCase: false,
-									want:       "\"]\"",
-								},
+								&litMatcher{val: "]", want: "\"]\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -2727,18 +2353,15 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "value",
+			name:      "value",
+			varExists: true,
 			expr: &choiceExpr{
 				alternatives: []any{
 					&actionExpr{
 						run: (*parser).call_onvalue_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "true",
-									ignoreCase: false,
-									want:       "\"true\"",
-								},
+								&litMatcher{val: "true", want: "\"true\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -2747,11 +2370,7 @@ var g = &grammar{
 						run: (*parser).call_onvalue_6,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "false",
-									ignoreCase: false,
-									want:       "\"false\"",
-								},
+								&litMatcher{val: "false", want: "\"false\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -2760,11 +2379,7 @@ var g = &grammar{
 						run: (*parser).call_onvalue_10,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "undefined",
-									ignoreCase: false,
-									want:       "\"undefined\"",
-								},
+								&litMatcher{val: "null", want: "\"null\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 							},
 						},
@@ -2775,11 +2390,7 @@ var g = &grammar{
 								run: (*parser).call_onvalue_15,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "this",
-											ignoreCase: false,
-											want:       "\"this\"",
-										},
+										&litMatcher{val: "this", want: "\"this\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -2798,11 +2409,7 @@ var g = &grammar{
 								run: (*parser).call_onvalue_23,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "&",
-											ignoreCase: false,
-											want:       "\"&\"",
-										},
+										&litMatcher{val: "&", want: "\"&\""},
 										&labeledExpr{
 											label: "id",
 											expr:  &ruleIRefExpr{index: 88 /* identifier */},
@@ -2865,17 +2472,9 @@ var g = &grammar{
 								run: (*parser).call_onvalue_55,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "[",
-											ignoreCase: false,
-											want:       "\"[\"",
-										},
+										&litMatcher{val: "[", want: "\"[\""},
 										&ruleIRefExpr{index: 112 /* sp */},
-										&litMatcher{
-											val:        "]",
-											ignoreCase: false,
-											want:       "\"]\"",
-										},
+										&litMatcher{val: "]", want: "\"]\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -2920,17 +2519,9 @@ var g = &grammar{
 								run: (*parser).call_onvalue_80,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "{",
-											ignoreCase: false,
-											want:       "\"{\"",
-										},
+										&litMatcher{val: "{", want: "\"{\""},
 										&ruleIRefExpr{index: 112 /* sp */},
-										&litMatcher{
-											val:        "}",
-											ignoreCase: false,
-											want:       "\"}\"",
-										},
+										&litMatcher{val: "}", want: "\"}\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -2949,11 +2540,7 @@ var g = &grammar{
 								run: (*parser).call_onvalue_90,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "{",
-											ignoreCase: false,
-											want:       "\"{\"",
-										},
+										&litMatcher{val: "{", want: "\"{\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -2966,28 +2553,16 @@ var g = &grammar{
 										&zeroOrMoreExpr{
 											expr: &seqExpr{
 												exprs: []any{
-													&litMatcher{
-														val:        ",",
-														ignoreCase: false,
-														want:       "\",\"",
-													},
+													&litMatcher{val: ",", want: "\",\""},
 													&ruleIRefExpr{index: 112 /* sp */},
 													&ruleIRefExpr{index: 73 /* dict_item */},
 												},
 											},
 										},
 										&zeroOrOneExpr{
-											expr: &litMatcher{
-												val:        ",",
-												ignoreCase: false,
-												want:       "\",\"",
-											},
+											expr: &litMatcher{val: ",", want: "\",\""},
 										},
-										&litMatcher{
-											val:        "}",
-											ignoreCase: false,
-											want:       "\"}\"",
-										},
+										&litMatcher{val: "}", want: "\"}\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 									},
 								},
@@ -3009,10 +2584,8 @@ var g = &grammar{
 				run: (*parser).call_onnumber_1,
 				expr: &oneOrMoreExpr{
 					expr: &charClassMatcher{
-						val:        "[0-9]",
-						ranges:     []rune{'0', '9'},
-						ignoreCase: false,
-						inverted:   false,
+						val:    "[0-9]",
+						ranges: []rune{'0', '9'},
 					},
 				},
 			},
@@ -3025,23 +2598,15 @@ var g = &grammar{
 					exprs: []any{
 						&zeroOrMoreExpr{
 							expr: &charClassMatcher{
-								val:        "[0-9]",
-								ranges:     []rune{'0', '9'},
-								ignoreCase: false,
-								inverted:   false,
+								val:    "[0-9]",
+								ranges: []rune{'0', '9'},
 							},
 						},
-						&litMatcher{
-							val:        ".",
-							ignoreCase: false,
-							want:       "\".\"",
-						},
+						&litMatcher{val: ".", want: "\".\""},
 						&oneOrMoreExpr{
 							expr: &charClassMatcher{
-								val:        "[0-9]",
-								ranges:     []rune{'0', '9'},
-								ignoreCase: false,
-								inverted:   false,
+								val:    "[0-9]",
+								ranges: []rune{'0', '9'},
 							},
 						},
 					},
@@ -3049,7 +2614,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "strPart",
+			name:      "strPart",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onstrPart_1,
 				expr: &labeledExpr{
@@ -3062,10 +2628,8 @@ var g = &grammar{
 									exprs: []any{
 										&notExpr{
 											expr: &charClassMatcher{
-												val:        "[{`\\\\]",
-												chars:      []rune{'{', '`', '\\'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[{`\\\\]",
+												chars: []rune{'{', '`', '\\'},
 											},
 										},
 										&anyMatcher{},
@@ -3079,7 +2643,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "strPart1",
+			name:      "strPart1",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onstrPart1_1,
 				expr: &labeledExpr{
@@ -3092,10 +2657,8 @@ var g = &grammar{
 									exprs: []any{
 										&notExpr{
 											expr: &charClassMatcher{
-												val:        "[{\\x1e\\\\]",
-												chars:      []rune{'{', '\x1e', '\\'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[{\\x1e\\\\]",
+												chars: []rune{'{', '\x1e', '\\'},
 											},
 										},
 										&anyMatcher{},
@@ -3109,7 +2672,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "strPart2",
+			name:      "strPart2",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onstrPart2_1,
 				expr: &labeledExpr{
@@ -3122,10 +2686,8 @@ var g = &grammar{
 									exprs: []any{
 										&notExpr{
 											expr: &charClassMatcher{
-												val:        "[{\"\\\\\\n\\r]",
-												chars:      []rune{'{', '"', '\\', '\n', '\r'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[{\"\\\\\\n\\r]",
+												chars: []rune{'{', '"', '\\', '\n', '\r'},
 											},
 										},
 										&anyMatcher{},
@@ -3139,7 +2701,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "strPart3",
+			name:      "strPart3",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onstrPart3_1,
 				expr: &labeledExpr{
@@ -3152,10 +2715,8 @@ var g = &grammar{
 									exprs: []any{
 										&notExpr{
 											expr: &charClassMatcher{
-												val:        "[{'\\\\\\n\\r]",
-												chars:      []rune{'{', '\'', '\\', '\n', '\r'},
-												ignoreCase: false,
-												inverted:   false,
+												val:   "[{'\\\\\\n\\r]",
+												chars: []rune{'{', '\'', '\\', '\n', '\r'},
 											},
 										},
 										&anyMatcher{},
@@ -3178,16 +2739,8 @@ var g = &grammar{
 								run: (*parser).call_onfstring_3,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "'",
-											ignoreCase: false,
-											want:       "\"'\"",
-										},
-										&litMatcher{
-											val:        "'",
-											ignoreCase: false,
-											want:       "\"'\"",
-										},
+										&litMatcher{val: "'", want: "\"'\""},
+										&litMatcher{val: "'", want: "\"'\""},
 									},
 								},
 							},
@@ -3195,16 +2748,8 @@ var g = &grammar{
 								run: (*parser).call_onfstring_7,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "\x1e",
-											ignoreCase: false,
-											want:       "\"\\x1e\"",
-										},
-										&litMatcher{
-											val:        "\x1e",
-											ignoreCase: false,
-											want:       "\"\\x1e\"",
-										},
+										&litMatcher{val: "\x1e", want: "\"\\x1e\""},
+										&litMatcher{val: "\x1e", want: "\"\\x1e\""},
 									},
 								},
 							},
@@ -3212,16 +2757,8 @@ var g = &grammar{
 								run: (*parser).call_onfstring_11,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "\"",
-											ignoreCase: false,
-											want:       "\"\\\"\"",
-										},
-										&litMatcher{
-											val:        "\"",
-											ignoreCase: false,
-											want:       "\"\\\"\"",
-										},
+										&litMatcher{val: "\"", want: "\"\\\"\""},
+										&litMatcher{val: "\"", want: "\"\\\"\""},
 									},
 								},
 							},
@@ -3229,28 +2766,16 @@ var g = &grammar{
 								run: (*parser).call_onfstring_15,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "`",
-											ignoreCase: false,
-											want:       "\"`\"",
-										},
-										&litMatcher{
-											val:        "`",
-											ignoreCase: false,
-											want:       "\"`\"",
-										},
+										&litMatcher{val: "`", want: "\"`\""},
+										&litMatcher{val: "`", want: "\"`\""},
 									},
 								},
 							},
 							&seqExpr{
 								exprs: []any{
 									&actionExpr{
-										run: (*parser).call_onfstring_20,
-										expr: &litMatcher{
-											val:        "`",
-											ignoreCase: false,
-											want:       "\"`\"",
-										},
+										run:  (*parser).call_onfstring_20,
+										expr: &litMatcher{val: "`", want: "\"`\""},
 									},
 									&actionExpr{
 										run: (*parser).call_onfstring_22,
@@ -3265,21 +2790,13 @@ var g = &grammar{
 																		run: (*parser).call_onfstring_27,
 																		expr: &seqExpr{
 																			exprs: []any{
-																				&litMatcher{
-																					val:        "{",
-																					ignoreCase: false,
-																					want:       "\"{\"",
-																				},
+																				&litMatcher{val: "{", want: "\"{\""},
 																				&ruleIRefExpr{index: 112 /* sp */},
 																				&ruleIRefExpr{index: 24 /* exprRoot */},
 																			},
 																		},
 																	},
-																	&litMatcher{
-																		val:        "}",
-																		ignoreCase: false,
-																		want:       "\"}\"",
-																	},
+																	&litMatcher{val: "}", want: "\"}\""},
 																},
 															},
 															&seqExpr{
@@ -3288,32 +2805,20 @@ var g = &grammar{
 																		run: (*parser).call_onfstring_34,
 																		expr: &seqExpr{
 																			exprs: []any{
-																				&litMatcher{
-																					val:        "{%",
-																					ignoreCase: false,
-																					want:       "\"{%\"",
-																				},
+																				&litMatcher{val: "{%", want: "\"{%\""},
 																				&ruleIRefExpr{index: 112 /* sp */},
 																				&ruleIRefExpr{index: 24 /* exprRoot */},
 																			},
 																		},
 																	},
-																	&litMatcher{
-																		val:        "%}",
-																		ignoreCase: false,
-																		want:       "\"%}\"",
-																	},
+																	&litMatcher{val: "%}", want: "\"%}\""},
 																},
 															},
 															&ruleIRefExpr{index: 80 /* strPart */},
 														},
 													},
 												},
-												&litMatcher{
-													val:        "`",
-													ignoreCase: false,
-													want:       "\"`\"",
-												},
+												&litMatcher{val: "`", want: "\"`\""},
 											},
 										},
 									},
@@ -3322,12 +2827,8 @@ var g = &grammar{
 							&seqExpr{
 								exprs: []any{
 									&actionExpr{
-										run: (*parser).call_onfstring_43,
-										expr: &litMatcher{
-											val:        "\x1e",
-											ignoreCase: false,
-											want:       "\"\\x1e\"",
-										},
+										run:  (*parser).call_onfstring_43,
+										expr: &litMatcher{val: "\x1e", want: "\"\\x1e\""},
 									},
 									&actionExpr{
 										run: (*parser).call_onfstring_45,
@@ -3342,21 +2843,13 @@ var g = &grammar{
 																		run: (*parser).call_onfstring_50,
 																		expr: &seqExpr{
 																			exprs: []any{
-																				&litMatcher{
-																					val:        "{",
-																					ignoreCase: false,
-																					want:       "\"{\"",
-																				},
+																				&litMatcher{val: "{", want: "\"{\""},
 																				&ruleIRefExpr{index: 112 /* sp */},
 																				&ruleIRefExpr{index: 24 /* exprRoot */},
 																			},
 																		},
 																	},
-																	&litMatcher{
-																		val:        "}",
-																		ignoreCase: false,
-																		want:       "\"}\"",
-																	},
+																	&litMatcher{val: "}", want: "\"}\""},
 																},
 															},
 															&seqExpr{
@@ -3365,32 +2858,20 @@ var g = &grammar{
 																		run: (*parser).call_onfstring_57,
 																		expr: &seqExpr{
 																			exprs: []any{
-																				&litMatcher{
-																					val:        "{%",
-																					ignoreCase: false,
-																					want:       "\"{%\"",
-																				},
+																				&litMatcher{val: "{%", want: "\"{%\""},
 																				&ruleIRefExpr{index: 112 /* sp */},
 																				&ruleIRefExpr{index: 24 /* exprRoot */},
 																			},
 																		},
 																	},
-																	&litMatcher{
-																		val:        "%}",
-																		ignoreCase: false,
-																		want:       "\"%}\"",
-																	},
+																	&litMatcher{val: "%}", want: "\"%}\""},
 																},
 															},
 															&ruleIRefExpr{index: 81 /* strPart1 */},
 														},
 													},
 												},
-												&litMatcher{
-													val:        "\x1e",
-													ignoreCase: false,
-													want:       "\"\\x1e\"",
-												},
+												&litMatcher{val: "\x1e", want: "\"\\x1e\""},
 											},
 										},
 									},
@@ -3399,12 +2880,8 @@ var g = &grammar{
 							&seqExpr{
 								exprs: []any{
 									&actionExpr{
-										run: (*parser).call_onfstring_66,
-										expr: &litMatcher{
-											val:        "\"",
-											ignoreCase: false,
-											want:       "\"\\\"\"",
-										},
+										run:  (*parser).call_onfstring_66,
+										expr: &litMatcher{val: "\"", want: "\"\\\"\""},
 									},
 									&actionExpr{
 										run: (*parser).call_onfstring_68,
@@ -3413,11 +2890,7 @@ var g = &grammar{
 												&zeroOrMoreExpr{
 													expr: &ruleIRefExpr{index: 82 /* strPart2 */},
 												},
-												&litMatcher{
-													val:        "\"",
-													ignoreCase: false,
-													want:       "\"\\\"\"",
-												},
+												&litMatcher{val: "\"", want: "\"\\\"\""},
 											},
 										},
 									},
@@ -3426,12 +2899,8 @@ var g = &grammar{
 							&seqExpr{
 								exprs: []any{
 									&actionExpr{
-										run: (*parser).call_onfstring_74,
-										expr: &litMatcher{
-											val:        "'",
-											ignoreCase: false,
-											want:       "\"'\"",
-										},
+										run:  (*parser).call_onfstring_74,
+										expr: &litMatcher{val: "'", want: "\"'\""},
 									},
 									&actionExpr{
 										run: (*parser).call_onfstring_76,
@@ -3440,11 +2909,7 @@ var g = &grammar{
 												&zeroOrMoreExpr{
 													expr: &ruleIRefExpr{index: 83 /* strPart3 */},
 												},
-												&litMatcher{
-													val:        "'",
-													ignoreCase: false,
-													want:       "\"'\"",
-												},
+												&litMatcher{val: "'", want: "\"'\""},
 											},
 										},
 									},
@@ -3460,16 +2925,10 @@ var g = &grammar{
 			name: "escape",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "\\",
-						ignoreCase: false,
-						want:       "\"\\\\\"",
-					},
+					&litMatcher{val: "\\", want: "\"\\\\\""},
 					&charClassMatcher{
-						val:        "[btnfr\"'\\\\]",
-						chars:      []rune{'b', 't', 'n', 'f', 'r', '"', '\'', '\\'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[btnfr\"'\\\\]",
+						chars: []rune{'b', 't', 'n', 'f', 'r', '"', '\'', '\\'},
 					},
 				},
 			},
@@ -3478,41 +2937,13 @@ var g = &grammar{
 			name: "keywords",
 			expr: &choiceExpr{
 				alternatives: []any{
-					&litMatcher{
-						val:        "while",
-						ignoreCase: false,
-						want:       "\"while\"",
-					},
-					&litMatcher{
-						val:        "if",
-						ignoreCase: false,
-						want:       "\"if\"",
-					},
-					&litMatcher{
-						val:        "else",
-						ignoreCase: false,
-						want:       "\"else\"",
-					},
-					&litMatcher{
-						val:        "continue",
-						ignoreCase: false,
-						want:       "\"continue\"",
-					},
-					&litMatcher{
-						val:        "break",
-						ignoreCase: false,
-						want:       "\"break\"",
-					},
-					&litMatcher{
-						val:        "return",
-						ignoreCase: false,
-						want:       "\"return\"",
-					},
-					&litMatcher{
-						val:        "func",
-						ignoreCase: false,
-						want:       "\"func\"",
-					},
+					&litMatcher{val: "while", want: "\"while\""},
+					&litMatcher{val: "if", want: "\"if\""},
+					&litMatcher{val: "else", want: "\"else\""},
+					&litMatcher{val: "continue", want: "\"continue\""},
+					&litMatcher{val: "break", want: "\"break\""},
+					&litMatcher{val: "return", want: "\"return\""},
+					&litMatcher{val: "func", want: "\"func\""},
 				},
 			},
 		},
@@ -3541,11 +2972,7 @@ var g = &grammar{
 							expr: &choiceExpr{
 								alternatives: []any{
 									&ruleIRefExpr{index: 91 /* xidContinue */},
-									&litMatcher{
-										val:        ":",
-										ignoreCase: false,
-										want:       "\":\"",
-									},
+									&litMatcher{val: ":", want: "\":\""},
 								},
 							},
 						},
@@ -3571,20 +2998,16 @@ var g = &grammar{
 		{
 			name: "xidStart",
 			expr: &charClassMatcher{
-				val:        "[_\\p{L}\\p{Other_ID_Start}]",
-				chars:      []rune{'_'},
-				classes:    []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start},
-				ignoreCase: false,
-				inverted:   false,
+				val:     "[_\\p{L}\\p{Other_ID_Start}]",
+				chars:   []rune{'_'},
+				classes: []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start},
 			},
 		},
 		{
 			name: "xidContinue",
 			expr: &charClassMatcher{
-				val:        "[\\p{L}\\p{Other_ID_Start}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Other_ID_Continue}]",
-				classes:    []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start, unicode.Nl, unicode.Mn, unicode.Mc, unicode.Nd, unicode.Pc, unicode.Other_ID_Continue},
-				ignoreCase: false,
-				inverted:   false,
+				val:     "[\\p{L}\\p{Other_ID_Start}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Other_ID_Continue}]",
+				classes: []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start, unicode.Nl, unicode.Mn, unicode.Mc, unicode.Nd, unicode.Pc, unicode.Other_ID_Continue},
 			},
 		},
 		{
@@ -3601,11 +3024,7 @@ var g = &grammar{
 			name: "parenOpen",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "(",
-						ignoreCase: false,
-						want:       "\"(\"",
-					},
+					&litMatcher{val: "(", want: "\"(\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3614,11 +3033,7 @@ var g = &grammar{
 			name: "parenClose",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        ")",
-						ignoreCase: false,
-						want:       "\")\"",
-					},
+					&litMatcher{val: ")", want: "\")\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3629,16 +3044,8 @@ var g = &grammar{
 				exprs: []any{
 					&choiceExpr{
 						alternatives: []any{
-							&litMatcher{
-								val:        "+",
-								ignoreCase: false,
-								want:       "\"+\"",
-							},
-							&litMatcher{
-								val:        "＋",
-								ignoreCase: false,
-								want:       "\"＋\"",
-							},
+							&litMatcher{val: "+", want: "\"+\""},
+							&litMatcher{val: "＋", want: "\"＋\""},
 						},
 					},
 					&ruleIRefExpr{index: 112 /* sp */},
@@ -3651,16 +3058,8 @@ var g = &grammar{
 				exprs: []any{
 					&choiceExpr{
 						alternatives: []any{
-							&litMatcher{
-								val:        "-",
-								ignoreCase: false,
-								want:       "\"-\"",
-							},
-							&litMatcher{
-								val:        "－",
-								ignoreCase: false,
-								want:       "\"－\"",
-							},
+							&litMatcher{val: "-", want: "\"-\""},
+							&litMatcher{val: "－", want: "\"－\""},
 						},
 					},
 					&ruleIRefExpr{index: 112 /* sp */},
@@ -3673,16 +3072,8 @@ var g = &grammar{
 				exprs: []any{
 					&choiceExpr{
 						alternatives: []any{
-							&litMatcher{
-								val:        "*",
-								ignoreCase: false,
-								want:       "\"*\"",
-							},
-							&litMatcher{
-								val:        "＊",
-								ignoreCase: false,
-								want:       "\"＊\"",
-							},
+							&litMatcher{val: "*", want: "\"*\""},
+							&litMatcher{val: "＊", want: "\"＊\""},
 						},
 					},
 					&ruleIRefExpr{index: 112 /* sp */},
@@ -3695,16 +3086,8 @@ var g = &grammar{
 				exprs: []any{
 					&choiceExpr{
 						alternatives: []any{
-							&litMatcher{
-								val:        "/",
-								ignoreCase: false,
-								want:       "\"/\"",
-							},
-							&litMatcher{
-								val:        "／",
-								ignoreCase: false,
-								want:       "\"／\"",
-							},
+							&litMatcher{val: "/", want: "\"/\""},
+							&litMatcher{val: "／", want: "\"／\""},
 						},
 					},
 					&ruleIRefExpr{index: 112 /* sp */},
@@ -3715,11 +3098,7 @@ var g = &grammar{
 			name: "modulus",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "%",
-						ignoreCase: false,
-						want:       "\"%\"",
-					},
+					&litMatcher{val: "%", want: "\"%\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3730,21 +3109,13 @@ var g = &grammar{
 				alternatives: []any{
 					&seqExpr{
 						exprs: []any{
-							&litMatcher{
-								val:        "^",
-								ignoreCase: false,
-								want:       "\"^\"",
-							},
+							&litMatcher{val: "^", want: "\"^\""},
 							&ruleIRefExpr{index: 112 /* sp */},
 						},
 					},
 					&seqExpr{
 						exprs: []any{
-							&litMatcher{
-								val:        "**",
-								ignoreCase: false,
-								want:       "\"**\"",
-							},
+							&litMatcher{val: "**", want: "\"**\""},
 							&ruleIRefExpr{index: 112 /* sp */},
 						},
 					},
@@ -3755,11 +3126,7 @@ var g = &grammar{
 			name: "nullCoalescing",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "??",
-						ignoreCase: false,
-						want:       "\"??\"",
-					},
+					&litMatcher{val: "??", want: "\"??\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3768,11 +3135,7 @@ var g = &grammar{
 			name: "bitwiseOr",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "|",
-						ignoreCase: false,
-						want:       "\"|\"",
-					},
+					&litMatcher{val: "|", want: "\"|\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3781,11 +3144,7 @@ var g = &grammar{
 			name: "bitwiseAnd",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "&",
-						ignoreCase: false,
-						want:       "\"&\"",
-					},
+					&litMatcher{val: "&", want: "\"&\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3794,11 +3153,7 @@ var g = &grammar{
 			name: "logicOr",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "||",
-						ignoreCase: false,
-						want:       "\"||\"",
-					},
+					&litMatcher{val: "||", want: "\"||\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3807,11 +3162,7 @@ var g = &grammar{
 			name: "logicAnd",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "&&",
-						ignoreCase: false,
-						want:       "\"&&\"",
-					},
+					&litMatcher{val: "&&", want: "\"&&\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3820,11 +3171,7 @@ var g = &grammar{
 			name: "lt",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "<",
-						ignoreCase: false,
-						want:       "\"<\"",
-					},
+					&litMatcher{val: "<", want: "\"<\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3833,11 +3180,7 @@ var g = &grammar{
 			name: "gt",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        ">",
-						ignoreCase: false,
-						want:       "\">\"",
-					},
+					&litMatcher{val: ">", want: "\">\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3846,11 +3189,7 @@ var g = &grammar{
 			name: "le",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "<=",
-						ignoreCase: false,
-						want:       "\"<=\"",
-					},
+					&litMatcher{val: "<=", want: "\"<=\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3859,11 +3198,7 @@ var g = &grammar{
 			name: "ge",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        ">=",
-						ignoreCase: false,
-						want:       "\">=\"",
-					},
+					&litMatcher{val: ">=", want: "\">=\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3872,11 +3207,7 @@ var g = &grammar{
 			name: "eq",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "==",
-						ignoreCase: false,
-						want:       "\"==\"",
-					},
+					&litMatcher{val: "==", want: "\"==\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3885,11 +3216,7 @@ var g = &grammar{
 			name: "ne",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "!=",
-						ignoreCase: false,
-						want:       "\"!=\"",
-					},
+					&litMatcher{val: "!=", want: "\"!=\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 				},
 			},
@@ -3899,10 +3226,8 @@ var g = &grammar{
 			displayName: "\"whitespace\"",
 			expr: &zeroOrMoreExpr{
 				expr: &charClassMatcher{
-					val:        "[ \\n\\t\\r]",
-					chars:      []rune{' ', '\n', '\t', '\r'},
-					ignoreCase: false,
-					inverted:   false,
+					val:   "[ \\n\\t\\r]",
+					chars: []rune{' ', '\n', '\t', '\r'},
 				},
 			},
 		},
@@ -3914,10 +3239,8 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&charClassMatcher{
-								val:        "[ \\n\\t\\r]",
-								chars:      []rune{' ', '\n', '\t', '\r'},
-								ignoreCase: false,
-								inverted:   false,
+								val:   "[ \\n\\t\\r]",
+								chars: []rune{' ', '\n', '\t', '\r'},
 							},
 							&ruleIRefExpr{index: 112 /* sp */},
 						},
@@ -3941,10 +3264,8 @@ var g = &grammar{
 			name: "spNoCR",
 			expr: &zeroOrMoreExpr{
 				expr: &charClassMatcher{
-					val:        "[ \\t]",
-					chars:      []rune{' ', '\t'},
-					ignoreCase: false,
-					inverted:   false,
+					val:   "[ \\t]",
+					chars: []rune{' ', '\t'},
 				},
 			},
 		},
@@ -3953,11 +3274,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&ruleIRefExpr{index: 115 /* spNoCR */},
-					&litMatcher{
-						val:        "//",
-						ignoreCase: false,
-						want:       "\"//\"",
-					},
+					&litMatcher{val: "//", want: "\"//\""},
 					&ruleIRefExpr{index: 117 /* commentLineRest */},
 				},
 			},
@@ -3971,10 +3288,8 @@ var g = &grammar{
 							exprs: []any{
 								&notExpr{
 									expr: &charClassMatcher{
-										val:        "[\\r\\n]",
-										chars:      []rune{'\r', '\n'},
-										ignoreCase: false,
-										inverted:   false,
+										val:   "[\\r\\n]",
+										chars: []rune{'\r', '\n'},
 									},
 								},
 								&anyMatcher{},
@@ -3984,10 +3299,8 @@ var g = &grammar{
 					&choiceExpr{
 						alternatives: []any{
 							&charClassMatcher{
-								val:        "[\\r\\n]",
-								chars:      []rune{'\r', '\n'},
-								ignoreCase: false,
-								inverted:   false,
+								val:   "[\\r\\n]",
+								chars: []rune{'\r', '\n'},
 							},
 							&notExpr{
 								expr: &anyMatcher{},
@@ -4006,10 +3319,8 @@ var g = &grammar{
 							exprs: []any{
 								&notExpr{
 									expr: &charClassMatcher{
-										val:        "[\\r\\n]",
-										chars:      []rune{'\r', '\n'},
-										ignoreCase: false,
-										inverted:   false,
+										val:   "[\\r\\n]",
+										chars: []rune{'\r', '\n'},
 									},
 								},
 								&anyMatcher{},
@@ -4017,10 +3328,8 @@ var g = &grammar{
 						},
 					},
 					&charClassMatcher{
-						val:        "[\\r\\n]",
-						chars:      []rune{'\r', '\n'},
-						ignoreCase: false,
-						inverted:   false,
+						val:   "[\\r\\n]",
+						chars: []rune{'\r', '\n'},
 					},
 				},
 			},
@@ -4046,11 +3355,7 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&andExpr{
-								expr: &litMatcher{
-									val:        "(",
-									ignoreCase: false,
-									want:       "\"(\"",
-								},
+								expr: &litMatcher{val: "(", want: "\"(\""},
 							},
 							&ruleIRefExpr{index: 120 /* e0 */},
 						},
@@ -4080,11 +3385,7 @@ var g = &grammar{
 						&ruleIRefExpr{index: 124 /* st_assign */},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&zeroOrOneExpr{
-							expr: &litMatcher{
-								val:        ",",
-								ignoreCase: false,
-								want:       "\",\"",
-							},
+							expr: &litMatcher{val: ",", want: "\",\""},
 						},
 						&ruleIRefExpr{index: 112 /* sp */},
 					},
@@ -4095,11 +3396,7 @@ var g = &grammar{
 			name: "st_star",
 			expr: &seqExpr{
 				exprs: []any{
-					&litMatcher{
-						val:        "*",
-						ignoreCase: false,
-						want:       "\"*\"",
-					},
+					&litMatcher{val: "*", want: "\"*\""},
 					&ruleIRefExpr{index: 112 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
@@ -4112,7 +3409,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_assign",
+			name:      "st_assign",
+			varExists: true,
 			expr: &choiceExpr{
 				alternatives: []any{
 					&actionExpr{
@@ -4123,16 +3421,8 @@ var g = &grammar{
 								&ruleIRefExpr{index: 112 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
-										&litMatcher{
-											val:        ":",
-											ignoreCase: false,
-											want:       "\":\"",
-										},
-										&litMatcher{
-											val:        "=",
-											ignoreCase: false,
-											want:       "\"=\"",
-										},
+										&litMatcher{val: ":", want: "\":\""},
+										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
 								&ruleIRefExpr{index: 112 /* sp */},
@@ -4159,16 +3449,8 @@ var g = &grammar{
 								&ruleIRefExpr{index: 112 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
-										&litMatcher{
-											val:        ":",
-											ignoreCase: false,
-											want:       "\":\"",
-										},
-										&litMatcher{
-											val:        "=",
-											ignoreCase: false,
-											want:       "\"=\"",
-										},
+										&litMatcher{val: ":", want: "\":\""},
+										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
 								&ruleIRefExpr{index: 112 /* sp */},
@@ -4182,24 +3464,12 @@ var g = &grammar{
 							exprs: []any{
 								&ruleIRefExpr{index: 134 /* st_name2r */},
 								&ruleIRefExpr{index: 112 /* sp */},
-								&litMatcher{
-									val:        "*",
-									ignoreCase: false,
-									want:       "\"*\"",
-								},
+								&litMatcher{val: "*", want: "\"*\""},
 								&ruleIRefExpr{index: 112 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
-										&litMatcher{
-											val:        ":",
-											ignoreCase: false,
-											want:       "\":\"",
-										},
-										&litMatcher{
-											val:        "=",
-											ignoreCase: false,
-											want:       "\"=\"",
-										},
+										&litMatcher{val: ":", want: "\":\""},
+										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
 								&ruleIRefExpr{index: 112 /* sp */},
@@ -4215,16 +3485,8 @@ var g = &grammar{
 								&ruleIRefExpr{index: 112 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
-										&litMatcher{
-											val:        ":",
-											ignoreCase: false,
-											want:       "\":\"",
-										},
-										&litMatcher{
-											val:        "=",
-											ignoreCase: false,
-											want:       "\"=\"",
-										},
+										&litMatcher{val: ":", want: "\":\""},
+										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
 								&ruleIRefExpr{index: 112 /* sp */},
@@ -4247,25 +3509,13 @@ var g = &grammar{
 								run: (*parser).call_onst_assign_51,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "&",
-											ignoreCase: false,
-											want:       "\"&\"",
-										},
+										&litMatcher{val: "&", want: "\"&\""},
 										&ruleIRefExpr{index: 133 /* st_name2 */},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&choiceExpr{
 											alternatives: []any{
-												&litMatcher{
-													val:        ":",
-													ignoreCase: false,
-													want:       "\":\"",
-												},
-												&litMatcher{
-													val:        "=",
-													ignoreCase: false,
-													want:       "\"=\"",
-												},
+												&litMatcher{val: ":", want: "\":\""},
+												&litMatcher{val: "=", want: "\"=\""},
 											},
 										},
 										&ruleIRefExpr{index: 112 /* sp */},
@@ -4288,25 +3538,13 @@ var g = &grammar{
 								run: (*parser).call_onst_assign_64,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "&",
-											ignoreCase: false,
-											want:       "\"&\"",
-										},
+										&litMatcher{val: "&", want: "\"&\""},
 										&ruleIRefExpr{index: 134 /* st_name2r */},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&choiceExpr{
 											alternatives: []any{
-												&litMatcher{
-													val:        ":",
-													ignoreCase: false,
-													want:       "\":\"",
-												},
-												&litMatcher{
-													val:        "=",
-													ignoreCase: false,
-													want:       "\"=\"",
-												},
+												&litMatcher{val: ":", want: "\":\""},
+												&litMatcher{val: "=", want: "\"=\""},
 											},
 										},
 										&ruleIRefExpr{index: 112 /* sp */},
@@ -4362,11 +3600,7 @@ var g = &grammar{
 							},
 							&ruleIRefExpr{index: 112 /* sp */},
 							&zeroOrOneExpr{
-								expr: &litMatcher{
-									val:        ",",
-									ignoreCase: false,
-									want:       "\",\"",
-								},
+								expr: &litMatcher{val: ",", want: "\",\""},
 							},
 							&ruleIRefExpr{index: 112 /* sp */},
 						},
@@ -4376,7 +3610,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_modify_rest1",
+			name:      "st_modify_rest1",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&ruleIRefExpr{index: 112 /* sp */},
@@ -4386,11 +3621,7 @@ var g = &grammar{
 								run: (*parser).call_onst_modify_rest1_4,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "+=",
-											ignoreCase: false,
-											want:       "\"+=\"",
-										},
+										&litMatcher{val: "+=", want: "\"+=\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&labeledExpr{
 											label:       "text",
@@ -4404,11 +3635,7 @@ var g = &grammar{
 								run: (*parser).call_onst_modify_rest1_10,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "-=",
-											ignoreCase: false,
-											want:       "\"-=\"",
-										},
+										&litMatcher{val: "-=", want: "\"-=\""},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&labeledExpr{
 											label:       "text",
@@ -4432,11 +3659,7 @@ var g = &grammar{
 							&ruleIRefExpr{index: 129 /* st_modify2 */},
 							&ruleIRefExpr{index: 112 /* sp */},
 							&zeroOrOneExpr{
-								expr: &litMatcher{
-									val:        ",",
-									ignoreCase: false,
-									want:       "\",\"",
-								},
+								expr: &litMatcher{val: ",", want: "\",\""},
 							},
 							&ruleIRefExpr{index: 112 /* sp */},
 						},
@@ -4453,11 +3676,7 @@ var g = &grammar{
 						&ruleIRefExpr{index: 129 /* st_modify2 */},
 						&ruleIRefExpr{index: 112 /* sp */},
 						&zeroOrOneExpr{
-							expr: &litMatcher{
-								val:        ",",
-								ignoreCase: false,
-								want:       "\",\"",
-							},
+							expr: &litMatcher{val: ",", want: "\",\""},
 						},
 						&ruleIRefExpr{index: 112 /* sp */},
 					},
@@ -4484,7 +3703,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_modify_rest",
+			name:      "st_modify_rest",
+			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
 					&ruleIRefExpr{index: 112 /* sp */},
@@ -4494,17 +3714,9 @@ var g = &grammar{
 								run: (*parser).call_onst_modify_rest_4,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "+",
-											ignoreCase: false,
-											want:       "\"+\"",
-										},
+										&litMatcher{val: "+", want: "\"+\""},
 										&zeroOrOneExpr{
-											expr: &litMatcher{
-												val:        "=",
-												ignoreCase: false,
-												want:       "\"=\"",
-											},
+											expr: &litMatcher{val: "=", want: "\"=\""},
 										},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&labeledExpr{
@@ -4520,11 +3732,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&andExpr{
-											expr: &litMatcher{
-												val:        "-",
-												ignoreCase: false,
-												want:       "\"-\"",
-											},
+											expr: &litMatcher{val: "-", want: "\"-\""},
 										},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&labeledExpr{
@@ -4539,17 +3747,9 @@ var g = &grammar{
 								run: (*parser).call_onst_modify_rest_19,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{
-											val:        "-",
-											ignoreCase: false,
-											want:       "\"-\"",
-										},
+										&litMatcher{val: "-", want: "\"-\""},
 										&zeroOrOneExpr{
-											expr: &litMatcher{
-												val:        "=",
-												ignoreCase: false,
-												want:       "\"=\"",
-											},
+											expr: &litMatcher{val: "=", want: "\"=\""},
 										},
 										&ruleIRefExpr{index: 112 /* sp */},
 										&labeledExpr{
@@ -4566,7 +3766,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_name1",
+			name:      "st_name1",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onst_name1_1,
 				expr: &labeledExpr{
@@ -4576,11 +3777,7 @@ var g = &grammar{
 							&oneOrMoreExpr{
 								expr: &ruleIRefExpr{index: 135 /* id_ch0 */},
 							},
-							&litMatcher{
-								val:        ":",
-								ignoreCase: false,
-								want:       "\":\"",
-							},
+							&litMatcher{val: ":", want: "\":\""},
 							&oneOrMoreExpr{
 								expr: &ruleIRefExpr{index: 135 /* id_ch0 */},
 							},
@@ -4591,7 +3788,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_name1r",
+			name:      "st_name1r",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onst_name1r_1,
 				expr: &labeledExpr{
@@ -4604,7 +3802,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_name2",
+			name:      "st_name2",
+			varExists: true,
 			expr: &actionExpr{
 				run: (*parser).call_onst_name2_1,
 				expr: &labeledExpr{
@@ -4617,11 +3816,7 @@ var g = &grammar{
 							},
 							&seqExpr{
 								exprs: []any{
-									&litMatcher{
-										val:        ":",
-										ignoreCase: false,
-										want:       "\":\"",
-									},
+									&litMatcher{val: ":", want: "\":\""},
 									&oneOrMoreExpr{
 										expr: &ruleIRefExpr{index: 136 /* id_ch */},
 									},
@@ -4634,7 +3829,8 @@ var g = &grammar{
 			},
 		},
 		{
-			name: "st_name2r",
+			name:      "st_name2r",
+			varExists: true,
 			expr: &choiceExpr{
 				alternatives: []any{
 					&actionExpr{
@@ -4656,11 +3852,7 @@ var g = &grammar{
 						run: (*parser).call_onst_name2r_8,
 						expr: &seqExpr{
 							exprs: []any{
-								&litMatcher{
-									val:        "'",
-									ignoreCase: false,
-									want:       "\"'\"",
-								},
+								&litMatcher{val: "'", want: "\"'\""},
 								&labeledExpr{
 									label: "text",
 									expr: &oneOrMoreExpr{
@@ -4668,31 +3860,17 @@ var g = &grammar{
 											alternatives: []any{
 												&ruleIRefExpr{index: 135 /* id_ch0 */},
 												&charClassMatcher{
-													val:        "[0-9]",
-													ranges:     []rune{'0', '9'},
-													ignoreCase: false,
-													inverted:   false,
+													val:    "[0-9]",
+													ranges: []rune{'0', '9'},
 												},
-												&litMatcher{
-													val:        " ",
-													ignoreCase: false,
-													want:       "\" \"",
-												},
-												&litMatcher{
-													val:        ":",
-													ignoreCase: false,
-													want:       "\":\"",
-												},
+												&litMatcher{val: " ", want: "\" \""},
+												&litMatcher{val: ":", want: "\":\""},
 											},
 										},
 									},
 									textCapture: true,
 								},
-								&litMatcher{
-									val:        "'",
-									ignoreCase: false,
-									want:       "\"'\"",
-								},
+								&litMatcher{val: "'", want: "\"'\""},
 							},
 						},
 					},
@@ -4772,7 +3950,7 @@ func (p *parser) call_onstmtReturn_2() any {
 
 func (p *parser) call_onstmtReturn_7() any {
 	return (func(c *current) any {
-		c.data.PushUndefined()
+		c.data.PushNull()
 		c.data.AddOp(typeReturn)
 		return nil
 	})(&p.cur)
@@ -5022,28 +4200,28 @@ func (p *parser) call_onstmtAssignType7_1() any {
 
 func (p *parser) call_on_step_7() any {
 	return (func(c *current) any {
-		c.data.PushUndefined()
+		c.data.PushNull()
 		return nil
 	})(&p.cur)
 }
 
 func (p *parser) call_on_step_9() any {
 	return (func(c *current) any {
-		c.data.PushUndefined()
+		c.data.PushNull()
 		return nil
 	})(&p.cur)
 }
 
 func (p *parser) call_on_sliceSuffix_6() any {
 	return (func(c *current) any {
-		c.data.PushUndefined()
+		c.data.PushNull()
 		return nil
 	})(&p.cur)
 }
 
 func (p *parser) call_on_sliceSuffix_12() any {
 	return (func(c *current) any {
-		c.data.PushUndefined()
+		c.data.PushNull()
 		return nil
 	})(&p.cur)
 }
@@ -5748,7 +4926,7 @@ func (p *parser) call_onvalue_6() any {
 
 func (p *parser) call_onvalue_10() any {
 	return (func(c *current) any {
-		c.data.PushUndefined()
+		c.data.PushNull()
 		return nil
 	})(&p.cur)
 }
@@ -6247,6 +5425,7 @@ type rule struct {
 	name        string
 	displayName string
 	expr        any
+	varExists   bool
 }
 
 // nolint: structcheck
@@ -6404,55 +5583,6 @@ func (p *parserError) Error() string {
 	return p.prefix + ": " + p.Inner.Error()
 }
 
-// newParser creates a parser with the specified input source and options.
-func newParser(filename string, b []byte, opts ...option) *parser {
-	stats := Stats{
-		ChoiceAltCnt: make(map[string]map[string]int),
-	}
-
-	p := &parser{
-		filename: filename,
-		errs:     new(errList),
-		data:     b,
-		pt:       savepoint{position: position{line: 1}},
-		recover:  true,
-		cur: current{
-			data: &ParserCustomData{},
-		},
-		maxFailPos:      position{col: 1, line: 1},
-		maxFailExpected: make([]string, 0, 20),
-		Stats:           &stats,
-		// start rule is rule [0] unless an alternate entrypoint is specified
-		entrypoint: "dicescript",
-		scStack:    []bool{false},
-	}
-
-	p.spStack.init(5)
-	p.setOptions(opts)
-
-	if p.maxExprCnt == 0 {
-		p.maxExprCnt = math.MaxUint64
-	}
-
-	return p
-}
-
-// setOptions applies the options to the parser.
-func (p *parser) setOptions(opts []option) {
-	for _, opt := range opts {
-		opt(p)
-	}
-}
-
-// setCustomData to the parser.
-func (p *parser) setCustomData(data *ParserCustomData) {
-	p.cur.data = data
-}
-
-func (p *parser) checkSkipCode() bool {
-	return p.scStack[len(p.scStack)-1]
-}
-
 // nolint: structcheck,deadcode
 type resultTuple struct {
 	v   any
@@ -6528,6 +5658,55 @@ type parser struct {
 	scStack []bool
 	// save point stack
 	spStack parserStack
+}
+
+// newParser creates a parser with the specified input source and options.
+func newParser(filename string, b []byte, opts ...option) *parser {
+	stats := Stats{
+		ChoiceAltCnt: make(map[string]map[string]int),
+	}
+
+	p := &parser{
+		filename: filename,
+		errs:     new(errList),
+		data:     b,
+		pt:       savepoint{position: position{line: 1}},
+		recover:  true,
+		cur: current{
+			data: &ParserCustomData{},
+		},
+		maxFailPos:      position{col: 1, line: 1},
+		maxFailExpected: make([]string, 0, 20),
+		Stats:           &stats,
+		// start rule is rule [0] unless an alternate entrypoint is specified
+		entrypoint: "dicescript",
+		scStack:    []bool{false},
+	}
+
+	p.spStack.init(5)
+	p.setOptions(opts)
+
+	if p.maxExprCnt == 0 {
+		p.maxExprCnt = math.MaxUint64
+	}
+
+	return p
+}
+
+// setOptions applies the options to the parser.
+func (p *parser) setOptions(opts []option) {
+	for _, opt := range opts {
+		opt(p)
+	}
+}
+
+// setCustomData to the parser.
+func (p *parser) setCustomData(data *ParserCustomData) {
+	p.cur.data = data
+}
+
+func (p *parser) checkSkipCode() bool {
+	return p.scStack[len(p.scStack)-1]
 }
 
 // push a variable set on the vstack.
@@ -6762,9 +5941,15 @@ func listJoin(list []string, sep string, lastSep string) string {
 
 func (p *parser) parseRuleWrap(rule *rule) (any, bool) {
 	p.rstack = append(p.rstack, rule)
-	p.pushV()
-	val, ok := p.parseExprWrap(rule.expr)
-	p.popV()
+	var val any
+	var ok bool
+	if rule.varExists && !p.checkSkipCode() {
+		p.pushV()
+		val, ok = p.parseExprWrap(rule.expr)
+		p.popV()
+	} else {
+		val, ok = p.parseExprWrap(rule.expr)
+	}
 	p.rstack = p.rstack[:len(p.rstack)-1]
 	return val, ok
 }
@@ -6784,9 +5969,9 @@ func (p *parser) parseExprWrap(expr any) (any, bool) {
 	case *andCodeExpr:
 		val, ok = p.parseAndCodeExpr(expr)
 	case *andExpr:
-		val, ok = p.parseAndExpr(expr, false)
+		val, ok = p.parseAndExpr(expr)
 	case *andLogicalExpr:
-		val, ok = p.parseAndExpr((*andExpr)(expr), true)
+		val, ok = p.parseAndLogicalExpr(expr)
 	case *anyMatcher:
 		val, ok = p.parseAnyMatcher(expr)
 	case *charClassMatcher:
@@ -6802,9 +5987,9 @@ func (p *parser) parseExprWrap(expr any) (any, bool) {
 	case *notCodeExpr:
 		val, ok = p.parseNotCodeExpr(expr)
 	case *notExpr:
-		val, ok = p.parseNotExpr(expr, false)
+		val, ok = p.parseNotExpr(expr)
 	case *notLogicalExpr:
-		val, ok = p.parseNotExpr((*notExpr)(expr), true)
+		val, ok = p.parseNotLogicalExpr(expr)
 	case *oneOrMoreExpr:
 		val, ok = p.parseOneOrMoreExpr(expr)
 	case *recoveryExpr:
@@ -6854,16 +6039,22 @@ func (p *parser) parseAndCodeExpr(and *andCodeExpr) (any, bool) {
 	return nil, ok
 }
 
-func (p *parser) parseAndExpr(and *andExpr, logical bool) (any, bool) {
+func (p *parser) parseAndExpr(and *andExpr) (any, bool) {
+	return p.parseAndExprBase(and, false)
+}
+
+func (p *parser) parseAndLogicalExpr(and *andLogicalExpr) (any, bool) {
+	return p.parseAndExprBase((*andExpr)(and), true)
+}
+
+func (p *parser) parseAndExprBase(and *andExpr, logical bool) (any, bool) {
 	pt := p.pt
-	p.pushV()
 
 	p.scStack = append(p.scStack, true)
 	_, ok := p.parseExprWrap(and.expr)
 	p.scStack = p.scStack[:len(p.scStack)-1]
 
 	matchedOffset := p.pt.offset
-	p.popV()
 	p.restore(&pt)
 
 	if logical {
@@ -6950,9 +6141,7 @@ func (p *parser) parseChoiceExpr(ch *choiceExpr) (any, bool) {
 		// dummy assignment to prevent compile error if optimized
 		_ = altI
 
-		p.pushV()
 		val, ok := p.parseExprWrap(alt)
-		p.popV()
 		if ok {
 			return val, ok
 		}
@@ -6964,10 +6153,8 @@ func (p *parser) parseLabeledExpr(lab *labeledExpr) (any, bool) {
 	startOffset := p.pt.position.offset
 	var val any
 	var ok bool
-	p.pushV()
 	val, ok = p.parseExprWrap(lab.expr)
-	p.popV()
-	if ok && lab.label != "" {
+	if ok && lab.label != "" && !p.checkSkipCode() {
 		m := p.vstack[len(p.vstack)-1]
 		if lab.textCapture {
 			m[lab.label] = string(p.sliceFromOffset(startOffset))
@@ -7008,9 +6195,16 @@ func (p *parser) parseNotCodeExpr(not *notCodeExpr) (any, bool) {
 	return nil, !ok
 }
 
-func (p *parser) parseNotExpr(not *notExpr, logical bool) (any, bool) {
+func (p *parser) parseNotExpr(not *notExpr) (any, bool) {
+	return p.parseNotExprBase(not, false)
+}
+
+func (p *parser) parseNotLogicalExpr(not *notLogicalExpr) (any, bool) {
+	return p.parseNotExprBase((*notExpr)(not), true)
+}
+
+func (p *parser) parseNotExprBase(not *notExpr, logical bool) (any, bool) {
 	pt := p.pt
-	p.pushV()
 	p.maxFailInvertExpected = !p.maxFailInvertExpected
 
 	p.scStack = append(p.scStack, true)
@@ -7018,7 +6212,6 @@ func (p *parser) parseNotExpr(not *notExpr, logical bool) (any, bool) {
 	p.scStack = p.scStack[:len(p.scStack)-1]
 
 	p.maxFailInvertExpected = !p.maxFailInvertExpected
-	p.popV()
 	matchedOffset := p.pt.offset
 	p.restore(&pt)
 
@@ -7032,9 +6225,7 @@ func (p *parser) parseOneOrMoreExpr(expr *oneOrMoreExpr) (any, bool) {
 	var vals []any
 	var matched bool
 	for {
-		p.pushV()
 		val, ok := p.parseExprWrap(expr.expr)
-		p.popV()
 		if !ok {
 			if len(vals) > 0 {
 				return vals, matched
@@ -7104,9 +6295,7 @@ func (p *parser) parseThrowExpr(expr *throwExpr) (any, bool) {
 func (p *parser) parseZeroOrMoreExpr(expr *zeroOrMoreExpr) (any, bool) {
 	var vals []any
 	for {
-		p.pushV()
 		val, ok := p.parseExprWrap(expr.expr)
-		p.popV()
 		if !ok {
 			if len(vals) > 0 {
 				return vals, true
@@ -7120,9 +6309,7 @@ func (p *parser) parseZeroOrMoreExpr(expr *zeroOrMoreExpr) (any, bool) {
 }
 
 func (p *parser) parseZeroOrOneExpr(expr *zeroOrOneExpr) (any, bool) {
-	p.pushV()
 	val, _ := p.parseExprWrap(expr.expr)
-	p.popV()
 	// whether it matched or not, consider it a match
 	return val, true
 }

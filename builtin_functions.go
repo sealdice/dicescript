@@ -9,7 +9,7 @@ import (
 func funcCeil(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt(IntType(math.Ceil(v)))
+		return NewIntVal(IntType(math.Ceil(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -19,7 +19,7 @@ func funcCeil(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 func funcRound(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt(IntType(math.Round(v)))
+		return NewIntVal(IntType(math.Round(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -29,7 +29,7 @@ func funcRound(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 func funcFloor(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v, ok := params[0].ReadFloat()
 	if ok {
-		return VMValueNewInt(IntType(math.Floor(v)))
+		return NewIntVal(IntType(math.Floor(v)))
 	} else {
 		ctx.Error = errors.New("类型错误: 只能是float")
 	}
@@ -42,13 +42,13 @@ func funcAbs(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	case VMTypeInt:
 		val := v.MustReadInt()
 		if val < 0 {
-			return VMValueNewInt(-val)
+			return NewIntVal(-val)
 		}
 		return v
 	case VMTypeFloat:
 		val := v.MustReadFloat()
 		if val < 0 {
-			return VMValueNewFloat(-val)
+			return NewFloatVal(-val)
 		}
 		return v
 	}
@@ -63,12 +63,12 @@ func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		return params[0]
 	case VMTypeFloat:
 		v, _ := params[0].ReadFloat()
-		return VMValueNewInt(IntType(v))
+		return NewIntVal(IntType(v))
 	case VMTypeString:
 		s, _ := params[0].ReadString()
 		val, err := strconv.ParseInt(s, 10, 64)
 		if err == nil {
-			return VMValueNewInt(IntType(val))
+			return NewIntVal(IntType(val))
 		} else {
 			ctx.Error = errors.New("值错误: 无法进行 int() 转换: " + s)
 		}
@@ -82,14 +82,14 @@ func funcFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
 		v, _ := params[0].ReadInt()
-		return VMValueNewFloat(float64(v))
+		return NewFloatVal(float64(v))
 	case VMTypeFloat:
 		return params[0]
 	case VMTypeString:
 		s, _ := params[0].ReadString()
 		val, err := strconv.ParseFloat(s, 64)
 		if err == nil {
-			return VMValueNewFloat(val)
+			return NewFloatVal(val)
 		} else {
 			ctx.Error = errors.New("值错误: 无法进行 float() 转换: " + s)
 		}
@@ -100,7 +100,7 @@ func funcFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 }
 
 func funcStr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
-	return VMValueNewStr(params[0].ToString())
+	return NewStrVal(params[0].ToString())
 }
 
 func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
@@ -108,7 +108,7 @@ func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	var arr []*VMValue
 	if v, ok := builtinProto[typeId]; ok {
 		v.Range(func(key string, value *VMValue) bool {
-			arr = append(arr, VMValueNewStr(key))
+			arr = append(arr, NewStrVal(key))
 			return true
 		})
 	}
@@ -119,16 +119,16 @@ func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 			arr = append(arr, d.DirFunc(ctx)...)
 		}
 	}
-	return VMValueNewArrayRaw(arr)
+	return NewArrayValRaw(arr)
 }
 
 //
 //func funcHelp(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 //	// 函数名，参数，说明
-//	return VMValueNewStr(params[0].ToString())
+//	return NewStrVal(params[0].ToString())
 //}
 
-var nnf = VMValueNewNativeFunction
+var nnf = NewNativeFunctionVal
 
 type ndf = NativeFunctionData
 

@@ -20,8 +20,7 @@ const (
 	typePushDict
 	typePushRange
 	typePushComputed
-	typePushUndefined
-	typePushNone
+	typePushNull
 	typePushThis
 	typePushGlobal
 	typePushFunction
@@ -128,10 +127,8 @@ func (code *ByteCode) CodeString() string {
 	case typePushComputed:
 		computed, _ := code.Value.(*VMValue).ReadComputed()
 		return "push.computed " + computed.Expr
-	case typePushUndefined:
-		return "push.undefined"
-	case typePushNone:
-		return "push.none"
+	case typePushNull:
+		return "push.null"
 	case typePushThis:
 		return "push.this"
 	case typePushGlobal:
