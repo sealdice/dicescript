@@ -32,7 +32,7 @@ func NewVM() *Context {
 	return p
 }
 
-// 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
+// RunExpr 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
 func (ctx *Context) RunExpr(value string) (*VMValue, error) {
 	val := NewFunctionValRaw(&FunctionData{
 		Expr:      ctx.Config.DefaultDiceSideExpr,
@@ -47,17 +47,16 @@ func (ctx *Context) RunExpr(value string) (*VMValue, error) {
 	return v, ctx.Error
 }
 
-func (ctx *Context) Run(value string) error {
+func (ctx *Context) Parse(value string) error {
 	// 检测是否正在执行，正在执行则使用新的上下文
 	if ctx.IsRunning {
 		return errors.New("正在执行中，无法执行新的语句")
 	}
-	ctx.IsRunning = false
 
 	p := newParser("", []byte(value))
 	ctx.parser = p
 	d := p.cur.data
-	//p.debug = true
+	// p.debug = true
 
 	// 初始化指令栈，默认指令长度512条，会自动增长
 	d.code = make([]ByteCode, 512)
@@ -65,7 +64,7 @@ func (ctx *Context) Run(value string) error {
 	d.Config = ctx.Config
 	ctx.Error = nil
 	ctx.NumOpCount = 0
-	ctx.Detail = ""
+	ctx.detailCache = ""
 
 	// 开始解析，编译字节码
 	_, err := p.parse(nil)
@@ -77,8 +76,23 @@ func (ctx *Context) Run(value string) error {
 	ctx.code = p.cur.data.code
 	ctx.codeIndex = p.cur.data.codeIndex
 
-	// println(_times)
-	ctx.Evaluate()
+	return nil
+}
+
+// IsDiceCalculateExists 只有表达式被解析后，才能被调用，暂不考虑存在invoke指令的情况
+func (ctx *Context) IsDiceCalculateExists() bool {
+	for _, i := range ctx.code {
+		switch i.T {
+		case typeDice, typeDiceDC, typeDiceWod, typeDiceCocBonus, typeDiceCocPenalty:
+			return true
+		}
+	}
+	return false
+}
+
+func (ctx *Context) RunAfterParsed() error {
+	// 以下为eval
+	ctx.evaluate()
 	if ctx.Error != nil {
 		return ctx.Error
 	}
@@ -93,8 +107,15 @@ func (ctx *Context) Run(value string) error {
 	// 给出VM解析完句子后的剩余文本
 	ctx.RestInput = string(ctx.parser.data[ctx.parser.pt.offset:])
 	ctx.Matched = string(ctx.parser.data[:ctx.parser.pt.offset])
+	return nil
+}
 
-	return err
+// Run 执行给定语句
+func (ctx *Context) Run(value string) error {
+	if err := ctx.Parse(value); err != nil {
+		return err
+	}
+	return ctx.RunAfterParsed()
 }
 
 type spanByBegin []BufferSpan
@@ -109,17 +130,95 @@ func (a spanByEnd) Len() int           { return len(a) }
 func (a spanByEnd) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a spanByEnd) Less(i, j int) bool { return a[i].end < a[j].end }
 
-//getE5 := func() error {
+// getE5 := func() error {
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
-//}
+// }
 
-func (e *Context) Evaluate() {
-	e.top = 0
-	e.stack = make([]VMValue, 1000)
-	stack := e.stack
+func (ctx *Context) makeDetailStr(details []BufferSpan) string {
+	if ctx.Config.CustomMakeDetailFunc != nil {
+		return ctx.Config.CustomMakeDetailFunc(ctx, details)
+	}
 
-	ctx := e
-	//ctx := &e.Context
+	curPoint := IntType(-1) // nolint
+	lastEnd := IntType(-1)  // nolint
+
+	var m []struct {
+		begin IntType
+		end   IntType
+		spans []BufferSpan
+	}
+
+	for _, i := range details {
+		// fmt.Println("?", i, lastEnd)
+		if i.begin > lastEnd {
+			curPoint = i.begin
+			m = append(m, struct {
+				begin IntType
+				end   IntType
+				spans []BufferSpan
+			}{begin: curPoint, end: i.end, spans: []BufferSpan{i}})
+		} else {
+			m[len(m)-1].spans = append(m[len(m)-1].spans, i)
+			if i.end > m[len(m)-1].end {
+				m[len(m)-1].end = i.end
+			}
+		}
+
+		if i.end > lastEnd {
+			lastEnd = i.end
+		}
+	}
+
+	detailResult := ctx.parser.data
+
+	for i := len(m) - 1; i >= 0; i-- {
+		// for i := 0; i < len(m); i++ {
+		item := m[i]
+		size := len(item.spans)
+		sort.Sort(spanByEnd(item.spans))
+		last := item.spans[size-1]
+
+		subDetailsText := ""
+		if size > 1 {
+			// 次级结果，如 (10d3)d5 中，此处为10d3的结果
+			// 例如 (10d3)d5=63[(10d3)d5=...,10d3=19]
+			for j := 0; j < len(item.spans)-1; j++ {
+				span := item.spans[j]
+				subDetailsText += "," + string(detailResult[span.begin:span.end]) + "=" + span.ret.ToString()
+			}
+		}
+
+		exprText := string(detailResult[item.begin:item.end])
+
+		var r []byte
+		r = append(r, detailResult[:item.begin]...)
+
+		// 主体结果部分，如 (10d3)d5=63[(10d3)d5=63=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
+		detail := "[" + exprText + "=" + last.ret.ToString()
+		if last.text != "" {
+			detail += "=" + last.text
+		}
+		detail += subDetailsText + "]"
+
+		r = append(r, ([]byte)(last.ret.ToString()+detail)...)
+		r = append(r, detailResult[item.end:]...)
+		detailResult = r
+	}
+
+	return string(detailResult)
+}
+
+func (ctx *Context) evaluate() {
+	ctx.top = 0
+	ctx.stack = make([]VMValue, 1000)
+	ctx.IsRunning = true
+	stack := ctx.stack
+	defer func() {
+		ctx.IsRunning = false // 如果程序崩掉，不过halt
+	}()
+
+	e := ctx
+	// ctx := &e.Context
 	var details []BufferSpan
 	numOpCountAdd := func(count IntType) bool {
 		e.NumOpCount += count
@@ -189,74 +288,8 @@ func (e *Context) Evaluate() {
 		if ctx.subThreadDepth != 0 {
 			return
 		}
-		var m []struct {
-			begin IntType
-			end   IntType
-			spans []BufferSpan
-		}
-		curPoint := IntType(-1) // nolint
-		lastEnd := IntType(-1)  // nolint
 		sort.Sort(spanByBegin(details))
-
-		for _, i := range details {
-			//fmt.Println("?", i, lastEnd)
-			if i.begin > lastEnd {
-				curPoint = i.begin
-				m = append(m, struct {
-					begin IntType
-					end   IntType
-					spans []BufferSpan
-				}{begin: curPoint, end: i.end, spans: []BufferSpan{i}})
-			} else {
-				m[len(m)-1].spans = append(m[len(m)-1].spans, i)
-				if i.end > m[len(m)-1].end {
-					m[len(m)-1].end = i.end
-				}
-			}
-
-			if i.end > lastEnd {
-				lastEnd = i.end
-			}
-		}
-
-		runeBuffer := e.parser.data
-		detailResult := runeBuffer
-
-		for i := len(m) - 1; i >= 0; i-- {
-			//for i := 0; i < len(m); i++ {
-			item := m[i]
-			size := len(item.spans)
-			sort.Sort(spanByEnd(item.spans))
-			last := item.spans[size-1]
-
-			subDetailsText := ""
-			if size > 1 {
-				// 次级结果，如 (10d3)d5 中，此处为10d3的结果
-				// 例如 (10d3)d5=63[(10d3)d5=...,10d3=19]
-				for j := 0; j < len(item.spans)-1; j++ {
-					span := item.spans[j]
-					subDetailsText += "," + string(runeBuffer[span.begin:span.end]) + "=" + span.ret.ToString()
-				}
-			}
-
-			exprText := string(runeBuffer[item.begin:item.end])
-
-			var r []byte
-			r = append(r, detailResult[:item.begin]...)
-
-			// 主体结果部分，如 (10d3)d5=63[(10d3)d5=63=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
-			detail := "[" + exprText + "=" + last.ret.ToString()
-			if last.text != "" {
-				detail += "=" + last.text
-			}
-			detail += subDetailsText + "]"
-
-			r = append(r, ([]byte)(last.ret.ToString()+detail)...)
-			r = append(r, detailResult[item.end:]...)
-			detailResult = r
-		}
-
-		ctx.Detail = string(detailResult)
+		ctx.DetailSpans = details
 	}
 
 	var lastPop *VMValue
@@ -351,7 +384,7 @@ func (e *Context) Evaluate() {
 			stackPush(NewNullVal())
 		case typePushThis:
 			stackPush(vmValueNewLocal())
-		//case typePushGlobal:
+		// case typePushGlobal:
 		//	stackPush(vmValueNewGlobal())
 
 		case typePushRange:
@@ -706,7 +739,7 @@ func (e *Context) Evaluate() {
 				return
 			}
 
-			num, detail := RollCommon(diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
+			num, detail := RollCommon(ctx.randSrc, diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
 			diceStateIndex -= 1
 
 			ret := NewIntVal(num)
@@ -715,7 +748,7 @@ func (e *Context) Evaluate() {
 			stackPush(ret)
 
 		case typeDiceFate:
-			sum, detail := RollFate()
+			sum, detail := RollFate(ctx.randSrc)
 			ret := NewIntVal(sum)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detail
@@ -729,7 +762,7 @@ func (e *Context) Evaluate() {
 				return
 			}
 
-			r, detailText := RollCoC(code.T == typeDiceCocBonus, diceNum)
+			r, detailText := RollCoC(ctx.randSrc, code.T == typeDiceCocBonus, diceNum)
 			ret := NewIntVal(r)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
@@ -763,7 +796,7 @@ func (e *Context) Evaluate() {
 				return
 			}
 
-			num, _, _, detailText := RollWoD(v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE)
+			num, _, _, detailText := RollWoD(ctx.randSrc, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE)
 			ret := NewIntVal(num)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
@@ -783,7 +816,7 @@ func (e *Context) Evaluate() {
 			if !doubleCrossCheck(ctx, v.MustReadInt(), dcState.pool, dcState.points) {
 				return
 			}
-			success, _, _, detailText := RollDoubleCross(v.MustReadInt(), dcState.pool, dcState.points)
+			success, _, _, detailText := RollDoubleCross(nil, v.MustReadInt(), dcState.pool, dcState.points)
 			ret := NewIntVal(success)
 			details[len(details)-1].ret = ret
 			details[len(details)-1].text = detailText
@@ -821,11 +854,11 @@ func (e *Context) Evaluate() {
 	}
 }
 
-func (e *Context) GetAsmText() string {
+func (ctx *Context) GetAsmText() string {
 	ret := ""
 	ret += "=== VM Code ===\n"
-	for index, i := range e.code {
-		if index >= e.codeIndex {
+	for index, i := range ctx.code {
+		if index >= ctx.codeIndex {
 			break
 		}
 		s := i.CodeString()

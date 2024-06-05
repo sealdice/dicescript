@@ -9,7 +9,7 @@ type CodeType uint8
 
 type ByteCode struct {
 	T     CodeType
-	Value interface{}
+	Value any
 }
 
 const (

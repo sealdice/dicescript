@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/rand"
 )
 
 type VMValueType int
@@ -80,6 +81,8 @@ type RollConfig struct {
 	CallbackLoadVar func(name string) (string, *VMValue)                                                    // 加载变量回调，返回值会成为新变量名
 	CallbackSt      func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
 
+	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan) string // 自定义计算过程
+
 	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
 	DefaultDiceSideExpr          string   // 默认骰子面数
 	defaultDiceSideExprCacheFunc *VMValue // expr的缓存函数
@@ -93,8 +96,30 @@ type RollConfig struct {
 }
 
 type customDiceItem struct {
-	re       *regexp.Regexp
+	expr     string
 	callback func(ctx *Context, groups []string) *VMValue
+
+	parse func(ctx *Context, p *parser)
+
+	// 该怎样写呢？似乎将一些解析相关的struct暴露出去并不合适
+	// 这里我有三个选项，第一种是创建一种更简单的语法进行编译：例如
+	// nos 'd' expr 可以看成是一种简易正则
+	// 选项二：
+	// 将parser独立成包(关联点很少，并不困难)，同时将几个expr暴露出去
+	// 这样用户直接与parser进行交互
+	// 使用难度较大，但自由度也很大
+	// 选项三：
+	// 对文档流进行简易封装，用户可以使用GetNext获取下一个字符，最后用户需要告知消耗了几个字符，然后生成了什么
+	// 自由度甚至更大，但需要额外封装一下 expr 等几个主要的语法节点供调用
+	//
+	// 值得额外注意的一点是，customDice实际上会参与两个阶段，即解析和执行
+	// 解析阶段需要确认是否匹配，同时给出抓取文本的规则，接着执行时需要使用解析过程生成的数据
+	// 这需要专门的数据结构来配合，回溯的问题也值得考虑
+	//
+	// 再补充一点，由于是字节码虚拟机，所以 'd' e:expr 这里对e的映射实际上没有意义，
+	// 并不会得到e的值因为expr语句实际上的执行结果是写入字节码
+	// 所以用户还需要能操作vm数据栈？还是搞点语法糖？
+	// 我认为可以先考虑选项三，再从其基础上制作选项一
 }
 
 type Context struct {
@@ -102,7 +127,7 @@ type Context struct {
 	subThreadDepth int
 	attrs          *ValueMap
 	upCtx          *Context
-	//subThread      *Context // 用于执行子句
+	// subThread      *Context // 用于执行子句
 
 	code      []ByteCode
 	codeIndex int
@@ -111,17 +136,19 @@ type Context struct {
 	top   int
 
 	NumOpCount IntType // 算力计数
-	//CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
+	// CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
 	Config RollConfig // 标记
 	Error  error      // 报错信息
 
-	Ret       *VMValue // 返回值
-	RestInput string   // 剩余字符串
-	Matched   string   // 匹配的字符串
-	Detail    string   // 计算过程
+	Ret         *VMValue // 返回值
+	RestInput   string   // 剩余字符串
+	Matched     string   // 匹配的字符串
+	DetailSpans []BufferSpan
+	detailCache string // 计算过程
 
-	//seed      int64 // 随机种子，之后换PCG算法
+	Seed    []byte          // 随机种子，16个字节，即双uint64
+	randSrc *rand.PCGSource // 根据种子生成的source
 
 	IsRunning bool // 是否正在运行，Run时会置为true，halt时会置为false
 
@@ -136,24 +163,49 @@ type Context struct {
 	GlobalValueLoadFunc  func(name string) *VMValue
 }
 
-func (e *Context) StackTop() int {
-	return e.top
+func (ctx *Context) GetDetailText() string {
+	if ctx.DetailSpans != nil {
+		if ctx.detailCache != "" {
+			return ctx.detailCache
+		}
+		ctx.detailCache = ctx.makeDetailStr(ctx.DetailSpans)
+		return ctx.detailCache
+	}
+	return ""
 }
 
-func (e *Context) Depth() int {
-	return e.subThreadDepth
+func (ctx *Context) StackTop() int {
+	return ctx.top
 }
 
-func (e *Context) SetConfig(cfg *RollConfig) {
-	e.Config = *cfg
+func (ctx *Context) Depth() int {
+	return ctx.subThreadDepth
 }
 
-func (e *Context) Init() {
-	e.attrs = &ValueMap{}
-	e.globalNames = &ValueMap{}
+func (ctx *Context) SetConfig(cfg *RollConfig) {
+	ctx.Config = *cfg
 }
 
-func (e *Context) loadInnerVar(name string) *VMValue {
+func (ctx *Context) Init() {
+	ctx.attrs = &ValueMap{}
+	ctx.globalNames = &ValueMap{}
+	ctx.detailCache = ""
+	ctx.DetailSpans = nil
+	if ctx.Seed != nil {
+		s := rand.PCGSource{}
+		_ = s.UnmarshalBinary(ctx.Seed)
+		ctx.randSrc = &s
+	}
+}
+
+func (ctx *Context) GetCurSeed() ([]byte, error) {
+	if ctx.randSrc != nil {
+		return ctx.randSrc.MarshalBinary()
+	}
+	return randSource.MarshalBinary()
+}
+
+func (ctx *Context) loadInnerVar(name string) *VMValue {
 	return builtinValues[name]
 }
 
@@ -176,10 +228,10 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 			return val
 		}
 	}
-	//else {
+	// else {
 	//	ctx.Error = errors.New("未设置 GlobalValueLoadFunc，无法获取变量")
 	//	return nil
-	//}
+	// }
 
 	// 检测内置变量/函数检查
 	val := ctx.loadInnerVar(name)
@@ -196,10 +248,10 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 }
 
 func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
-	//if ctx.currentThis != nil {
+	// if ctx.currentThis != nil {
 	//	return ctx.currentThis.AttrGet(ctx, name)
-	//} else {
-	//if ctx.subThreadDepth >= 1 {
+	// } else {
+	// if ctx.subThreadDepth >= 1 {
 	ret, exists := ctx.attrs.Load(name)
 	if !exists {
 		ret = NewNullVal()
@@ -211,12 +263,12 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 		}
 	}
 	return ret
-	//}
-	//}
+	// }
+	// }
 }
 
 func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
-	//fmt.Println("!!!!!!", name)
+	// fmt.Println("!!!!!!", name)
 	// 先local再global
 	curCtx := ctx
 	for {
@@ -237,7 +289,7 @@ func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
 	}
 
 	return ctx.LoadNameGlobal(name, isRaw)
-	//if ctx.GlobalValueLoadFunc != nil {
+	// if ctx.GlobalValueLoadFunc != nil {
 	//	ret := ctx.GlobalValueLoadFunc(name)
 	//	if ctx.Error != nil {
 	//		return nil
@@ -251,8 +303,8 @@ func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
 	//		}
 	//		return ret
 	//	}
-	//}
-	//return VMValueNewUndefined()
+	// }
+	// return VMValueNewUndefined()
 }
 
 // StoreName 储存变量
@@ -271,7 +323,6 @@ func (ctx *Context) StoreName(name string, v *VMValue) {
 }
 
 func (ctx *Context) StoreNameLocal(name string, v *VMValue) {
-	//fmt.Println("XXXXXX", name, v)
 	ctx.attrs.Store(name, v.Clone())
 }
 
@@ -286,18 +337,18 @@ func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
 }
 
 func (ctx *Context) RegCustomDice(s string, callback func(ctx *Context, groups []string) *VMValue) error {
-	re, err := regexp.Compile(s)
-	if err != nil {
-		return err
-	}
-	ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, &customDiceItem{re, callback})
+	// re, err := regexp.Compile(s)
+	// if err != nil {
+	// 	return err
+	// }
+	// ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, &customDiceItem{re, callback})
 	return nil
 }
 
 type VMValue struct {
 	TypeId VMValueType `json:"t"`
 	Value  any         `json:"v"`
-	//ExpiredTime int64       `json:"expiredTime"`
+	// ExpiredTime int64       `json:"expiredTime"`
 }
 
 type VMDictValue VMValue
@@ -329,7 +380,7 @@ type FunctionData struct {
 	Self      *VMValue // 若存在self，即为bound method
 	code      []ByteCode
 	codeIndex int
-	//ctx       *Context
+	// ctx       *Context
 }
 
 type NativeFunctionDef func(ctx *Context, this *VMValue, params []*VMValue) *VMValue
@@ -355,12 +406,12 @@ type NativeObjectData struct {
 }
 
 func (v *VMValue) Clone() *VMValue {
-	//switch v.TypeId {
-	//case VMTypeDict, VMTypeArray:
+	// switch v.TypeId {
+	// case VMTypeDict, VMTypeArray:
 	//	return v
-	//default:
+	// default:
 	return &VMValue{TypeId: v.TypeId, Value: v.Value}
-	//}
+	// }
 }
 
 func (v *VMValue) AsBool() bool {
@@ -371,7 +422,7 @@ func (v *VMValue) AsBool() bool {
 		return v.Value != ""
 	case VMTypeNull:
 		return false
-	//case VMTypeComputedValue:
+	// case VMTypeComputedValue:
 	//	vd := v.Value.(*VMComputedValueData)
 	//	return vd.BaseValue.AsBool()
 	default:
@@ -433,14 +484,14 @@ func (v *VMValue) toStringRaw(ri *recursionInfo) string {
 		dd, _ := v.ReadDictData()
 		dd.Dict.Range(func(key string, value *VMValue) bool {
 			txt := value.toReprRaw(ri)
-			//txt := ""
-			//if value.TypeId == VMTypeArray {
+			// txt := ""
+			// if value.TypeId == VMTypeArray {
 			//	txt = "[...]"
-			//} else if value.TypeId == VMTypeDict {
+			// } else if value.TypeId == VMTypeDict {
 			//	txt = "{...}"
-			//} else {
+			// } else {
 			//	txt = value.ToRepr()
-			//}
+			// }
 			items = append(items, fmt.Sprintf("'%s': %s", key, txt))
 			return true
 		})
@@ -976,9 +1027,9 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 				}
 			}
 
-			//if ret == nil {
+			// if ret == nil {
 			//	ret = VMValueNewUndefined()
-			//}
+			// }
 		}
 		// TODO: 思考一下 Dict.keys 和 Dict.values 与 ArrtGet 的冲突
 		if ret != nil {
@@ -1058,7 +1109,7 @@ func (v *VMValue) ItemGet(ctx *Context, index *VMValue) *VMValue {
 		}
 		return ret
 	default:
-		//case VMTypeUndefined, VMTypeNull:
+		// case VMTypeUndefined, VMTypeNull:
 		ctx.Error = errors.New("此类型无法取下标")
 	}
 	return nil
@@ -1322,6 +1373,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
+	vm.randSrc = ctx.randSrc
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
@@ -1335,7 +1387,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	} else {
 		vm.code = cd.code
 		vm.codeIndex = cd.codeIndex
-		vm.Evaluate()
+		vm.evaluate()
 	}
 
 	if vm.Error != nil {
@@ -1367,20 +1419,21 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 		return nil
 	}
 	for index, i := range cd.Params {
-		//if index >= len(params) {
+		// if index >= len(params) {
 		//	break
-		//}
+		// }
 		vm.attrs.Store(i, params[index])
 	}
 
 	vm.Config = ctx.Config
-	//vm.Config.PrintBytecode = false
+	// vm.Config.PrintBytecode = false
 	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
 	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.upCtx = ctx
-	vm.NumOpCount = ctx.NumOpCount + 100
-	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
+	vm.NumOpCount = ctx.NumOpCount + 100 // 递归视为消耗 + 100
+	ctx.NumOpCount = vm.NumOpCount       // 防止无限递归
+	vm.randSrc = ctx.randSrc
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
@@ -1394,7 +1447,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	} else {
 		vm.code = cd.code
 		vm.codeIndex = cd.codeIndex
-		vm.Evaluate()
+		vm.evaluate()
 	}
 
 	if vm.Error != nil {
@@ -1534,9 +1587,9 @@ func vmValueNewLocal() *VMValue {
 	return &VMValue{TypeId: vmTypeLocal}
 }
 
-//func vmValueNewGlobal() *VMValue {
+// func vmValueNewGlobal() *VMValue {
 //	return &VMValue{TypeId: vmTypeGlobal}
-//}
+// }
 
 func NewNullVal() *VMValue {
 	return &VMValue{TypeId: VMTypeNull}

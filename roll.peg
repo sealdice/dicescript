@@ -356,10 +356,10 @@ identifierWithoutColon <- keywords_test xidStart xidContinue* {
 }
 
 // L + Other_ID_Start
-xidStart <- [_\p{L}\p{Other_ID_Start}]
+xidStart <- [_$\p{L}\p{Other_ID_Start}]
 
 // xid_start + Nl + Mn + Mc + Nd + Pc + Other_ID_Continue \u200C\u200D
-xidContinue <- [\p{L}\p{Other_ID_Start}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Other_ID_Continue}]
+xidContinue <- [$\p{L}\p{Other_ID_Start}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Other_ID_Continue}]
 
 // 括号
 sub <- parenOpen exprRoot parenClose

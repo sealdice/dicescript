@@ -2998,15 +2998,16 @@ var g = &grammar{
 		{
 			name: "xidStart",
 			expr: &charClassMatcher{
-				val:     "[_\\p{L}\\p{Other_ID_Start}]",
-				chars:   []rune{'_'},
+				val:     "[_$\\p{L}\\p{Other_ID_Start}]",
+				chars:   []rune{'_', '$'},
 				classes: []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start},
 			},
 		},
 		{
 			name: "xidContinue",
 			expr: &charClassMatcher{
-				val:     "[\\p{L}\\p{Other_ID_Start}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Other_ID_Continue}]",
+				val:     "[$\\p{L}\\p{Other_ID_Start}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Other_ID_Continue}]",
+				chars:   []rune{'$'},
 				classes: []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start, unicode.Nl, unicode.Mn, unicode.Mc, unicode.Nd, unicode.Pc, unicode.Other_ID_Continue},
 			},
 		},

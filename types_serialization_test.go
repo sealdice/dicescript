@@ -53,7 +53,7 @@ func TestDumps(t *testing.T) {
 	v, err = NewDictVal(&m).V().ToJSON()
 	if assert.NoError(t, err) {
 		// 注: 反序列化的两个值顺序不是固定的
-		//assert.Equal(t, `{"t":7,"v":{"dict":{"v1":{"t":0,"v":1},"v2":{"t":0,"v":2}}}}`, string(v))
+		// assert.Equal(t, `{"t":7,"v":{"dict":{"v1":{"t":0,"v":1},"v2":{"t":0,"v":2}}}}`, string(v))
 		assert.True(t, string(v) == `{"t":7,"v":{"dict":{"v1":{"t":0,"v":1},"v2":{"t":0,"v":2}}}}` ||
 			string(v) == `{"t":7,"v":{"dict":{"v2":{"t":0,"v":2},"v1":{"t":0,"v":1}}}}`)
 	}
@@ -169,7 +169,7 @@ func TestLoadsDict(t *testing.T) {
 }
 
 func TestNativeTypes(t *testing.T) {
-	//vm := NewVM()
+	// vm := NewVM()
 	var slot *VMValue
 	od := &NativeObjectData{
 		Name: "obj1",

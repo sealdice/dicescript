@@ -3,25 +3,41 @@ package dicescript
 import (
 	"errors"
 	"fmt"
-	"math/rand"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
+
+	"golang.org/x/exp/rand"
 )
 
-func Roll(dicePoints IntType) IntType {
+func getSource() *rand.PCGSource {
+	s := &rand.PCGSource{}
+	s.Seed(uint64(time.Now().UnixMilli()))
+	return s
+}
+
+var randSource = getSource()
+
+func Roll(src *rand.PCGSource, dicePoints IntType) IntType {
 	if dicePoints == 0 {
 		return 0
 	}
+	if src == nil {
+		src = randSource
+	}
 	// js端有bug，如果当前IntType为32位，Int63会得到负数
-	val := IntType(rand.Int31())%dicePoints + 1
+	// val := IntType(rand.Int31())%dicePoints + 1
+	// 同样问题也存在于这里，所以需要 &math.MaxInt32
+	val := IntType(src.Uint64()&math.MaxInt32)%dicePoints + 1
 	return val
 }
 
 func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, threshold IntType) bool {
-	//makeE6 := func() {
+	// makeE6 := func() {
 	//	e.Error = errors.New("E6: 类型错误")
-	//}
+	// }
 
 	if pool < 1 || pool > 20000 {
 		e.Error = errors.New("E7: 非法数值, 骰池范围是1到20000")
@@ -47,7 +63,7 @@ func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, thresho
 }
 
 // RollWoD 返回: 成功数，总骰数，轮数，细节
-func RollWoD(addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool) (IntType, IntType, IntType, string) {
+func RollWoD(src *rand.PCGSource, addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
@@ -57,12 +73,12 @@ func RollWoD(addLine IntType, pool IntType, points IntType, threshold IntType, i
 
 	for times := 0; times < addTimes; times++ {
 		addCount := IntType(0)
-		detailsOne := []string{}
+		var detailsOne []string
 
 		for i := IntType(0); i < pool; i++ {
 			var reachSuccess bool
 			var reachAddRound bool
-			one := Roll(points)
+			one := Roll(src, points)
 
 			if addLine != 0 {
 				reachAddRound = one >= addLine
@@ -146,7 +162,7 @@ func doubleCrossCheck(ctx *Context, addLine, pool, points IntType) bool {
 	return true
 }
 
-func RollDoubleCross(addLine IntType, pool IntType, points IntType) (IntType, IntType, IntType, string) {
+func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points IntType) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
@@ -160,7 +176,7 @@ func RollDoubleCross(addLine IntType, pool IntType, points IntType) (IntType, In
 		maxDice := IntType(0)
 
 		for i := IntType(0); i < pool; i++ {
-			one := Roll(points)
+			one := Roll(src, points)
 			if one > maxDice {
 				maxDice = one
 			}
@@ -223,10 +239,10 @@ func RollDoubleCross(addLine IntType, pool IntType, points IntType) (IntType, In
 }
 
 // RollCommon (times)d(dicePoints)kl(lowNum) 或 (times)d(dicePoints)kh(highNum)
-func RollCommon(times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType) (IntType, string) {
+func RollCommon(src *rand.PCGSource, times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType) (IntType, string) {
 	var nums []IntType
 	for i := IntType(0); i < times; i += 1 {
-		die := Roll(dicePoints)
+		die := Roll(src, dicePoints)
 		if diceMax != nil {
 			if die > *diceMax {
 				die = *diceMax
@@ -308,8 +324,8 @@ func RollCommon(times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, 
 	return num, text
 }
 
-func RollCoC(isBonus bool, diceNum IntType) (IntType, string) {
-	diceResult := Roll(100)
+func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType) (IntType, string) {
+	diceResult := Roll(src, 100)
 	diceTens := diceResult / 10
 	diceUnits := diceResult % 10
 
@@ -319,7 +335,7 @@ func RollCoC(isBonus bool, diceNum IntType) (IntType, string) {
 	num10Exists := false
 
 	for i := IntType(0); i < diceNum; i++ {
-		n := Roll(10)
+		n := Roll(src, 10)
 
 		if n == 10 {
 			num10Exists = true
@@ -358,11 +374,11 @@ func RollCoC(isBonus bool, diceNum IntType) (IntType, string) {
 	}
 }
 
-func RollFate() (IntType, string) {
+func RollFate(src *rand.PCGSource) (IntType, string) {
 	detail := ""
 	sum := IntType(0)
 	for i := 0; i < 4; i++ {
-		n := Roll(3) - 2
+		n := Roll(src, 3) - 2
 		sum += n
 		switch n {
 		case -1:

@@ -85,9 +85,9 @@ func TestValueDefineStr(t *testing.T) {
 	simpleExecute(t, "`"+`12\\3`+"`", ns("12\\3"))
 
 	// TODO: FIX
-	//simpleExecute(t, `"12\"3"`, ns(`12"3`))
-	//simpleExecute(t, `"\""`, ns(`"`))
-	//simpleExecute(t, `"\r"`, ns("\r"))
+	// simpleExecute(t, `"12\"3"`, ns(`12"3`))
+	// simpleExecute(t, `"\""`, ns(`"`))
+	// simpleExecute(t, `"\r"`, ns("\r"))
 }
 
 func TestEmptyInput(t *testing.T) {
@@ -673,7 +673,7 @@ func TestComputed2(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ni(3)))
 	}
 
-	//vm = NewVM()
+	// vm = NewVM()
 	err = vm.Run("&a.x")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(2)))
@@ -832,9 +832,9 @@ func TestSliceGet(t *testing.T) {
 	err = vm.Run("a[-3:-1:1]")
 	assert.Error(t, err)
 	// 尚不支持分片步长
-	//if assert.NoError(t, err) {
+	// if assert.NoError(t, err) {
 	//	assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
-	//}
+	// }
 
 	err = vm.Run("a[-3:-1]")
 	if assert.NoError(t, err) {
@@ -1288,7 +1288,7 @@ func TestDiceDH_DL(t *testing.T) {
 	for {
 		err := vm.Run("3d1000dh1")
 		if assert.NoError(t, err) {
-			m := reResult.FindStringSubmatch(vm.Detail)
+			m := reResult.FindStringSubmatch(vm.GetDetailText())
 			a1, _ := strconv.ParseInt(m[1], 10, 64)
 			a2, _ := strconv.ParseInt(m[2], 10, 64)
 			a3, _ := strconv.ParseInt(m[3], 10, 64)
@@ -1304,7 +1304,7 @@ func TestDiceDH_DL(t *testing.T) {
 	for {
 		err := vm.Run("3d1000dl1")
 		if assert.NoError(t, err) {
-			m := reResult.FindStringSubmatch(vm.Detail)
+			m := reResult.FindStringSubmatch(vm.GetDetailText())
 			a1, _ := strconv.ParseInt(m[1], 10, 64)
 			a2, _ := strconv.ParseInt(m[2], 10, 64)
 			a3, _ := strconv.ParseInt(m[3], 10, 64)
@@ -1317,6 +1317,33 @@ func TestDiceDH_DL(t *testing.T) {
 	}
 }
 
+func TestIdentifier(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("$a = 1")
+	if assert.NoError(t, err) {
+		_ = vm.Run("$a")
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	err = vm.Run("`{$b}`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewStrVal("null")))
+	}
+}
+
+func TestIsDiceCalculateExists(t *testing.T) {
+	vm := NewVM()
+	err := vm.Parse("d100")
+	if assert.NoError(t, err) {
+		assert.True(t, vm.IsDiceCalculateExists())
+	}
+
+	err = vm.Parse("100")
+	if assert.NoError(t, err) {
+		assert.False(t, vm.IsDiceCalculateExists())
+	}
+}
+
 func TestDiceExprIndexBug(t *testing.T) {
 	// 12.1 于言诺发现，如 2d(3d1) 会被错误计算为 9[2d(3d1)=9=3+3+3,3d1=3]
 	// 经查原因为Dice字节指令执行时，并未将骰子栈正确出栈
@@ -1326,7 +1353,7 @@ func TestDiceExprIndexBug(t *testing.T) {
 	err := vm.Run("2d(3d1)")
 
 	if assert.NoError(t, err) {
-		assert.True(t, reResult.MatchString(vm.Detail))
+		assert.True(t, reResult.MatchString(vm.GetDetailText()))
 	}
 }
 
@@ -1354,7 +1381,7 @@ func TestDiceExprKlBug(t *testing.T) {
 		err := vm.Run("(1d1000kl)d1")
 
 		if assert.NoError(t, err) {
-			assert.False(t, strings.Contains(vm.Detail, "|"))
+			assert.False(t, strings.Contains(vm.GetDetailText(), "|"))
 		}
 	}
 }
@@ -1407,7 +1434,7 @@ func TestNameDetailBug(t *testing.T) {
 	err := vm.Run(`a = 1;a   `)
 	if assert.NoError(t, err) {
 		// TODO: 后面的空格
-		assert.Equal(t, "a = 1;1[a=1]   ", vm.Detail)
+		assert.Equal(t, "a = 1;1[a=1]   ", vm.GetDetailText())
 	}
 }
 

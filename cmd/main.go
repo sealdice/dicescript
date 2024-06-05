@@ -75,17 +75,17 @@ func main() {
 		return ds.NewIntVal(2)
 	})
 
-	//vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
+	// vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {
 	//	attrs[name] = v
-	//}
+	// }
 
 	re := regexp.MustCompile(`^(\D+)(\d+)$`)
 
 	vm.GlobalValueLoadFunc = func(name string) *ds.VMValue {
 		m := re.FindStringSubmatch(name)
 		if len(m) > 1 {
-			//val, _ := strconv.ParseInt(m[2], 10, 64)
-			//return dice.NewIntVal(val)
+			// val, _ := strconv.ParseInt(m[2], 10, 64)
+			// return dice.NewIntVal(val)
 			return ds.NewIntVal(0)
 		}
 
@@ -103,7 +103,7 @@ func main() {
 			line.AppendHistory(text)
 
 			err := vm.Run(text)
-			//fmt.Println(vm.GetAsmText())
+			// fmt.Println(vm.GetAsmText())
 			if err != nil {
 				fmt.Printf("错误: %s\n", err.Error())
 			} else {
@@ -111,7 +111,7 @@ func main() {
 				if rest != "" {
 					rest = fmt.Sprintf(" 剩余文本: %s", rest)
 				}
-				fmt.Printf("过程: %s\n", vm.Detail)
+				fmt.Printf("过程: %s\n", vm.GetDetailText())
 				fmt.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
 				fmt.Printf("栈顶: %d 层数:%d 算力: %d\n", vm.StackTop(), vm.Depth(), vm.NumOpCount)
 			}
