@@ -19,6 +19,7 @@ jobs:
     - name: Install gopherjs
       run: |
         go install github.com/gopherjs/gopherjs@v1.19.0-beta1
+        go mod download golang.org/x/exp
 
     - name: Build
       run: gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.cjs

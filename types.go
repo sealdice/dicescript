@@ -96,10 +96,9 @@ type RollConfig struct {
 }
 
 type customDiceItem struct {
-	expr     string
-	callback func(ctx *Context, groups []string) *VMValue
-
-	parse func(ctx *Context, p *parser)
+	// expr     string
+	// callback func(ctx *Context, groups []string) *VMValue
+	// parse func(ctx *Context, p *parser)
 
 	// 该怎样写呢？似乎将一些解析相关的struct暴露出去并不合适
 	// 这里我有三个选项，第一种是创建一种更简单的语法进行编译：例如
