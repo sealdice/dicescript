@@ -248,7 +248,7 @@ func (code *ByteCode) CodeString() string {
 		return "halt"
 	case typeDetailMark:
 		v := code.Value.(BufferSpan)
-		return fmt.Sprintf("mark.detail %d, %d", v.begin, v.end)
+		return fmt.Sprintf("mark.detail %d, %d", v.Begin, v.End)
 	case typeJmp:
 		return fmt.Sprintf("jmp %d", code.Value)
 	case typeJe:

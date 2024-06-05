@@ -28,10 +28,10 @@ type ParserData struct {
 }
 
 type BufferSpan struct {
-	begin IntType
-	end   IntType
-	ret   *VMValue
-	text  string
+	Begin IntType
+	End   IntType
+	Ret   *VMValue
+	Text  string
 }
 
 func (pd *ParserData) init() {
@@ -68,7 +68,7 @@ func (e *ParserData) checkStackOverflow() bool {
 			copy(newCode, e.code)
 			e.code = newCode
 		} else {
-			//e.Error = errors.New("E1:指令虚拟机栈溢出，请不要发送过长的指令")
+			// e.Error = errors.New("E1:指令虚拟机栈溢出，请不要发送过长的指令")
 			return true
 		}
 	}
@@ -87,7 +87,7 @@ func (e *ParserData) WriteCode(T CodeType, value any) {
 }
 
 func (p *ParserData) AddDiceDetail(begin IntType, end IntType) {
-	p.WriteCode(typeDetailMark, BufferSpan{begin: begin, end: end})
+	p.WriteCode(typeDetailMark, BufferSpan{Begin: begin, End: end})
 }
 
 func (e *ParserData) AddOp(operator CodeType) {
@@ -132,7 +132,7 @@ func (e *ParserData) PushGlobal() {
 }
 
 func (e *ParserData) AddFormatString(num IntType) {
-	//e.PushStr(value)
+	// e.PushStr(value)
 	e.WriteCode(typeLoadFormatString, num) // num
 }
 
@@ -233,7 +233,7 @@ func (e *ParserData) OffsetPopAndSet() {
 	codeIndex := e.jmpStack[last]
 	e.jmpStack = e.jmpStack[:last]
 	e.code[codeIndex].Value = IntType(IntType(e.codeIndex) - codeIndex - 1)
-	//fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
+	// fmt.Println("XXXX", e.Code[codeIndex], "|", e.Top, codeIndex)
 }
 
 func (e *ParserData) OffsetPopN(num int) {
@@ -289,7 +289,7 @@ func (e *ParserData) AddInvokeMethod(name string, paramsNum IntType) {
 }
 
 func (e *ParserData) AddInvoke(paramsNum IntType) {
-	//e.WriteCode(typePushIntNumber, paramsNum)
+	// e.WriteCode(typePushIntNumber, paramsNum)
 	e.WriteCode(typeInvoke, paramsNum)
 }
 

@@ -81,7 +81,7 @@ type RollConfig struct {
 	CallbackLoadVar func(name string) (string, *VMValue)                                                    // 加载变量回调，返回值会成为新变量名
 	CallbackSt      func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
 
-	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan) string // 自定义计算过程
+	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan, dataBuffer []byte) string // 自定义计算过程
 
 	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
 	DefaultDiceSideExpr          string   // 默认骰子面数
@@ -289,18 +289,18 @@ func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
 
 	return ctx.LoadNameGlobal(name, isRaw)
 	// if ctx.GlobalValueLoadFunc != nil {
-	//	ret := ctx.GlobalValueLoadFunc(name)
+	//	Ret := ctx.GlobalValueLoadFunc(name)
 	//	if ctx.Error != nil {
 	//		return nil
 	//	}
-	//	if ret != nil {
-	//		if !isRaw && ret.TypeId == VMTypeComputedValue {
-	//			ret = ret.ComputedExecute(ctx)
+	//	if Ret != nil {
+	//		if !isRaw && Ret.TypeId == VMTypeComputedValue {
+	//			Ret = Ret.ComputedExecute(ctx)
 	//			if ctx.Error != nil {
 	//				return nil
 	//			}
 	//		}
-	//		return ret
+	//		return Ret
 	//	}
 	// }
 	// return VMValueNewUndefined()
@@ -1026,8 +1026,8 @@ func (v *VMValue) AttrGet(ctx *Context, name string) *VMValue {
 				}
 			}
 
-			// if ret == nil {
-			//	ret = VMValueNewUndefined()
+			// if Ret == nil {
+			//	Ret = VMValueNewUndefined()
 			// }
 		}
 		// TODO: 思考一下 Dict.keys 和 Dict.values 与 ArrtGet 的冲突

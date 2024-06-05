@@ -122,13 +122,13 @@ type spanByBegin []BufferSpan
 
 func (a spanByBegin) Len() int           { return len(a) }
 func (a spanByBegin) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a spanByBegin) Less(i, j int) bool { return a[i].begin < a[j].begin }
+func (a spanByBegin) Less(i, j int) bool { return a[i].Begin < a[j].Begin }
 
 type spanByEnd []BufferSpan
 
 func (a spanByEnd) Len() int           { return len(a) }
 func (a spanByEnd) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a spanByEnd) Less(i, j int) bool { return a[i].end < a[j].end }
+func (a spanByEnd) Less(i, j int) bool { return a[i].End < a[j].End }
 
 // getE5 := func() error {
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
@@ -136,8 +136,9 @@ func (a spanByEnd) Less(i, j int) bool { return a[i].end < a[j].end }
 
 func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 	if ctx.Config.CustomMakeDetailFunc != nil {
-		return ctx.Config.CustomMakeDetailFunc(ctx, details)
+		return ctx.Config.CustomMakeDetailFunc(ctx, details, ctx.parser.data)
 	}
+	detailResult := ctx.parser.data
 
 	curPoint := IntType(-1) // nolint
 	lastEnd := IntType(-1)  // nolint
@@ -150,26 +151,24 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 
 	for _, i := range details {
 		// fmt.Println("?", i, lastEnd)
-		if i.begin > lastEnd {
-			curPoint = i.begin
+		if i.Begin > lastEnd {
+			curPoint = i.Begin
 			m = append(m, struct {
 				begin IntType
 				end   IntType
 				spans []BufferSpan
-			}{begin: curPoint, end: i.end, spans: []BufferSpan{i}})
+			}{begin: curPoint, end: i.End, spans: []BufferSpan{i}})
 		} else {
 			m[len(m)-1].spans = append(m[len(m)-1].spans, i)
-			if i.end > m[len(m)-1].end {
-				m[len(m)-1].end = i.end
+			if i.End > m[len(m)-1].end {
+				m[len(m)-1].end = i.End
 			}
 		}
 
-		if i.end > lastEnd {
-			lastEnd = i.end
+		if i.End > lastEnd {
+			lastEnd = i.End
 		}
 	}
-
-	detailResult := ctx.parser.data
 
 	for i := len(m) - 1; i >= 0; i-- {
 		// for i := 0; i < len(m); i++ {
@@ -184,7 +183,7 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 			// 例如 (10d3)d5=63[(10d3)d5=...,10d3=19]
 			for j := 0; j < len(item.spans)-1; j++ {
 				span := item.spans[j]
-				subDetailsText += "," + string(detailResult[span.begin:span.end]) + "=" + span.ret.ToString()
+				subDetailsText += "," + string(detailResult[span.Begin:span.End]) + "=" + span.Ret.ToString()
 			}
 		}
 
@@ -194,13 +193,13 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		r = append(r, detailResult[:item.begin]...)
 
 		// 主体结果部分，如 (10d3)d5=63[(10d3)d5=63=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
-		detail := "[" + exprText + "=" + last.ret.ToString()
-		if last.text != "" {
-			detail += "=" + last.text
+		detail := "[" + exprText + "=" + last.Ret.ToString()
+		if last.Text != "" {
+			detail += "=" + last.Text
 		}
 		detail += subDetailsText + "]"
 
-		r = append(r, ([]byte)(last.ret.ToString()+detail)...)
+		r = append(r, ([]byte)(last.Ret.ToString()+detail)...)
 		r = append(r, detailResult[item.end:]...)
 		detailResult = r
 	}
@@ -597,8 +596,8 @@ func (ctx *Context) evaluate() {
 				if val != nil {
 					// 使用弄进来的替代值进行计算
 					if typeLoadNameWithDetail == code.T {
-						details[len(details)-1].ret = val
-						details[len(details)-1].text = ""
+						details[len(details)-1].Ret = val
+						details[len(details)-1].Text = ""
 					}
 					stackPush(val)
 					continue
@@ -610,8 +609,8 @@ func (ctx *Context) evaluate() {
 				return
 			}
 			if typeLoadNameWithDetail == code.T {
-				details[len(details)-1].ret = val
-				details[len(details)-1].text = ""
+				details[len(details)-1].Ret = val
+				details[len(details)-1].Text = ""
 			}
 			stackPush(val)
 
@@ -743,15 +742,15 @@ func (ctx *Context) evaluate() {
 			diceStateIndex -= 1
 
 			ret := NewIntVal(num)
-			details[len(details)-1].ret = ret
-			details[len(details)-1].text = detail
+			details[len(details)-1].Ret = ret
+			details[len(details)-1].Text = detail
 			stackPush(ret)
 
 		case typeDiceFate:
 			sum, detail := RollFate(ctx.randSrc)
 			ret := NewIntVal(sum)
-			details[len(details)-1].ret = ret
-			details[len(details)-1].text = detail
+			details[len(details)-1].Ret = ret
+			details[len(details)-1].Text = detail
 			stackPush(ret)
 
 		case typeDiceCocBonus, typeDiceCocPenalty:
@@ -764,8 +763,8 @@ func (ctx *Context) evaluate() {
 
 			r, detailText := RollCoC(ctx.randSrc, code.T == typeDiceCocBonus, diceNum)
 			ret := NewIntVal(r)
-			details[len(details)-1].ret = ret
-			details[len(details)-1].text = detailText
+			details[len(details)-1].Ret = ret
+			details[len(details)-1].Text = detailText
 			stackPush(ret)
 
 		case typeWodSetInit:
@@ -798,8 +797,8 @@ func (ctx *Context) evaluate() {
 
 			num, _, _, detailText := RollWoD(ctx.randSrc, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE)
 			ret := NewIntVal(num)
-			details[len(details)-1].ret = ret
-			details[len(details)-1].text = detailText
+			details[len(details)-1].Ret = ret
+			details[len(details)-1].Text = detailText
 			stackPush(ret)
 
 		case typeDCSetInit:
@@ -818,8 +817,8 @@ func (ctx *Context) evaluate() {
 			}
 			success, _, _, detailText := RollDoubleCross(nil, v.MustReadInt(), dcState.pool, dcState.points)
 			ret := NewIntVal(success)
-			details[len(details)-1].ret = ret
-			details[len(details)-1].text = detailText
+			details[len(details)-1].Ret = ret
+			details[len(details)-1].Text = detailText
 			stackPush(ret)
 
 		case typeStSetName:
