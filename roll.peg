@@ -129,7 +129,9 @@ stmtAssign <- &stmtAssignType1 stmtAssignType1
             / &stmtAssignType6 stmtAssignType6
             / &stmtAssignType7 stmtAssignType7
 
-exprRoot <- exprSlice sp
+// exprRoot <- exprSlice sp
+nestedBoost <- &(subX sp [-+*/%^dDcCaA&|?<>=]) exprSlice / &subX subX
+exprRoot <- (nestedBoost / exprSlice) sp
 
 _step <- (':' sp (exprRoot / sp { c.data.PushNull() }) / sp { c.data.PushNull() })
 _sliceSuffix <- '[' sp (exprRoot / sp { c.data.PushNull() }) ':' sp (exprRoot / sp { c.data.PushNull() }) _step ']' sp
@@ -363,6 +365,7 @@ xidContinue <- [$\p{L}\p{Other_ID_Start}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Other_I
 
 // 括号
 sub <- parenOpen exprRoot parenClose
+subX <- sub item_get attr_get
 parenOpen <- '(' sp
 parenClose <- ')' sp
 
