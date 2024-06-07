@@ -5,7 +5,24 @@ import (
 	"testing"
 )
 
-func TestStBasic(t *testing.T) {
+type checkItem struct {
+	Name  string
+	Value *VMValue
+	Extra *VMValue
+	Type  string
+	Op    string
+}
+
+func (item *checkItem) check(t *testing.T, _type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+	assert.Equal(t, name, item.Name)
+	assert.True(t, valueEqual(val, item.Value))
+	if item.Extra != nil {
+		assert.True(t, valueEqual(extra, item.Extra))
+	}
+	assert.Equal(t, _type, item.Type)
+}
+
+func TestStSetBasic(t *testing.T) {
 	vm := NewVM()
 
 	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
@@ -19,7 +36,78 @@ func TestStBasic(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestStBasicMod(t *testing.T) {
+func TestStSet(t *testing.T) {
+	vm := NewVM()
+	items := []checkItem{
+		checkItem{Name: "力量", Value: ni(60), Type: "set"},
+		checkItem{Name: "敏捷", Value: ni(70), Type: "set"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st力量60敏捷70`)
+	assert.NoError(t, err)
+}
+
+func TestStSet2(t *testing.T) {
+	vm := NewVM()
+	items := []checkItem{
+		checkItem{Name: "力量", Value: ni(60), Type: "set"},
+		checkItem{Name: "敏捷", Value: ni(70), Type: "set"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st力量60 敏捷70`)
+	assert.NoError(t, err)
+}
+
+func TestStSet3(t *testing.T) {
+	vm := NewVM()
+	items := []checkItem{
+		checkItem{Name: "智力", Value: ni(80), Type: "set"},
+		checkItem{Name: "知识", Value: ni(90), Type: "set"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st智力:80 知识=90`)
+	assert.NoError(t, err)
+}
+
+func TestStSetCompute(t *testing.T) {
+	vm := NewVM()
+	items := []checkItem{
+		checkItem{Name: "射击", Value: NewComputedVal("1d6"), Type: "set"},
+		checkItem{Name: "射击", Value: NewComputedVal("(1d6)"), Type: "set"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!!", _type, name, val, extra, op, detail, val.ToRepr()) // 注: 最后一个值在IDEA中的输出可能不正常，中间加了空格，实际没有
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	// err := vm.Run(`^st&射击=1d6 `)
+	err := vm.Run(`^st&射击=1d6      &射击=(1d6)`)
+	assert.NoError(t, err)
+	assert.Equal(t, index, 2)
+}
+
+func TestStModBasic(t *testing.T) {
 	vm := NewVM()
 
 	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
@@ -33,7 +121,7 @@ func TestStBasicMod(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestStBasicStX0(t *testing.T) {
+func TestStSetX0Basic(t *testing.T) {
 	vm := NewVM()
 
 	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
@@ -47,7 +135,7 @@ func TestStBasicStX0(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestStBasicStX1(t *testing.T) {
+func TestStSetX1Basic(t *testing.T) {
 	vm := NewVM()
 
 	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
@@ -59,5 +147,62 @@ func TestStBasicStX1(t *testing.T) {
 	}
 
 	err := vm.Run(`^stA*2.1: 3`)
+	assert.NoError(t, err)
+}
+
+func TestStMod(t *testing.T) {
+	vm := NewVM()
+
+	items := []checkItem{
+		checkItem{Name: "力量", Value: ni(3), Type: "mod"},
+		checkItem{Name: "敏捷", Value: ni(3), Type: "mod"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!", _type, name, val, extra, op, detail)
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st力量+3d1 敏捷+=3 `)
+	assert.NoError(t, err)
+}
+
+func TestStMod1(t *testing.T) {
+	vm := NewVM()
+	items := []checkItem{
+		checkItem{Name: "力量", Value: ni(1), Type: "mod"},
+		checkItem{Name: "力量", Value: ni(4), Type: "mod"},
+		checkItem{Name: "力量", Value: ni(6), Type: "mod"},
+		checkItem{Name: "力量", Value: ni(6), Type: "mod", Op: "-"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!", _type, name, val, extra, op, detail)
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st力量+1力量+4d1力量+4d1+2力量-4d1+2`)
+	assert.NoError(t, err)
+}
+
+func TestStMod2(t *testing.T) {
+	vm := NewVM()
+
+	items := []checkItem{
+		checkItem{Name: "力量123", Value: ni(3), Type: "mod"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!", _type, name, val, extra, op, detail)
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st'力量123'+=3`)
 	assert.NoError(t, err)
 }

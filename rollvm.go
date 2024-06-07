@@ -825,7 +825,7 @@ func (ctx *Context) evaluate() {
 			stName, stVal := stackPop2()
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
-				e.Config.CallbackSt("set", name, stVal, nil, "", "")
+				e.Config.CallbackSt("set", name, stVal.Clone(), nil, "", "")
 			}
 		case typeStModify:
 			stName, stVal := stackPop2()
@@ -833,13 +833,13 @@ func (ctx *Context) evaluate() {
 
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
-				e.Config.CallbackSt("mod", name, stVal, nil, stInfo.Op, stInfo.Text)
+				e.Config.CallbackSt("mod", name, stVal.Clone(), nil, stInfo.Op, stInfo.Text)
 			}
 		case typeStX0:
 			stName, stVal := stackPop2()
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
-				e.Config.CallbackSt("set.x0", name, stVal, nil, "", "")
+				e.Config.CallbackSt("set.x0", name, stVal.Clone(), nil, "", "")
 			}
 		case typeStX1:
 			stVal := stackPop()
@@ -847,7 +847,7 @@ func (ctx *Context) evaluate() {
 			stName := stackPop()
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
-				e.Config.CallbackSt("set.x1", name, stVal, stExtra, "", "")
+				e.Config.CallbackSt("set.x1", name, stVal.Clone(), stExtra.Clone(), "", "")
 			}
 		}
 	}

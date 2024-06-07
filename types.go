@@ -533,7 +533,7 @@ func (v *VMValue) toReprRaw(ri *recursionInfo) string {
 }
 
 func (v *VMValue) ToRepr() string {
-	ri := &recursionInfo{exists: map[interface{}]bool{}}
+	ri := &recursionInfo{exists: map[any]bool{}}
 	return v.toReprRaw(ri)
 }
 
@@ -1553,6 +1553,10 @@ func ValueEqual(a *VMValue, b *VMValue, autoConvert bool) bool {
 				return true
 			})
 			return isSame
+		case VMTypeComputedValue:
+			c1, _ := a.ReadComputed()
+			c2, _ := b.ReadComputed()
+			return c1.Expr == c2.Expr
 		case VMTypeNativeFunction:
 			fd1, _ := a.ReadNativeFunctionData()
 			fd2, _ := b.ReadNativeFunctionData()

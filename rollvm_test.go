@@ -219,6 +219,14 @@ func TestValueStore(t *testing.T) {
 	assert.True(t, vmValueEqual(vm, "d", ni(2)))
 }
 
+func TestIfBasic(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("if 1 { a = 2 } ")
+	if assert.NoError(t, err) {
+		assert.True(t, vmValueEqual(vm, "a", ni(2)))
+	}
+}
+
 func TestIf(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("if 0 { a = 2 } else if 2 { b = 1 } c= 1; ;;;;; d= 2;b")

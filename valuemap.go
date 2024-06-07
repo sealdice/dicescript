@@ -7,6 +7,8 @@
 package dicescript
 
 import (
+	"bytes"
+	"encoding/json"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -391,4 +393,37 @@ func (e *entryValueMap) tryExpungeLocked() (isExpunged bool) {
 		p = atomic.LoadPointer(&e.p)
 	}
 	return p == expungedValueMap
+}
+
+func (m *ValueMap) ToJSON() ([]byte, error) {
+	lst := [][]byte{}
+	var err error
+	save := map[*VMValue]bool{}
+	m.Range(func(key string, value *VMValue) bool {
+		var jsonKey []byte
+		var jsonData []byte
+		jsonData, err = value.ToJSONRaw(save)
+		if err != nil {
+			return false
+		}
+		jsonKey, err = json.Marshal(key)
+		if err != nil {
+			return false
+		}
+
+		b := append(jsonKey, []byte(":")...)
+		b = append(b, jsonData...)
+
+		lst = append(lst, b)
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	lst2 := [][]byte{[]byte(`{`)}
+	lst2 = append(lst2, bytes.Join(lst, []byte(",")))
+	lst2 = append(lst2, []byte("}"))
+
+	return bytes.Join(lst2, []byte("")), nil
 }
