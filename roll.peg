@@ -30,9 +30,12 @@ func toStr(x []byte) string {
 }
 
 // 出口
-dicescript <- sp stmtRoot sp {
+dicescript <- sp stmtSt sp {
     c.data.AddOp(typeHalt)
 }
+
+stmtSt <- "^st" st_expr
+        / stmtRoot
 
 stmtRoot <- stmtLines sp
 
@@ -422,8 +425,8 @@ commentLineRest2 <- (![\r\n] .)* [\r\n]
 // st &手枪=(1d6+2)
 
 st_expr <- st_modify_multi_1
-          / st_assign_multi
-          / st_modify_multi_2
+         / st_assign_multi
+         / st_modify_multi_2
 
 // est <- eDice / &'(' ? e0
 // est <- e0
@@ -451,7 +454,7 @@ st_modify_multi_1 <- ((st_name2 st_modify_rest1 / st_name2r st_modify_rest1 / st
 st_modify_rest1 <- sp (
      "+=" sp text:< e0 > {c.data.AddStModify("+", text.(string))} /
      "-=" sp text:< e0 > {c.data.AddStModify("-", text.(string))}
-    )
+)
 
 // 第二类，在第一种基础上增加:
 // 力量123+1d3
@@ -466,7 +469,7 @@ st_modify_rest <- sp (
      '+' '='? sp text:< e0 > {c.data.AddStModify("+", text.(string))} /
      &( '-' ) sp text:< e0 > {c.data.AddStModify("-", text.(string))} /
      '-' '='? sp text:< e0 > {c.data.AddStModify("-", text.(string))}
-    )
+)
 
 st_name1 <- text:<( id_ch0+ ":" id_ch0+ )> { c.data.PushStr(text.(string)) } // 结尾不带数字
 st_name1r <- text: <( id_ch0+ )> { c.data.PushStr(text.(string)) } // 结尾不带数字
