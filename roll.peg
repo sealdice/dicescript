@@ -242,7 +242,7 @@ _diceType2 <- [dD] nos
 // 3d
 _diceType3 <- nos [dD]
 // d
-_diceType4 <- [dD]
+_diceType4 <- [dD] !xidStart
 
 // XdY 中的 dy 部分，跟上面 _diceTypeX 一一对应
 _diceExpr1 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes);  } nos _diceMod? _diceModType2?

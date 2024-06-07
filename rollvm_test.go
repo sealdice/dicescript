@@ -1495,3 +1495,13 @@ func TestStackTop(t *testing.T) {
 	_ = vm.Run(`1;2; while (i<10) { i=i+1; 1;2;3 }`)
 	assert.Equal(t, vm.StackTop(), 2) // 语句块弃栈不影响上级
 }
+
+func TestFStringDiceType4(t *testing.T) {
+	vm := NewVM()
+	vm.Config.DisableNDice = false
+	err := vm.Run("`{db}`")
+	assert.NoError(t, err)
+
+	err = vm.Run("`{ddx}`")
+	assert.NoError(t, err)
+}

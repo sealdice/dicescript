@@ -1533,9 +1533,16 @@ var g = &grammar{
 		},
 		{
 			name: "_diceType4",
-			expr: &charClassMatcher{
-				val:   "[dD]",
-				chars: []rune{'d', 'D'},
+			expr: &seqExpr{
+				exprs: []any{
+					&charClassMatcher{
+						val:   "[dD]",
+						chars: []rune{'d', 'D'},
+					},
+					&notExpr{
+						expr: &ruleIRefExpr{index: 92 /* xidStart */},
+					},
+				},
 			},
 		},
 		{
