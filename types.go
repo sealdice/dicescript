@@ -157,9 +157,14 @@ type Context struct {
 	ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
 
 	/** 全局变量 */
-	globalNames          *ValueMap
+	globalNames *ValueMap
+
+	// 全局scope的写入回调
 	GlobalValueStoreFunc func(name string, v *VMValue)
-	GlobalValueLoadFunc  func(name string) *VMValue
+	// 全局scope的读取回调
+	GlobalValueLoadFunc func(name string) *VMValue
+	// 全局scope的读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil)
+	GlobalValueLoadOverwriteFunc func(name string, curVal *VMValue) *VMValue
 }
 
 func (ctx *Context) GetDetailText() string {
@@ -234,6 +239,9 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 
 	// 检测内置变量/函数检查
 	val := ctx.loadInnerVar(name)
+	if ctx.GlobalValueLoadOverwriteFunc != nil {
+		val = ctx.GlobalValueLoadOverwriteFunc(name, val)
+	}
 	if val == nil {
 		val = NewNullVal()
 	}
@@ -1368,6 +1376,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 
 	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
 	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
+	vm.GlobalValueLoadOverwriteFunc = ctx.GlobalValueLoadOverwriteFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
@@ -1428,6 +1437,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	// vm.Config.PrintBytecode = false
 	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
 	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
+	vm.GlobalValueLoadOverwriteFunc = ctx.GlobalValueLoadOverwriteFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
 	vm.upCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100 // 递归视为消耗 + 100
