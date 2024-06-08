@@ -39,8 +39,8 @@ const (
 	typeInvokeSelf
 	typeItemGet
 	typeItemSet
+	typeAttrGet
 	typeAttrSet
-	typeGetAttr
 	typeSliceGet
 	typeSliceSet
 
@@ -148,7 +148,7 @@ func (code *ByteCode) CodeString() string {
 		return "item.set"
 	case typeAttrSet:
 		return "attr.set " + code.Value.(string)
-	case typeGetAttr:
+	case typeAttrGet:
 		return "attr.get " + code.Value.(string)
 	case typeSliceGet:
 		return "slice.get"

@@ -59,7 +59,7 @@ flagsSwitch <- "//" sp "#EnableDice" sp1x id:identifier sp1x on:<("true" / "fals
     }
 }
 
-stmtWithSemicolon <- stmtAssign / stmtBreak / stmtContinue / exprRoot
+stmtWithSemicolon <- stmtBreak / stmtContinue / exprRoot
 
 stmtWithBlock <- stmtIf / stmtFunc / stmtWhile / stmtReturn
 
@@ -119,8 +119,8 @@ stmtAssignType2 <- '&' id:identifier sp { c.data.NamePush(id.(string)) } '=' sp 
 stmtAssignType3 <- '&' id:identifier sp { c.data.NamePush(id.(string)) } '.' id2:identifier sp { c.data.NamePush(id2.(string)) } sp '=' sp exprRoot { attr, objName := c.data.NamePop(), c.data.NamePop(); c.data.AddAttrSet(objName, attr, true) }
 stmtAssignType4 <- "this" sp '.' sp id:identifier sp { c.data.NamePush(id.(string)) } '=' sp exprRoot { c.data.AddStoreLocal(c.data.NamePop()) }
 stmtAssignType5 <- id:identifier sp { c.data.NamePush(id.(string)) } '.' sp id2:identifier sp { c.data.NamePush(id2.(string)) } '=' sp exprRoot { attr, objName := c.data.NamePop(), c.data.NamePop(); c.data.AddAttrSet(objName, attr, false) }
-stmtAssignType6 <- exprRoot '[' sp exprRoot ']' sp '=' sp exprRoot { c.data.AddOp(typeItemSet) }
-stmtAssignType7 <- exprRoot _sliceSuffix '=' sp exprRoot { c.data.AddOp(typeSliceSet) }
+stmtAssignType6 <- exprSlice '[' sp exprRoot ']' sp '=' sp exprRoot { c.data.AddOp(typeItemSet) }
+stmtAssignType7 <- exprSlice _sliceSuffix '=' sp exprRoot { c.data.AddOp(typeSliceSet) }
 
 stmtAssign <- &stmtAssignType1 stmtAssignType1
             / &stmtAssignType2 stmtAssignType2
@@ -133,8 +133,9 @@ stmtAssign <- &stmtAssignType1 stmtAssignType1
             / &stmtAssignType7 stmtAssignType7
 
 // exprRoot <- exprSlice sp
-nestedBoost <- &(subX sp [-+*/%^dDcCaA&|?<>=]) exprSlice / &subX subX
-exprRoot <- (nestedBoost / exprSlice)
+// 注: 这个优化还是比较关键的，能节省大量回溯，但是开启memoized后我说不准
+nestedBoost <- &(subX sp [-+*/%^dDcCaA&|?<>=]) (stmtAssign / exprSlice) / &subX subX
+exprRoot <- nestedBoost / stmtAssign / exprSlice
 
 _step <- (':' sp (exprRoot / sp { c.data.PushNull() }) / sp { c.data.PushNull() })
 _sliceSuffix <- '[' sp (exprRoot / sp { c.data.PushNull() }) ':' sp (exprRoot / sp { c.data.PushNull() }) _step sp ']' sp
@@ -279,8 +280,8 @@ exprDice <- &_diceType1 detailStart nos _diceExpr1 detailEnd { c.data.AddOp(type
           / &{return c.data.Config.EnableDiceFate} &_fateDiceType detailStart [fF] !xidContinue detailEnd { c.data.AddOp(typeDiceFate) }
           / value
 
-array_call <- "kh" { c.data.WriteCode(typeGetAttr, string("kh")) } (number { c.data.AddInvoke(1) } / {c.data.AddInvoke(0)})
-            / "kl" { c.data.WriteCode(typeGetAttr, string("kl")) } (number { c.data.AddInvoke(1) } / {c.data.AddInvoke(0)})
+array_call <- "kh" { c.data.WriteCode(typeAttrGet, string("kh")) } (number { c.data.AddInvoke(1) } / {c.data.AddInvoke(0)})
+            / "kl" { c.data.WriteCode(typeAttrGet, string("kl")) } (number { c.data.AddInvoke(1) } / {c.data.AddInvoke(0)})
             / ('[' sp exprRoot sp ']' sp { c.data.AddOp(typeItemGet) })+
 
 // TODO: value 中的 item_get attr_get 连写这种形式处理的很烂，之后改掉
@@ -289,7 +290,7 @@ array_call <- "kh" { c.data.WriteCode(typeGetAttr, string("kh")) } (number { c.d
 item_getX <- ('[' sp exprRoot sp ']' sp (!'=') { c.data.AddOp(typeItemGet); } func_invoke? )*
 item_get <- (&&(item_getX) item_getX)?
 
-attr_getX <- ('.' (sp id:identifier sp { c.data.WriteCode(typeGetAttr, id.(string)) }) func_invoke? )*
+attr_getX <- ('.' (sp id:identifier sp { c.data.WriteCode(typeAttrGet, id.(string)) }) func_invoke? )*
 attr_get <- (&&attr_getX attr_getX)?
 
 func_invoke <- '(' sp ')' { c.data.AddInvoke(0) }
@@ -333,13 +334,14 @@ strPart1 <- text:< (escape / (![{\x1e\\].))+ > { c.data.PushStr(text.(string)); 
 strPart2 <- text:< (escape / (![{"\\\n\r].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
 strPart3 <- text:< (escape / (![{'\\\n\r].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
 
+fstringE1 <- ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
 fstring <- (
         ('\'' '\'' { c.data.PushStr("") })
       / ('\x1e' '\x1e' { c.data.PushStr("") })
       / ('"' '"' { c.data.PushStr("") })
       / ('`' '`' { c.data.PushStr("") })
-      / ('`' { c.data.CounterPush() } ( ('{' sp exprRoot {c.data.CounterAdd(1)}  sp '}') / ("{%" sp exprRoot {c.data.CounterAdd(1)} sp "%}") / strPart )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
-      / ('\x1e' { c.data.CounterPush() } ( ('{' sp exprRoot {c.data.CounterAdd(1)} sp '}') / ("{%" sp exprRoot {c.data.CounterAdd(1)} sp "%}") / strPart1 )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
+      / ('`' { c.data.CounterPush() } ( ('{' sp exprRoot {c.data.CounterAdd(1)}  sp fstringE1) / ("{%" sp stmtRoot {c.data.CounterAdd(1)} sp "%}") / strPart )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
+      / ('\x1e' { c.data.CounterPush() } ( ('{' sp exprRoot {c.data.CounterAdd(1)} sp fstringE1) / ("{%" sp stmtRoot {c.data.CounterAdd(1)} sp "%}") / strPart1 )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
       / ('"' { c.data.CounterPush() } strPart2* '"' { c.data.CounterPop() })
       / ('\'' { c.data.CounterPush() } strPart3* '\'' { c.data.CounterPop() } )
     ) sp
@@ -349,7 +351,7 @@ escape <- '\\' ([btnfr"'\\])
 
 
 keywords <- "while" / "if" / "else" / "continue" / "break" / "return" / "func"
-keywords_test <- !(keywords !xidContinue)
+keywords_test <- !(keywords !xidContinue &{ p.addErr(errors.New("使用关键字作为变量名")); return true})
 
 identifier <- keywords_test xidStart (xidContinue / ':')* {
     return toStr(c.text);

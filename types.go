@@ -83,6 +83,7 @@ type RollConfig struct {
 
 	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan, dataBuffer []byte) string // 自定义计算过程
 
+	ParseExprLimit               uint64   // 解析算力限制，防止构造特殊语句进行DOS攻击，0为无限，建议值1000万
 	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
 	DefaultDiceSideExpr          string   // 默认骰子面数
 	defaultDiceSideExprCacheFunc *VMValue // expr的缓存函数
@@ -330,13 +331,13 @@ func (ctx *Context) StoreName(name string, v *VMValue) {
 }
 
 func (ctx *Context) StoreNameLocal(name string, v *VMValue) {
-	ctx.attrs.Store(name, v.Clone())
+	ctx.attrs.Store(name, v)
 }
 
 func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
 	storeFunc := ctx.GlobalValueStoreFunc
 	if storeFunc != nil {
-		storeFunc(name, v.Clone())
+		storeFunc(name, v)
 	} else {
 		ctx.Error = errors.New("未设置 ValueStoreNameFunc，无法储存变量")
 		return

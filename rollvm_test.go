@@ -1505,3 +1505,20 @@ func TestFStringDiceType4(t *testing.T) {
 	err = vm.Run("`{ddx}`")
 	assert.NoError(t, err)
 }
+
+func TestFStringBlock(t *testing.T) {
+	vm := NewVM()
+	var err error
+	err = vm.Run("`{% a=2; b=3 %}4`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("34")))
+	}
+
+	err = vm.Run("`{  if b=3 {} }`")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "关键字作为变量名")
+
+	err = vm.Run("`{ a=1;b=2 }`")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "无法处理字符 ;")
+}

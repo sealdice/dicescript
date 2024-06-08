@@ -35,16 +35,23 @@ func NewVM() *Context {
 // RunExpr 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
 func (ctx *Context) RunExpr(value string) (*VMValue, error) {
 	val := NewFunctionValRaw(&FunctionData{
-		Expr:      ctx.Config.DefaultDiceSideExpr,
+		Expr:      value,
 		Name:      "",
 		Params:    nil,
 		code:      nil,
 		codeIndex: 0,
 	})
-	ctx.Config.defaultDiceSideExprCacheFunc = val
 
 	v := val.FuncInvoke(ctx, nil)
 	return v, ctx.Error
+}
+
+// GetErrorText 主要用于js，因为ctx.Error是数组，在js那边不被当做正常的异常对象，所以会报错
+func (ctx *Context) GetErrorText() string {
+	if ctx.Error != nil {
+		return ctx.Error.Error()
+	}
+	return ""
 }
 
 func (ctx *Context) Parse(value string) error {
@@ -67,6 +74,9 @@ func (ctx *Context) Parse(value string) error {
 	ctx.detailCache = ""
 
 	// 开始解析，编译字节码
+	if ctx.Config.ParseExprLimit != 0 {
+		p.maxExprCnt = ctx.Config.ParseExprLimit
+	}
 	_, err := p.parse(nil)
 	if err != nil {
 		ctx.Error = err
@@ -518,7 +528,7 @@ func (ctx *Context) evaluate() {
 			if ctx.Error != nil {
 				return
 			}
-		case typeGetAttr:
+		case typeAttrGet:
 			obj := stackPop()
 			attrName := code.Value.(string)
 			ret := obj.AttrGet(ctx, attrName)
@@ -615,7 +625,7 @@ func (ctx *Context) evaluate() {
 			stackPush(val)
 
 		case typeStoreName:
-			v := stackPop()
+			v := e.stack[e.top-1].Clone()
 			name := code.Value.(string)
 
 			ctx.StoreName(name, v)
