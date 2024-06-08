@@ -255,7 +255,7 @@ func TestStatementLines(t *testing.T) {
 	vm = NewVM()
 	err = vm.Run("i = 0 if 1 { i = 3 }")
 	assert.NoError(t, err)
-	assert.Equal(t, "if 1 { i = 3 }", vm.RestInput)
+	assert.Equal(t, " if 1 { i = 3 }", vm.RestInput)
 
 	vm = NewVM()
 	err = vm.Run("i = 0; if 1 { i = 3 }")
@@ -322,7 +322,7 @@ func TestWhile(t *testing.T) {
 	vm = NewVM()
 	vm.Config.OpCountLimit = 30000
 	err = vm.Run("i = 0; while1 {}") // nolint
-	assert.True(t, vm.RestInput == "{}", vm.RestInput)
+	assert.True(t, vm.RestInput == " {}", vm.RestInput)
 }
 
 func TestWhileContinueBreak(t *testing.T) {
@@ -490,7 +490,7 @@ func TestRest(t *testing.T) {
 	err := vm.Run("1 2")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(1)))
-		assert.True(t, vm.RestInput == "2")
+		assert.True(t, vm.RestInput == " 2")
 	}
 }
 
@@ -975,6 +975,27 @@ func TestCrash1(t *testing.T) {
 	}
 }
 
+func TestDiceCocExpr(t *testing.T) {
+	vm := NewVM()
+	vm.Config.EnableDiceCoC = true
+	err := vm.Run("b1 + p1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, vm.Ret.MustReadInt() > 1)
+	}
+
+	err = vm.Run("b")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, vm.Ret.MustReadInt() > 1)
+	}
+
+	err = vm.Run("b技能") // rab技能，这种不予修改，由指令那边做支持
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
+	}
+}
+
 func TestDiceWodExpr(t *testing.T) {
 	vm := NewVM()
 	vm.Config.EnableDiceWoD = true
@@ -1343,12 +1364,12 @@ func TestIsDiceCalculateExists(t *testing.T) {
 	vm := NewVM()
 	err := vm.Parse("d100")
 	if assert.NoError(t, err) {
-		assert.True(t, vm.IsDiceCalculateExists())
+		assert.True(t, vm.IsCalculateExists())
 	}
 
 	err = vm.Parse("100")
 	if assert.NoError(t, err) {
-		assert.False(t, vm.IsDiceCalculateExists())
+		assert.False(t, vm.IsCalculateExists())
 	}
 }
 
@@ -1408,7 +1429,7 @@ func TestIfElseExprBug1(t *testing.T) {
 
 	if assert.NoError(t, err) {
 		// 注: 这里 elseif 会被当做变量 所以这里读到是undefined
-		assert.Equal(t, "1{}", vm.RestInput)
+		assert.Equal(t, " 1{}", vm.RestInput)
 	}
 }
 
@@ -1418,7 +1439,7 @@ func TestBlockExprBug(t *testing.T) {
 	err := vm.Run("if 1 {} 1 2 3 4 5")
 
 	if assert.NoError(t, err) {
-		assert.Equal(t, "2 3 4 5", vm.RestInput)
+		assert.Equal(t, " 2 3 4 5", vm.RestInput)
 	}
 }
 

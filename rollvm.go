@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func NewVM() *Context {
@@ -89,11 +90,15 @@ func (ctx *Context) Parse(value string) error {
 	return nil
 }
 
-// IsDiceCalculateExists 只有表达式被解析后，才能被调用，暂不考虑存在invoke指令的情况
-func (ctx *Context) IsDiceCalculateExists() bool {
+// IsCalculateExists 只有表达式被解析后，才能被调用，暂不考虑存在invoke指令的情况
+func (ctx *Context) IsCalculateExists() bool {
 	for _, i := range ctx.code {
 		switch i.T {
 		case typeDice, typeDiceDC, typeDiceWod, typeDiceCocBonus, typeDiceCocPenalty:
+			return true
+		case typeAdd, typeSubtract, typeMultiply, typeDivide, typeModulus, typeExponentiation:
+			return true
+		case typeInvoke, typeInvokeSelf:
 			return true
 		}
 	}
@@ -115,8 +120,12 @@ func (ctx *Context) RunAfterParsed() error {
 	}
 
 	// 给出VM解析完句子后的剩余文本
-	ctx.RestInput = string(ctx.parser.data[ctx.parser.pt.offset:])
-	ctx.Matched = string(ctx.parser.data[:ctx.parser.pt.offset])
+	offset := ctx.parser.pt.offset
+	matched := strings.TrimRightFunc(string(ctx.parser.data[:offset]), func(r rune) bool {
+		return unicode.IsSpace(r)
+	})
+	ctx.Matched = matched
+	ctx.RestInput = string(ctx.parser.data[len(matched):])
 	return nil
 }
 

@@ -9,7 +9,7 @@ func TestAssignSpace(t *testing.T) {
 	// stmtAssign
 	vm := NewVM()
 	err := vm.Run("a = 1")
-	//fmt.Println("xxx", vm.GetAsmText())
+	// fmt.Println("xxx", vm.GetAsmText())
 	if assert.NoError(t, err) {
 		assert.True(t, vmValueEqual(vm, "a", ni(1)))
 	}
@@ -74,5 +74,22 @@ func TestAssignArrayWithSpace(t *testing.T) {
 	err := vm.Run("a = [1,2,3];  a[0] = 3")
 	if assert.NoError(t, err) {
 		assert.True(t, vm.RestInput == "")
+	}
+}
+
+func TestMatchedWithSpace(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("1   ")
+	if assert.NoError(t, err) {
+		assert.True(t, vm.Matched == "1")
+	}
+}
+
+func TestMatchedWithSpace2(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run(" 1   ")
+	if assert.NoError(t, err) {
+		assert.Equal(t, vm.Matched, " 1")
+		assert.Equal(t, vm.RestInput, "   ")
 	}
 }
