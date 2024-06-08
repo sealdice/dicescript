@@ -5799,7 +5799,6 @@ type Stats struct {
 	// match, a special counter is incremented. The exprType of this counter is set with
 	// the parser option Statistics.
 	// For an alternative to be included in ChoiceAltCnt, it has to match at least once.
-	ChoiceAltCnt map[string]map[string]int
 }
 
 // nolint: structcheck,maligned
@@ -5836,6 +5835,9 @@ type parser struct {
 
 	*Stats
 
+	memo1 map[int]map[any]*resultTuple
+	memo2 map[int]map[any]*resultTuple
+
 	choiceNoMatch string
 	// recovery expression stack, keeps track of the currently available recovery expression, these are traversed in reverse
 	recoveryStack []map[string]any
@@ -5849,9 +5851,7 @@ type parser struct {
 
 // newParser creates a parser with the specified input source and options.
 func newParser(filename string, b []byte, opts ...option) *parser {
-	stats := Stats{
-		ChoiceAltCnt: make(map[string]map[string]int),
-	}
+	stats := Stats{}
 
 	p := &parser{
 		filename: filename,
@@ -5868,6 +5868,9 @@ func newParser(filename string, b []byte, opts ...option) *parser {
 		// start rule is rule [0] unless an alternate entrypoint is specified
 		entrypoint: "dicescript",
 		scStack:    []bool{false},
+
+		memo1: map[int]map[any]*resultTuple{},
+		memo2: map[int]map[any]*resultTuple{},
 	}
 
 	p.spStack.init(5)
@@ -6148,6 +6151,33 @@ func (p *parser) parseExprWrap(expr any) (any, bool) {
 		panic(errMaxExprCnt)
 	}
 
+	memo := p.memo1
+	if !p.checkSkipCode() {
+		memo = p.memo2
+	}
+
+	setMem := func(pos int, expr any, val resultTuple) {
+		if memo[pos] == nil {
+			memo[pos] = map[any]*resultTuple{}
+		}
+		memo[pos][expr] = &val
+	}
+
+	getMem := func(expr any) *resultTuple {
+		pos := p.pt.offset
+		if memo[pos] == nil {
+			return nil
+		}
+		return memo[pos][expr]
+	}
+
+	if x := getMem(expr); x != nil {
+		p.restore(&x.end)
+		return x.v, x.b
+	}
+
+	pos := p.pt.offset
+
 	var val any
 	var ok bool
 	switch expr := expr.(type) {
@@ -6196,6 +6226,8 @@ func (p *parser) parseExprWrap(expr any) (any, bool) {
 	default:
 		panic(fmt.Sprintf("unknown expression type %T", expr))
 	}
+
+	setMem(pos, expr, resultTuple{val, ok, p.pt})
 	return val, ok
 }
 
