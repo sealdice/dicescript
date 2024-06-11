@@ -55,10 +55,12 @@ func TestValueDefineStr(t *testing.T) {
 	simpleExecute(t, "'123'", ns("123"))
 	simpleExecute(t, "'12' + '3' ", ns("123"))
 	simpleExecute(t, "`12{3}` ", ns("123"))
+	simpleExecute(t, "`12{3 }` ", ns("123"))
+	simpleExecute(t, "`12{ 3}` ", ns("123"))
 	simpleExecute(t, "`12{'3'}` ", ns("123"))
-	simpleExecute(t, "`12{% 3 %}` ", ns("123"))
+	simpleExecute(t, "`12{% 3 %}` ", ns("12"))
 	simpleExecute(t, `"123"`, ns("123"))
-	simpleExecute(t, "\x1e"+"12{% 3 %}"+"\x1e", ns("123"))
+	simpleExecute(t, "\x1e"+"12{% 3 %}"+"\x1e", ns("12"))
 
 	simpleExecute(t, `"12\n3"`, ns("12\n3"))
 	simpleExecute(t, `"12\r3"`, ns("12\r3"))
@@ -1532,7 +1534,7 @@ func TestFStringBlock(t *testing.T) {
 	var err error
 	err = vm.Run("`{% a=2; b=3 %}4`")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ns("34")))
+		assert.True(t, valueEqual(vm.Ret, ns("4")))
 	}
 
 	err = vm.Run("`{  if b=3 {} }`")
@@ -1542,4 +1544,11 @@ func TestFStringBlock(t *testing.T) {
 	err = vm.Run("`{ a=1;b=2 }`")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "无法处理字符 ;")
+}
+
+func TestFStringIf(t *testing.T) {
+	vm := NewVM()
+	var err error
+	err = vm.Run("`{ if }`")
+	assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
 }

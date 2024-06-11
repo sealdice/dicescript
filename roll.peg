@@ -67,7 +67,8 @@ nextLine <- ((spNoCR '\n' / sp ';') sp)+ stmtLines?
 
 stmtBreak <- "break" sp {
     if c.data.loopLayer == 0 {
-        panic("`break` is not allowed outside loop.")
+        p.addErr(errors.New("`break` is not allowed outside loop."))
+        return false
     } else {
         c.data.BreakPush()
     }
@@ -75,7 +76,8 @@ stmtBreak <- "break" sp {
 
 stmtContinue <- "continue" sp {
     if c.data.loopLayer == 0 {
-        panic("`continue` is not allowed outside loop.")
+        p.addErr(errors.New("`continue` is not allowed outside loop."))
+        return false
     } else {
         c.data.ContinuePush()
     }
@@ -334,14 +336,17 @@ strPart1 <- text:< (escape / (![{\x1e\\].))+ > { c.data.PushStr(text.(string)); 
 strPart2 <- text:< (escape / (![{"\\\n\r].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
 strPart3 <- text:< (escape / (![{'\\\n\r].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
 
-fstringE1 <- ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
+fstringExpr1 <- exprRoot {c.data.CounterAdd(1)} / &{ p.addErr(errors.New("{} 内必须是一个表达式")); return false; }
+fstringExpr <- '{' sp fstringExpr1 sp ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
+fstringStmt <- "{%" sp stmtRoot { c.data.WriteCode(typePop, nil) } sp "%}"
+
 fstring <- (
         ('\'' '\'' { c.data.PushStr("") })
       / ('\x1e' '\x1e' { c.data.PushStr("") })
       / ('"' '"' { c.data.PushStr("") })
       / ('`' '`' { c.data.PushStr("") })
-      / ('`' { c.data.CounterPush() } ( ('{' sp exprRoot {c.data.CounterAdd(1)}  sp fstringE1) / ("{%" sp stmtRoot {c.data.CounterAdd(1)} sp "%}") / strPart )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
-      / ('\x1e' { c.data.CounterPush() } ( ('{' sp exprRoot {c.data.CounterAdd(1)} sp fstringE1) / ("{%" sp stmtRoot {c.data.CounterAdd(1)} sp "%}") / strPart1 )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
+      / ('`' { c.data.CounterPush() } ( fstringStmt / fstringExpr / strPart )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
+      / ('\x1e' { c.data.CounterPush() } ( fstringStmt / fstringExpr / strPart1 )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
       / ('"' { c.data.CounterPush() } strPart2* '"' { c.data.CounterPop() })
       / ('\'' { c.data.CounterPush() } strPart3* '\'' { c.data.CounterPop() } )
     ) sp
@@ -351,7 +356,7 @@ escape <- '\\' ([btnfr"'\\])
 
 
 keywords <- "while" / "if" / "else" / "continue" / "break" / "return" / "func"
-keywords_test <- !(keywords !xidContinue &{ p.addErr(errors.New("使用关键字作为变量名")); return true})
+keywords_test "keywords" <- !(keywords !xidContinue &{ p.addErr(errors.New("使用关键字作为变量名")); return true})
 
 identifier <- keywords_test xidStart (xidContinue / ':')* {
     return toStr(c.text);

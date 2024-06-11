@@ -32,6 +32,8 @@ type BufferSpan struct {
 	End   IntType
 	Ret   *VMValue
 	Text  string
+	// 来源标记
+	Tag string
 }
 
 func (pd *ParserData) init() {

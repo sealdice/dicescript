@@ -94,7 +94,7 @@ func (ctx *Context) Parse(value string) error {
 func (ctx *Context) IsCalculateExists() bool {
 	for _, i := range ctx.code {
 		switch i.T {
-		case typeDice, typeDiceDC, typeDiceWod, typeDiceCocBonus, typeDiceCocPenalty:
+		case typeDice, typeDiceDC, typeDiceWod, typeDiceFate, typeDiceCocBonus, typeDiceCocPenalty:
 			return true
 		case typeAdd, typeSubtract, typeMultiply, typeDivide, typeModulus, typeExponentiation:
 			return true
@@ -608,26 +608,12 @@ func (ctx *Context) evaluate() {
 			e.top++
 		case typeLoadName, typeLoadNameRaw, typeLoadNameWithDetail:
 			name := code.Value.(string)
-			if e.Config.CallbackLoadVar != nil {
-				var val *VMValue
-				name, val = e.Config.CallbackLoadVar(name)
-
-				if val != nil {
-					// 使用弄进来的替代值进行计算
-					if typeLoadNameWithDetail == code.T {
-						details[len(details)-1].Ret = val
-						details[len(details)-1].Text = ""
-					}
-					stackPush(val)
-					continue
-				}
-			}
-
-			val := ctx.LoadName(name, typeLoadNameRaw == code.T)
+			val := ctx.LoadName(name, typeLoadNameRaw == code.T, true)
 			if ctx.Error != nil {
 				return
 			}
 			if typeLoadNameWithDetail == code.T {
+				details[len(details)-1].Tag = "load"
 				details[len(details)-1].Ret = val
 				details[len(details)-1].Text = ""
 			}
@@ -637,7 +623,7 @@ func (ctx *Context) evaluate() {
 			v := e.stack[e.top-1].Clone()
 			name := code.Value.(string)
 
-			ctx.StoreName(name, v)
+			ctx.StoreName(name, v, true)
 			if ctx.Error != nil {
 				return
 			}
@@ -763,6 +749,7 @@ func (ctx *Context) evaluate() {
 			ret := NewIntVal(num)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detail
+			details[len(details)-1].Tag = "dice"
 			stackPush(ret)
 
 		case typeDiceFate:
@@ -770,6 +757,7 @@ func (ctx *Context) evaluate() {
 			ret := NewIntVal(sum)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detail
+			details[len(details)-1].Tag = "dice-fate"
 			stackPush(ret)
 
 		case typeDiceCocBonus, typeDiceCocPenalty:
@@ -780,10 +768,16 @@ func (ctx *Context) evaluate() {
 				return
 			}
 
-			r, detailText := RollCoC(ctx.randSrc, code.T == typeDiceCocBonus, diceNum)
+			isBonus := code.T == typeDiceCocBonus
+			r, detailText := RollCoC(ctx.randSrc, isBonus, diceNum)
 			ret := NewIntVal(r)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
+			if isBonus {
+				details[len(details)-1].Tag = "dice-coc-bonus"
+			} else {
+				details[len(details)-1].Tag = "dice-coc-penalty"
+			}
 			stackPush(ret)
 
 		case typeWodSetInit:
@@ -818,6 +812,7 @@ func (ctx *Context) evaluate() {
 			ret := NewIntVal(num)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
+			details[len(details)-1].Tag = "dice-wod"
 			stackPush(ret)
 
 		case typeDCSetInit:
@@ -838,6 +833,7 @@ func (ctx *Context) evaluate() {
 			ret := NewIntVal(success)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
+			details[len(details)-1].Tag = "dice-dc"
 			stackPush(ret)
 
 		case typeStSetName:

@@ -34,7 +34,6 @@ const (
 	VMTypeInt            VMValueType = 0
 	VMTypeFloat          VMValueType = 1
 	VMTypeString         VMValueType = 2
-	VMTypeUndefined      VMValueType = 3
 	VMTypeNull           VMValueType = 4
 	VMTypeComputedValue  VMValueType = 5
 	VMTypeArray          VMValueType = 6
@@ -78,10 +77,13 @@ type RollConfig struct {
 	DisableStmts     bool // 禁用语句语法(如if while等)，仅允许表达式
 	DisableNDice     bool // 禁用Nd语法，即只能2d6这样写，不能写2d
 
-	CallbackLoadVar func(name string) (string, *VMValue)                                                    // 加载变量回调，返回值会成为新变量名
-	CallbackSt      func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
+	// 如果返回值为true，那么跳过剩下的储存流程。如果overwrite不为nil，对v进行覆盖
+	HookFuncValueStore func(ctx *Context, name string, v *VMValue) (overwrite *VMValue, solved bool)
+	// 如果overwrite不为nil，将结束值加载并使用overwrite值。如果为nil，将以newName为key进行加载
+	HookFuncValueLoad func(name string) (newName string, overwrite *VMValue)
 
-	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan, dataBuffer []byte) string // 自定义计算过程
+	CallbackSt           func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
+	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan, dataBuffer []byte) string                      // 自定义计算过程
 
 	ParseExprLimit               uint64   // 解析算力限制，防止构造特殊语句进行DOS攻击，0为无限，建议值1000万
 	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
@@ -150,12 +152,8 @@ type Context struct {
 	Seed    []byte          // 随机种子，16个字节，即双uint64
 	randSrc *rand.PCGSource // 根据种子生成的source
 
-	IsRunning bool // 是否正在运行，Run时会置为true，halt时会置为false
-
+	IsRunning      bool // 是否正在运行，Run时会置为true，halt时会置为false
 	CustomDiceInfo []*customDiceItem
-
-	// 如果返回值为true，那么不会保存在本地变量上
-	ValueStoreHookFunc func(ctx *Context, name string, v *VMValue) (solved bool)
 
 	/** 全局变量 */
 	globalNames *ValueMap
@@ -275,8 +273,17 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 	// }
 }
 
-func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
-	// fmt.Println("!!!!!!", name)
+func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
+	if useHook && ctx.Config.HookFuncValueLoad != nil {
+		var overwrite *VMValue
+		name, overwrite = ctx.Config.HookFuncValueLoad(name)
+
+		if overwrite != nil {
+			// 使用弄进来的替代值进行计算
+			return overwrite
+		}
+	}
+
 	// 先local再global
 	curCtx := ctx
 	for {
@@ -316,11 +323,14 @@ func (ctx *Context) LoadName(name string, isRaw bool) *VMValue {
 }
 
 // StoreName 储存变量
-func (ctx *Context) StoreName(name string, v *VMValue) {
-	if ctx.ValueStoreHookFunc != nil {
-		solved := ctx.ValueStoreHookFunc(ctx, name, v)
+func (ctx *Context) StoreName(name string, v *VMValue, useHook bool) {
+	if useHook && ctx.Config.HookFuncValueStore != nil {
+		overwrite, solved := ctx.Config.HookFuncValueStore(ctx, name, v)
 		if solved {
 			return
+		}
+		if overwrite != nil {
+			v = overwrite
 		}
 	}
 	if _, ok := ctx.globalNames.Load(name); ok {
