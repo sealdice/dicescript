@@ -1,6 +1,7 @@
 package dicescript
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -58,9 +59,9 @@ func TestValueDefineStr(t *testing.T) {
 	simpleExecute(t, "`12{3 }` ", ns("123"))
 	simpleExecute(t, "`12{ 3}` ", ns("123"))
 	simpleExecute(t, "`12{'3'}` ", ns("123"))
-	simpleExecute(t, "`12{% 3 %}` ", ns("12"))
+	simpleExecute(t, "`12{% 3 %}` ", ns("123"))
 	simpleExecute(t, `"123"`, ns("123"))
-	simpleExecute(t, "\x1e"+"12{% 3 %}"+"\x1e", ns("12"))
+	simpleExecute(t, "\x1e"+"12{% 3 %}"+"\x1e", ns("123"))
 
 	simpleExecute(t, `"12\n3"`, ns("12\n3"))
 	simpleExecute(t, `"12\r3"`, ns("12\r3"))
@@ -1534,7 +1535,7 @@ func TestFStringBlock(t *testing.T) {
 	var err error
 	err = vm.Run("`{% a=2; b=3 %}4`")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ns("4")))
+		assert.True(t, valueEqual(vm.Ret, ns("34")))
 	}
 
 	err = vm.Run("`{  if b=3 {} }`")
@@ -1551,4 +1552,51 @@ func TestFStringIf(t *testing.T) {
 	var err error
 	err = vm.Run("`{ if }`")
 	assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
+}
+
+func TestFStringStackOverflowBug(t *testing.T) {
+	// `{1} {2} {% 3;4;5;6 %}`
+	// 的结果会成为 345 或 456(根据版本不同)
+	// 这是栈不平衡的体现
+	vm := NewVM()
+	err := vm.Run("`{1} {2} {% 3;4;5;6 %}`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("1 2 6")))
+	}
+}
+
+func TestFStringStackOverflowBug2(t *testing.T) {
+	// `{1} {2} {% if false {} %}`
+	// 会报错，因为没有任何返回
+	vm := NewVM()
+	err := vm.Run("`{1} {2} {% if false {} %}`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("1 2 ")))
+	}
+}
+
+func TestIfError(t *testing.T) {
+	vm := NewVM()
+	var err error
+	err = vm.Run("if 1 ")
+	fmt.Println(err)
+	assert.Contains(t, err.Error(), "不符合if语法")
+}
+
+func TestFStringV1IfCompatible(t *testing.T) {
+	// `1 {% if 1 {'test'} %} 2`
+	// 在v1中会返回1  2，中间的if语句执行后栈中是空的
+	// 但是v2改为不进行栈平衡，所以会得到1 test 2，这个兼容选项用于模拟这一行为
+	vm := NewVM()
+	err := vm.Run("`1 {% if 1 {'test'} %} 2`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("1 test 2")))
+	}
+
+	vm.Config.EnableV1IfCompatible = true
+	err = vm.Run("`1 {% if 1 {'test'} %} 2`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("1  2")))
+		assert.Equal(t, vm.V1IfCompatibleCount, 1)
+	}
 }

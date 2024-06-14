@@ -104,6 +104,10 @@ const (
 	typeJeDup
 	typeReturn
 
+	typeFStringBlockPush // fstring标记 用于栈平衡
+	typeFStringBlockPop
+	typeV1IfMark // 特殊兼容标记
+
 	typeStSetName
 	typeStModify
 	typeStX0
@@ -281,6 +285,13 @@ func (code *ByteCode) CodeString() string {
 		return "nop"
 	case typeReturn:
 		return "ret"
+
+	case typeFStringBlockPush:
+		return "fstr.block.push"
+	case typeFStringBlockPop:
+		return "fstr.block.pop"
+	case typeV1IfMark:
+		return "v1.if.mark"
 
 	case typeStSetName:
 		return "st.set"

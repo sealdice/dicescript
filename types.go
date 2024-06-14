@@ -93,6 +93,8 @@ type RollConfig struct {
 	PrintBytecode bool // 执行时打印字节码
 	IgnoreDiv0    bool // 当div0时暂不报错
 
+	EnableV1IfCompatible bool // 一种特殊的兼容，fstring中如果最后一个语句是if那么此项为空字符串
+
 	// 以下尚未实现
 	DiceMinMode bool // 骰子以最小值结算，用于获取下界
 	DiceMaxMode bool // 以最大值结算 获取上界
@@ -139,6 +141,8 @@ type Context struct {
 
 	NumOpCount IntType // 算力计数
 	// CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
+
+	V1IfCompatibleCount int
 
 	Config RollConfig // 标记
 	Error  error      // 报错信息

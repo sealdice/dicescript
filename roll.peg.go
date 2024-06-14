@@ -332,25 +332,34 @@ var g = &grammar{
 			name: "stmtIf",
 			expr: &seqExpr{
 				exprs: []any{
-					&actionExpr{
-						run: (*parser).call_onstmtIf_2,
-						expr: &seqExpr{
-							exprs: []any{
-								&litMatcher{val: "if", want: "\"if\""},
-								&ruleIRefExpr{index: 120 /* sp1x */},
-								&ruleIRefExpr{index: 26 /* exprRoot */},
-								&ruleIRefExpr{index: 118 /* sp */},
+					&litMatcher{val: "if", want: "\"if\""},
+					&ruleIRefExpr{index: 120 /* sp1x */},
+					&choiceExpr{
+						alternatives: []any{
+							&seqExpr{
+								exprs: []any{
+									&actionExpr{
+										run: (*parser).call_onstmtIf_6,
+										expr: &seqExpr{
+											exprs: []any{
+												&ruleIRefExpr{index: 26 /* exprRoot */},
+												&ruleIRefExpr{index: 118 /* sp */},
+											},
+										},
+									},
+									&actionExpr{
+										run:  (*parser).call_onstmtIf_10,
+										expr: &ruleIRefExpr{index: 12 /* block */},
+									},
+									&actionExpr{
+										run: (*parser).call_onstmtIf_12,
+										expr: &zeroOrOneExpr{
+											expr: &ruleIRefExpr{index: 13 /* stmtElse */},
+										},
+									},
+								},
 							},
-						},
-					},
-					&actionExpr{
-						run:  (*parser).call_onstmtIf_8,
-						expr: &ruleIRefExpr{index: 12 /* block */},
-					},
-					&actionExpr{
-						run: (*parser).call_onstmtIf_10,
-						expr: &zeroOrOneExpr{
-							expr: &ruleIRefExpr{index: 13 /* stmtElse */},
+							&andCodeExpr{run: (*parser).call_onstmtIf_15},
 						},
 					},
 				},
@@ -2840,22 +2849,26 @@ var g = &grammar{
 			name: "fstringStmt",
 			expr: &seqExpr{
 				exprs: []any{
-					&actionExpr{
-						run: (*parser).call_onfstringStmt_2,
-						expr: &seqExpr{
-							exprs: []any{
-								&litMatcher{val: "{%", want: "\"{%\""},
-								&ruleIRefExpr{index: 118 /* sp */},
-								&ruleIRefExpr{index: 2 /* stmtRoot */},
+					&litMatcher{val: "{%", want: "\"{%\""},
+					&ruleIRefExpr{index: 118 /* sp */},
+					&choiceExpr{
+						alternatives: []any{
+							&seqExpr{
+								exprs: []any{
+									&codeExpr{
+										run: (*parser).call_onfstringStmt_6,
+									},
+									&actionExpr{
+										run:  (*parser).call_onfstringStmt_7,
+										expr: &ruleIRefExpr{index: 2 /* stmtRoot */},
+									},
+								},
 							},
+							&andCodeExpr{run: (*parser).call_onfstringStmt_9},
 						},
 					},
-					&seqExpr{
-						exprs: []any{
-							&ruleIRefExpr{index: 118 /* sp */},
-							&litMatcher{val: "%}", want: "\"%}\""},
-						},
-					},
+					&ruleIRefExpr{index: 118 /* sp */},
+					&litMatcher{val: "%}", want: "\"%}\""},
 				},
 			},
 		},
@@ -4167,7 +4180,7 @@ func (p *parser) call_onstmtWhile_9() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onstmtIf_2() any {
+func (p *parser) call_onstmtIf_6() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
@@ -4175,7 +4188,7 @@ func (p *parser) call_onstmtIf_2() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onstmtIf_8() any {
+func (p *parser) call_onstmtIf_10() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeJmp)
 		c.data.OffsetPopAndSet()
@@ -4184,10 +4197,20 @@ func (p *parser) call_onstmtIf_8() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onstmtIf_10() any {
+func (p *parser) call_onstmtIf_12() any {
 	return (func(c *current) any {
 		c.data.OffsetPopAndSet()
+		if c.data.Config.EnableV1IfCompatible {
+			c.data.AddOp(typeV1IfMark)
+		}
 		return nil
+	})(&p.cur)
+}
+
+func (p *parser) call_onstmtIf_15() bool {
+	return (func(c *current) bool {
+		p.addErr(errors.New("不符合if语法: if expr {...} [else {...}]"))
+		return false
 	})(&p.cur)
 }
 
@@ -5234,10 +5257,25 @@ func (p *parser) call_onfstringExpr_8() bool {
 	})(&p.cur)
 }
 
-func (p *parser) call_onfstringStmt_2() any {
+func (p *parser) call_onfstringStmt_6() any {
 	return (func(c *current) any {
-		c.data.WriteCode(typePop, nil)
+		c.data.AddOp(typeFStringBlockPush)
 		return nil
+	})(&p.cur)
+}
+
+func (p *parser) call_onfstringStmt_7() any {
+	return (func(c *current) any {
+		c.data.AddOp(typeFStringBlockPop)
+		c.data.CounterAdd(1)
+		return nil
+	})(&p.cur)
+}
+
+func (p *parser) call_onfstringStmt_9() bool {
+	return (func(c *current) bool {
+		p.addErr(errors.New("{%} 内必须是语句块或表达式"))
+		return false
 	})(&p.cur)
 }
 

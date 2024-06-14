@@ -105,7 +105,19 @@ func (ctx *Context) IsCalculateExists() bool {
 	return false
 }
 
+// IsV1IfCompatibleExists 是否存在v1的fstring-if兼容指令
+func (ctx *Context) IsV1IfCompatibleExists() bool {
+	for _, i := range ctx.code {
+		switch i.T {
+		case typeV1IfMark:
+			return true
+		}
+	}
+	return false
+}
+
 func (ctx *Context) RunAfterParsed() error {
+	ctx.V1IfCompatibleCount = 0
 	// 以下为eval
 	ctx.evaluate()
 	if ctx.Error != nil {
@@ -342,6 +354,9 @@ func (ctx *Context) evaluate() {
 		e.stack[e.top] = *v
 		e.top += 1
 	}
+
+	var fstrBlockStack [5]int
+	var fstrBlockIndex int
 
 	startTime := time.Now().UnixMilli()
 	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
@@ -835,6 +850,36 @@ func (ctx *Context) evaluate() {
 			details[len(details)-1].Text = detailText
 			details[len(details)-1].Tag = "dice-dc"
 			stackPush(ret)
+
+		case typeFStringBlockPush:
+			if fstrBlockIndex >= 4 {
+				ctx.Error = errors.New("字符串模板嵌套层数过多")
+				return
+			}
+			fstrBlockStack[fstrBlockIndex] = e.top
+			fstrBlockIndex += 1
+		case typeFStringBlockPop:
+			newTop := fstrBlockStack[fstrBlockIndex-1]
+			var v *VMValue
+			if newTop != e.top {
+				v = stackPop()
+			}
+			e.top = newTop
+			fstrBlockIndex -= 1
+			if v != nil {
+				stackPush(v)
+			} else {
+				stackPush(NewStrVal(""))
+			}
+		case typeV1IfMark:
+			// 满足条件: 首先在fstring中，其次栈里目前有东西
+			if fstrBlockIndex > 0 {
+				newTop := fstrBlockStack[fstrBlockIndex-1]
+				if newTop != e.top {
+					stackPush(NewStrVal("")) // 填入空字符串，模拟v1行为
+					ctx.V1IfCompatibleCount += 1
+				}
+			}
 
 		case typeStSetName:
 			stName, stVal := stackPop2()

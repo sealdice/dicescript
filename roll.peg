@@ -95,8 +95,8 @@ stmtWhile <- "while" { c.data.LoopBegin(); c.data.OffsetPush() } sp1x exprRoot s
 
 block <- ( '{' sp '}' / '{' sp stmtRoot '}' ) sp
 stmtElse <- "else" (sp block / sp1x stmtIf)
-stmtIf <- "if" sp1x exprRoot sp { c.data.AddOp(typeJne); c.data.OffsetPush() } block { c.data.AddOp(typeJmp); c.data.OffsetPopAndSet(); c.data.OffsetPush(); }
-           stmtElse? { c.data.OffsetPopAndSet(); }
+stmtIf <- "if" sp1x (exprRoot sp { c.data.AddOp(typeJne); c.data.OffsetPush() } block { c.data.AddOp(typeJmp); c.data.OffsetPopAndSet(); c.data.OffsetPush(); }
+               stmtElse? { c.data.OffsetPopAndSet(); if c.data.Config.EnableV1IfCompatible { c.data.AddOp(typeV1IfMark) } } / &{ p.addErr(errors.New("不符合if语法: if expr {...} [else {...}]")); return false; })
 
 // 'if' exprRoot block
 // ('else' block)?
@@ -338,7 +338,7 @@ strPart3 <- text:< (escape / (![{'\\\n\r].))+ > { c.data.PushStr(text.(string));
 
 fstringExpr1 <- exprRoot {c.data.CounterAdd(1)} / &{ p.addErr(errors.New("{} 内必须是一个表达式")); return false; }
 fstringExpr <- '{' sp fstringExpr1 sp ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
-fstringStmt <- "{%" sp stmtRoot { c.data.WriteCode(typePop, nil) } sp "%}"
+fstringStmt <- "{%" sp ({ c.data.AddOp(typeFStringBlockPush) } stmtRoot { c.data.AddOp(typeFStringBlockPop); c.data.CounterAdd(1) } / &{ p.addErr(errors.New("{% %} 内必须是语句块或表达式")); return false; }) sp "%}"
 
 fstring <- (
         ('\'' '\'' { c.data.PushStr("") })
