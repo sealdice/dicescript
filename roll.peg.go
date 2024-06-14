@@ -1331,7 +1331,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 102 /* minus */},
-								&ruleIRefExpr{index: 26 /* exprRoot */},
+								&ruleIRefExpr{index: 68 /* exprDice */},
 							},
 						},
 					},
@@ -1348,7 +1348,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 101 /* add */},
-								&ruleIRefExpr{index: 26 /* exprRoot */},
+								&ruleIRefExpr{index: 68 /* exprDice */},
 							},
 						},
 					},

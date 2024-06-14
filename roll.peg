@@ -212,10 +212,10 @@ exprExp <- exprUnaryNeg (
          )*
 
 // 正数 负数
-exprUnaryNeg <- minus exprRoot { c.data.AddOp(typeNegation) }
+exprUnaryNeg <- minus exprDice { c.data.AddOp(typeNegation) }
               / exprUnaryPos
 
-exprUnaryPos <- add exprRoot { c.data.AddOp(typePositive) }
+exprUnaryPos <- add exprDice { c.data.AddOp(typePositive) }
               / exprDice
 
 // 骰子算符

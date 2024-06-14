@@ -1,7 +1,6 @@
 package dicescript
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,7 +10,7 @@ import (
 )
 
 func vmValueEqual(vm *Context, aKey string, bValue *VMValue) bool {
-	return valueEqual(vm.attrs.MustLoad(aKey), bValue)
+	return valueEqual(vm.Attrs.MustLoad(aKey), bValue)
 }
 
 func simpleExecute(t *testing.T, expr string, ret *VMValue) *Context {
@@ -238,7 +237,7 @@ func TestIf(t *testing.T) {
 	assert.True(t, vmValueEqual(vm, "c", ni(1)))
 	assert.True(t, vmValueEqual(vm, "d", ni(2)))
 
-	_, exists := vm.attrs.Load("a")
+	_, exists := vm.Attrs.Load("a")
 	assert.True(t, !exists)
 }
 
@@ -431,21 +430,21 @@ func TestTernary(t *testing.T) {
 	}
 
 	vm = NewVM()
-	vm.attrs.Store("a", ni(1))
+	vm.Attrs.Store("a", ni(1))
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("A")))
 	}
 
 	vm = NewVM()
-	vm.attrs.Store("a", ni(2))
+	vm.Attrs.Store("a", ni(2))
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("B")))
 	}
 
 	vm = NewVM()
-	vm.attrs.Store("a", ni(3))
+	vm.Attrs.Store("a", ni(3))
 	err = vm.Run("a == 1 ? 'A', a == 2 ? 'B', a == 3 ? 'C'")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("C")))
@@ -460,22 +459,26 @@ func TestUnary(t *testing.T) {
 	}
 
 	vm = NewVM()
-	err = vm.Run("--1")
+	err = vm.Run("- 1")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ni(1)))
+		assert.True(t, valueEqual(vm.Ret, ni(-1)))
 	}
+
+	vm = NewVM()
+	err = vm.Run("--1")
+	assert.Error(t, err)
+
+	vm = NewVM()
+	err = vm.Run("++1")
+	assert.Error(t, err)
 
 	vm = NewVM()
 	err = vm.Run("-+1")
-	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ni(-1)))
-	}
+	assert.Error(t, err)
 
 	vm = NewVM()
 	err = vm.Run("+-1")
-	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ni(-1)))
-	}
+	assert.Error(t, err)
 
 	vm = NewVM()
 	err = vm.Run("-1.3")
@@ -941,7 +944,7 @@ func TestDictExpr2(t *testing.T) {
 
 func TestIdExpr(t *testing.T) {
 	vm := NewVM()
-	vm.attrs.Store("a:b", ni(3))
+	vm.Attrs.Store("a:b", ni(3))
 	err := vm.Run("a:b") // 如果读到a 余下a:b即为错误
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(3)))
@@ -1579,7 +1582,6 @@ func TestIfError(t *testing.T) {
 	vm := NewVM()
 	var err error
 	err = vm.Run("if 1 ")
-	fmt.Println(err)
 	assert.Contains(t, err.Error(), "不符合if语法")
 }
 
@@ -1598,5 +1600,23 @@ func TestFStringV1IfCompatible(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("1  2")))
 		assert.Equal(t, vm.V1IfCompatibleCount, 1)
+	}
+}
+
+func TestNeg(t *testing.T) {
+	vm := NewVM()
+	var err error
+	err = vm.Run("-1 + 5")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(4)))
+	}
+}
+
+func TestNeg2(t *testing.T) {
+	vm := NewVM()
+	var err error
+	err = vm.Run("-1-5")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(-6)))
 	}
 }

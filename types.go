@@ -129,8 +129,8 @@ type customDiceItem struct {
 type Context struct {
 	parser         *parser
 	subThreadDepth int
-	attrs          *ValueMap
-	upCtx          *Context
+	Attrs          *ValueMap
+	UpCtx          *Context
 	// subThread      *Context // 用于执行子句
 
 	code      []ByteCode
@@ -194,7 +194,7 @@ func (ctx *Context) SetConfig(cfg *RollConfig) {
 }
 
 func (ctx *Context) Init() {
-	ctx.attrs = &ValueMap{}
+	ctx.Attrs = &ValueMap{}
 	ctx.globalNames = &ValueMap{}
 	ctx.detailCache = ""
 	ctx.DetailSpans = nil
@@ -262,7 +262,7 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 	//	return ctx.currentThis.AttrGet(ctx, name)
 	// } else {
 	// if ctx.subThreadDepth >= 1 {
-	ret, exists := ctx.attrs.Load(name)
+	ret, exists := ctx.Attrs.Load(name)
 	if !exists {
 		ret = NewNullVal()
 	}
@@ -300,10 +300,10 @@ func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
 		if ret.TypeId != VMTypeNull {
 			return ret
 		}
-		if curCtx.upCtx == nil {
+		if curCtx.UpCtx == nil {
 			break
 		} else {
-			curCtx = curCtx.upCtx
+			curCtx = curCtx.UpCtx
 		}
 	}
 
@@ -345,7 +345,7 @@ func (ctx *Context) StoreName(name string, v *VMValue, useHook bool) {
 }
 
 func (ctx *Context) StoreNameLocal(name string, v *VMValue) {
-	ctx.attrs.Store(name, v)
+	ctx.Attrs.Store(name, v)
 }
 
 func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
@@ -1387,13 +1387,13 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	if cd.Attrs == nil {
 		cd.Attrs = &ValueMap{}
 	}
-	vm.attrs = cd.Attrs
+	vm.Attrs = cd.Attrs
 
 	vm.GlobalValueStoreFunc = ctx.GlobalValueStoreFunc
 	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
 	vm.GlobalValueLoadOverwriteFunc = ctx.GlobalValueLoadOverwriteFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
-	vm.upCtx = ctx
+	vm.UpCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
 	vm.randSrc = ctx.randSrc
@@ -1434,7 +1434,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 
 	vm := NewVM()
 	cd, _ := v.ReadFunctionData()
-	vm.attrs = &ValueMap{}
+	vm.Attrs = &ValueMap{}
 
 	// 设置参数
 	if len(cd.Params) != len(params) {
@@ -1445,7 +1445,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 		// if index >= len(params) {
 		//	break
 		// }
-		vm.attrs.Store(i, params[index])
+		vm.Attrs.Store(i, params[index])
 	}
 
 	vm.Config = ctx.Config
@@ -1454,7 +1454,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	vm.GlobalValueLoadFunc = ctx.GlobalValueLoadFunc
 	vm.GlobalValueLoadOverwriteFunc = ctx.GlobalValueLoadOverwriteFunc
 	vm.subThreadDepth = ctx.subThreadDepth + 1
-	vm.upCtx = ctx
+	vm.UpCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100 // 递归视为消耗 + 100
 	ctx.NumOpCount = vm.NumOpCount       // 防止无限递归
 	vm.randSrc = ctx.randSrc
@@ -1487,7 +1487,7 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
-	vm.attrs = &ValueMap{} // 清空
+	vm.Attrs = &ValueMap{} // 清空
 	return ret
 }
 
