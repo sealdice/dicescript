@@ -1430,11 +1430,19 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 }
 
 func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
+	return v.FuncInvokeRaw(ctx, params, false)
+}
+
+func (v *VMValue) FuncInvokeRaw(ctx *Context, params []*VMValue, useUpCtxLocal bool) *VMValue {
 	// TODO: 先复制computed代码修改，后续重构
 
 	vm := NewVM()
 	cd, _ := v.ReadFunctionData()
-	vm.Attrs = &ValueMap{}
+	if useUpCtxLocal {
+		vm.Attrs = ctx.Attrs
+	} else {
+		vm.Attrs = &ValueMap{}
+	}
 
 	// 设置参数
 	if len(cd.Params) != len(params) {
@@ -1487,7 +1495,9 @@ func (v *VMValue) FuncInvoke(ctx *Context, params []*VMValue) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
-	vm.Attrs = &ValueMap{} // 清空
+	if !useUpCtxLocal {
+		vm.Attrs = &ValueMap{} // 清空
+	}
 	return ret
 }
 

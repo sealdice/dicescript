@@ -34,7 +34,7 @@ func NewVM() *Context {
 }
 
 // RunExpr 注: 最后不一定叫这个名字，这个函数作用是，即使当前vm被占用，也能执行语句，是为了指令hack而服务的
-func (ctx *Context) RunExpr(value string) (*VMValue, error) {
+func (ctx *Context) RunExpr(value string, useUpCtxLocal bool) (*VMValue, error) {
 	val := NewFunctionValRaw(&FunctionData{
 		Expr:      value,
 		Name:      "",
@@ -43,7 +43,7 @@ func (ctx *Context) RunExpr(value string) (*VMValue, error) {
 		codeIndex: 0,
 	})
 
-	v := val.FuncInvoke(ctx, nil)
+	v := val.FuncInvokeRaw(ctx, nil, useUpCtxLocal)
 	return v, ctx.Error
 }
 
