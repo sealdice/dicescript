@@ -86,10 +86,9 @@ func TestValueDefineStr(t *testing.T) {
 	simpleExecute(t, "`"+`12\t3`+"`", ns("12\t3"))
 	simpleExecute(t, "`"+`12\\3`+"`", ns("12\\3"))
 
-	// TODO: FIX
-	// simpleExecute(t, `"12\"3"`, ns(`12"3`))
-	// simpleExecute(t, `"\""`, ns(`"`))
-	// simpleExecute(t, `"\r"`, ns("\r"))
+	simpleExecute(t, `"12\"3"`, ns(`12"3`))
+	simpleExecute(t, `"\""`, ns(`"`))
+	simpleExecute(t, `"\r"`, ns("\r"))
 }
 
 func TestEmptyInput(t *testing.T) {
@@ -1552,8 +1551,7 @@ func TestFStringBlock(t *testing.T) {
 
 func TestFStringIf(t *testing.T) {
 	vm := NewVM()
-	var err error
-	err = vm.Run("`{ if }`")
+	err := vm.Run("`{ if }`")
 	assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
 }
 
@@ -1580,8 +1578,7 @@ func TestFStringStackOverflowBug2(t *testing.T) {
 
 func TestIfError(t *testing.T) {
 	vm := NewVM()
-	var err error
-	err = vm.Run("if 1 ")
+	err := vm.Run("if 1 ")
 	assert.Contains(t, err.Error(), "不符合if语法")
 }
 
@@ -1605,8 +1602,7 @@ func TestFStringV1IfCompatible(t *testing.T) {
 
 func TestNeg(t *testing.T) {
 	vm := NewVM()
-	var err error
-	err = vm.Run("-1 + 5")
+	err := vm.Run("-1 + 5")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(4)))
 	}
@@ -1614,9 +1610,25 @@ func TestNeg(t *testing.T) {
 
 func TestNeg2(t *testing.T) {
 	vm := NewVM()
-	var err error
-	err = vm.Run("-1-5")
+	err := vm.Run("-1-5")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ni(-6)))
+	}
+}
+
+func TestFStringCRBug(t *testing.T) {
+	// 2024.6.15 白鱼
+	// 遇到的问题是自定义文本中的换行正常但\n不转义[解析中为\\n]
+	// 经测试发现如果混用 \n 和 \\n 混用，则后面的 \\n 不转义
+	vm := NewVM()
+	err := vm.Run("`AAAAA\n1234\\n5678`")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("AAAAA\n1234\n5678")))
+	}
+
+	vm = NewVM()
+	err = vm.Run("\x1eAAAAA\n1234\\n5678\x1e")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("AAAAA\n1234\n5678")))
 	}
 }

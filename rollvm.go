@@ -391,12 +391,8 @@ func (ctx *Context) evaluate() {
 			e.top++
 		case typePushString:
 			s := code.Value.(string)
-			unquote, err := strconv.Unquote(`"` + strings.ReplaceAll(s, `"`, `\"`) + `"`)
-			if err != nil {
-				unquote = s
-			}
 			stack[e.top].TypeId = VMTypeString
-			stack[e.top].Value = unquote
+			stack[e.top].Value = s
 			e.top++
 		case typePushArray:
 			num := code.Value.(IntType)

@@ -26,6 +26,14 @@ func toStr(x []byte) string {
 	return string(x)
 }
 
+func stringsJoin(items any) string {
+    var buf bytes.Buffer
+    for _, i := range items.([]any) {
+        buf.Write(i.([]byte))
+    }
+	return buf.String()
+}
+
 {{ end }}
 }
 
@@ -247,10 +255,10 @@ _diceType3 <- nos [dD]
 // d
 _diceType4 <- [dD] !xidStart
 
-// XdY 中的 dy 部分，跟上面 _diceTypeX 一一对应
+// XdY/dY/Xd 中的 dy + 后缀部分，跟上面 _diceTypeX 一一对应
 _diceExpr1 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes);  } nos _diceMod? _diceModType2?
-_diceExpr2 <- [dD] { c.data.AddOp(typeDiceInit); } nos (_dicePearMod / _diceMod)? _diceModType2?
-_diceExpr3 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes); } (_dicePearMod / _diceMod)? _diceModType2?
+_diceExpr2 <- [dD] { c.data.AddOp(typeDiceInit); } nos (_dicePearMod / _diceMod)? _diceModType2? // 注: 这一条是 dY 而不是 xdY
+_diceExpr3 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes); } _diceMod? _diceModType2?
 
 // 多重式子 d4d6d8
 _diceExprX <- &_diceType2 detailStart _diceExpr1 detailEnd { c.data.AddOp(typeDice) }
@@ -331,10 +339,28 @@ number <- [0-9]+ { c.data.PushIntNumber(toStr(c.text)); }
 float <- [0-9]* '.' [0-9]+ { c.data.PushFloatNumber(toStr(c.text)); }
 
 // 字符串
-strPart <- text:< (escape / (![{`\\].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
-strPart1 <- text:< (escape / (![{\x1e\\].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
-strPart2 <- text:< (escape / (![{"\\\n\r].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
-strPart3 <- text:< (escape / (![{'\\\n\r].))+ > { c.data.PushStr(text.(string)); c.data.CounterAdd(1) }
+strPart1 <- items:(strEscape / strPart1Normal)+ { c.data.PushStr(stringsJoin(items)); c.data.CounterAdd(1) }
+strPart1Normal <- (&[^'\\].)+ { return c.text }
+
+strPart2 <- items:(strEscape / strPart2Normal)+ { c.data.PushStr(stringsJoin(items)); c.data.CounterAdd(1) }
+strPart2Normal <- (&[^"\\].)+ { return c.text }
+
+strPart3 <- items:(strEscape / strPart3Normal)+ { c.data.PushStr(stringsJoin(items)); c.data.CounterAdd(1) }
+strPart3Normal <- (&[^`\\{].)+ { return c.text }
+
+strPart4 <- items:(strEscape / strPart4Normal)+ { c.data.PushStr(stringsJoin(items)); c.data.CounterAdd(1) }
+strPart4Normal <- (&[^\x1e\\{].)+ { return c.text }
+
+strEscape <- "\\n" { return []byte("\n") }
+           / "\\r" { return []byte("\r") }
+           / "\\f" { return []byte("\f") }
+           / "\\t" { return []byte("\t") }
+           / "\\\\" { return []byte("\\") }
+           / "\\'" { return []byte("'") }
+           / "\\\"" { return []byte("\"") }
+           / "\\{" { return []byte("{") }
+           / "\\}" { return []byte("}") }
+           / '\\' { return []byte("\\") }
 
 fstringExpr1 <- exprRoot {c.data.CounterAdd(1)} / &{ p.addErr(errors.New("{} 内必须是一个表达式")); return false; }
 fstringExpr <- '{' sp fstringExpr1 sp ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
@@ -345,15 +371,11 @@ fstring <- (
       / ('\x1e' '\x1e' { c.data.PushStr("") })
       / ('"' '"' { c.data.PushStr("") })
       / ('`' '`' { c.data.PushStr("") })
-      / ('`' { c.data.CounterPush() } ( fstringStmt / fstringExpr / strPart )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
-      / ('\x1e' { c.data.CounterPush() } ( fstringStmt / fstringExpr / strPart1 )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
+      / ('\'' { c.data.CounterPush() } strPart1* '\'' { c.data.CounterPop() } )
       / ('"' { c.data.CounterPush() } strPart2* '"' { c.data.CounterPop() })
-      / ('\'' { c.data.CounterPush() } strPart3* '\'' { c.data.CounterPop() } )
+      / ('`' { c.data.CounterPush() } ( strPart3 / fstringStmt / fstringExpr )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
+      / ('\x1e' { c.data.CounterPush() } ( strPart4 / fstringStmt / fstringExpr )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
     ) sp
-
-escape <- '\\' ([btnfr"'\\])
-//  / OctalEscape / UnicodeEscape
-
 
 keywords <- "while" / "if" / "else" / "continue" / "break" / "return" / "func"
 keywords_test "keywords" <- !(keywords !xidContinue &{ p.addErr(errors.New("使用关键字作为变量名")); return true})
