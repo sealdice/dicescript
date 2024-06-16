@@ -128,7 +128,7 @@ func (m *ValueMap) Load(key string) (value *VMValue, ok bool) {
 	return e.load()
 }
 
-func (m *ValueMap) Size() int {
+func (m *ValueMap) Length() int {
 	read, _ := m.read.Load().(readOnlyValueMap)
 	if read.amended {
 		m.mu.Lock()

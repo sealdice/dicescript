@@ -442,13 +442,23 @@ func (v *VMValue) AsBool() bool {
 	switch v.TypeId {
 	case VMTypeInt:
 		return v.Value != IntType(0)
+	case VMTypeFloat:
+		return v.Value != 0.0
 	case VMTypeString:
 		return v.Value != ""
 	case VMTypeNull:
 		return false
-	// case VMTypeComputedValue:
-	//	vd := v.Value.(*VMComputedValueData)
-	//	return vd.BaseValue.AsBool()
+	case VMTypeComputedValue:
+		vd := v.Value.(*ComputedData)
+		return vd.Expr != ""
+	case VMTypeArray:
+		ad := v.MustReadArray()
+		return len(ad.List) != 0
+	case VMTypeDict:
+		dd := v.MustReadDictData()
+		return dd.Dict.Length() != 0
+	case VMTypeFunction, VMTypeNativeFunction, VMTypeNativeObject:
+		return true
 	default:
 		return false
 	}

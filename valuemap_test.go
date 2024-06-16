@@ -18,7 +18,7 @@ func TestValueMapSize(t *testing.T) {
 	v.Store("a", ni(1))
 	v.Store("b", ni(2))
 	v.Store("c", ni(3))
-	assert.Equal(t, v.Size(), 3)
+	assert.Equal(t, v.Length(), 3)
 }
 
 func TestValueMapSize2(t *testing.T) {
@@ -34,7 +34,7 @@ func TestValueMapSize2(t *testing.T) {
 	v.Store("d", ni(4))
 	// fmt.Println(1, v.read)
 	// fmt.Println(2, v.dirty)
-	assert.Equal(t, v.Size(), 4)
+	assert.Equal(t, v.Length(), 4)
 }
 
 func TestValueMapClear(t *testing.T) {
@@ -48,8 +48,8 @@ func TestValueMapClear(t *testing.T) {
 		return true
 	})
 	assert.Equal(t, 0, len(v.dirty)) // 此时全在 read 表中
-	assert.Equal(t, v.Size(), 4)
+	assert.Equal(t, v.Length(), 4)
 
 	v.Clear()
-	assert.Equal(t, v.Size(), 0)
+	assert.Equal(t, v.Length(), 0)
 }

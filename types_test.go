@@ -387,3 +387,31 @@ func TestNativeObject(t *testing.T) {
 	ret := funcDir(vm, nil, []*VMValue{v})
 	assert.Equal(t, ret.ToString(), "['x']")
 }
+
+func TestAsBool(t *testing.T) {
+	assert.Equal(t, ni(1).AsBool(), true)
+	assert.Equal(t, ni(0).AsBool(), false)
+
+	assert.Equal(t, nf(1.1).AsBool(), true)
+	assert.Equal(t, nf(0.0).AsBool(), false)
+
+	assert.Equal(t, ns("1").AsBool(), true)
+	assert.Equal(t, ns("").AsBool(), false)
+
+	assert.Equal(t, NewNullVal().AsBool(), false)
+
+	assert.Equal(t, NewComputedVal("d10").AsBool(), true)
+	assert.Equal(t, NewComputedVal("").AsBool(), false)
+
+	assert.Equal(t, na(ns("1")).AsBool(), true)
+	assert.Equal(t, na().AsBool(), false)
+
+	assert.Equal(t, nd(ns("1"), ns("1")).V().AsBool(), true)
+	assert.Equal(t, nd().V().AsBool(), false)
+
+	vm := NewVM()
+	_ = vm.Run("func a() {}")
+	assert.Equal(t, vm.Ret.AsBool(), true)
+
+	assert.Equal(t, builtinValues["str"].AsBool(), true)
+}

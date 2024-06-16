@@ -57,6 +57,14 @@ func funcAbs(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return nil
 }
 
+func funcBool(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	v := params[0]
+	if v.AsBool() {
+		return NewIntVal(1)
+	}
+	return NewIntVal(0)
+}
+
 func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
@@ -123,10 +131,10 @@ func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 }
 
 //
-//func funcHelp(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+// func funcHelp(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 //	// 函数名，参数，说明
 //	return NewStrVal(params[0].ToString())
-//}
+// }
 
 var nnf = NewNativeFunctionVal
 
@@ -140,9 +148,10 @@ var builtinValues = map[string]*VMValue{
 	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
 	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
 	"abs":   nnf(&ndf{"abs", []string{"value"}, nil, nil, funcAbs}),
+	"bool":  nnf(&ndf{"bool", []string{"value"}, nil, nil, funcBool}),
 	// TODO: roll()
 
 	// 要不要进行权限隔绝？
 	"dir": nnf(&ndf{"dir", []string{"value"}, nil, nil, funcDir}),
-	//"help": nnf(&ndf{"help", []string{"value"}, nil, nil, funcHelp}),
+	// "help": nnf(&ndf{"help", []string{"value"}, nil, nil, funcHelp}),
 }
