@@ -118,6 +118,7 @@ func (ctx *Context) IsV1IfCompatibleExists() bool {
 
 func (ctx *Context) RunAfterParsed() error {
 	ctx.V1IfCompatibleCount = 0
+	ctx.IsComputedLoaded = false
 	// 以下为eval
 	ctx.evaluate()
 	if ctx.Error != nil {

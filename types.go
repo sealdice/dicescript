@@ -147,11 +147,12 @@ type Context struct {
 	Config RollConfig // 标记
 	Error  error      // 报错信息
 
-	Ret         *VMValue // 返回值
-	RestInput   string   // 剩余字符串
-	Matched     string   // 匹配的字符串
-	DetailSpans []BufferSpan
-	detailCache string // 计算过程
+	Ret              *VMValue // 返回值
+	RestInput        string   // 剩余字符串
+	Matched          string   // 匹配的字符串
+	DetailSpans      []BufferSpan
+	detailCache      string // 计算过程
+	IsComputedLoaded bool
 
 	Seed    []byte          // 随机种子，16个字节，即双uint64
 	randSrc *rand.PCGSource // 根据种子生成的source
@@ -268,6 +269,7 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 	}
 	if !isRaw && ret.TypeId == VMTypeComputedValue {
 		ret = ret.ComputedExecute(ctx)
+		ctx.IsComputedLoaded = true
 		if ctx.Error != nil {
 			return nil
 		}
@@ -1426,6 +1428,9 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
+	if vm.IsComputedLoaded {
+		ctx.IsComputedLoaded = true
+	}
 	return ret
 }
 
@@ -1497,6 +1502,9 @@ func (v *VMValue) FuncInvokeRaw(ctx *Context, params []*VMValue, useUpCtxLocal b
 	ctx.NumOpCount = vm.NumOpCount
 	if !useUpCtxLocal {
 		vm.Attrs = &ValueMap{} // 清空
+	}
+	if vm.IsComputedLoaded {
+		ctx.IsComputedLoaded = true
 	}
 	return ret
 }

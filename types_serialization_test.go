@@ -34,6 +34,13 @@ func TestDumps(t *testing.T) {
 		assert.Equal(t, `{"t":5,"v":{"expr":"1 + this.x + d10"}}`, string(v))
 	}
 
+	_attrs := &ValueMap{}
+	_attrs.Store("x", ni(1))
+	v, err = NewComputedValRaw(&ComputedData{Expr: "this.x + 1", Attrs: _attrs}).ToJSON()
+	if assert.NoError(t, err) {
+		assert.Equal(t, `{"t":5,"v":{"expr":"this.x + 1","attrs":{"x":{"t":0,"v":1}}}}`, string(v))
+	}
+
 	vm := NewVM()
 	err = vm.Run(`func a(x) { return 5 }; a`)
 	if assert.NoError(t, err) {
@@ -105,6 +112,14 @@ func TestLoads(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, VMTypeComputedValue, v.TypeId)
 		assert.Equal(t, "1 + this.x + d10", v.Value.(*ComputedData).Expr)
+	}
+
+	v, err = VMValueFromJSON([]byte(`{"t":5,"v":{"expr":"this.x + 1","attrs":{"x":{"t":0,"v":1}}}}`))
+	if assert.NoError(t, err) {
+		assert.Equal(t, VMTypeComputedValue, v.TypeId)
+		assert.Equal(t, "this.x + 1", v.Value.(*ComputedData).Expr)
+		assert.True(t, v.Value.(*ComputedData).Attrs != nil)
+		assert.True(t, valueEqual(ni(1), v.Value.(*ComputedData).Attrs.MustLoad("x")))
 	}
 
 	v, err = VMValueFromJSON([]byte(`{"t":8,"v":{"expr":"return 5 ","name":"a","params":["x"]}}`))

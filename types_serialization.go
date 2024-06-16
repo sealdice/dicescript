@@ -25,17 +25,23 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 
 	case VMTypeComputedValue:
 		cd, _ := v.ReadComputed()
-		return json.Marshal(struct {
+		x := struct {
 			TypeId VMValueType `json:"t"`
 			Value  struct {
-				Expr string `json:"expr"`
+				Expr  string          `json:"expr"`
+				Attrs json.RawMessage `json:"attrs,omitempty"`
 			} `json:"v"`
-		}{
-			v.TypeId,
-			struct {
-				Expr string `json:"expr"`
-			}{cd.Expr},
-		})
+		}{}
+		x.TypeId = v.TypeId
+		x.Value.Expr = cd.Expr
+		if cd.Attrs != nil {
+			attrJson, err := cd.Attrs.ToJSON()
+			if err != nil {
+				return nil, err
+			}
+			x.Value.Attrs = attrJson
+		}
+		return json.Marshal(x)
 
 	case VMTypeArray:
 		if save == nil {
@@ -71,33 +77,14 @@ func (v *VMValue) ToJSONRaw(save map[*VMValue]bool) ([]byte, error) {
 		save[v] = true
 		cd := v.MustReadDictData()
 
-		lst := [][]byte{}
-		var err error
-		cd.Dict.Range(func(key string, value *VMValue) bool {
-			var jsonKey []byte
-			var jsonData []byte
-			jsonData, err = value.ToJSONRaw(save)
-			if err != nil {
-				return false
-			}
-			jsonKey, err = json.Marshal(key)
-			if err != nil {
-				return false
-			}
-
-			b := append(jsonKey, []byte(":")...)
-			b = append(b, jsonData...)
-
-			lst = append(lst, b)
-			return true
-		})
+		dictJson, err := cd.Dict.ToJSON()
 		if err != nil {
 			return nil, err
 		}
 
-		lst2 := [][]byte{[]byte(`{"t":7,"v":{"dict":{`)}
-		lst2 = append(lst2, bytes.Join(lst, []byte(",")))
-		lst2 = append(lst2, []byte("}}}"))
+		lst2 := [][]byte{[]byte(`{"t":7,"v":{"dict":`)}
+		lst2 = append(lst2, dictJson)
+		lst2 = append(lst2, []byte("}}"))
 
 		return bytes.Join(lst2, []byte("")), nil
 
@@ -198,12 +185,22 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 	case VMTypeComputedValue:
 		var v1 struct {
 			Value struct {
-				Expr string `json:"expr"`
+				Expr  string          `json:"expr"`
+				Attrs json.RawMessage `json:"attrs,omitempty"`
 			} `json:"v"`
 		}
 		err := json.Unmarshal(input, &v1)
 		if err == nil {
-			v.Value = NewComputedVal(v1.Value.Expr).Value
+			cd := &ComputedData{
+				Expr: v1.Value.Expr,
+			}
+			if v1.Value.Attrs != nil {
+				cd.Attrs = &ValueMap{}
+				if err := json.Unmarshal(v1.Value.Attrs, cd.Attrs); err != nil {
+					return err
+				}
+			}
+			v.Value = cd
 		}
 		return err
 	case VMTypeArray:
@@ -220,19 +217,15 @@ func (v *VMValue) UnmarshalJSON(input []byte) error {
 	case VMTypeDict:
 		var v1 struct {
 			Value struct {
-				Dict map[string]*VMValue `json:"dict"`
+				Dict ValueMap `json:"dict"`
 			} `json:"v"`
 		}
 
-		err := json.Unmarshal(input, &v1)
-		if err == nil {
-			m := &ValueMap{}
-			for k, v := range v1.Value.Dict {
-				m.Store(k, v)
-			}
-			v.Value = NewDictVal(m).Value
+		if err := json.Unmarshal(input, &v1); err != nil {
+			return err
 		}
-		return err
+		v.Value = NewDictVal(&v1.Value.Dict).Value
+		return nil
 
 	case VMTypeFunction:
 		var v1 struct {
