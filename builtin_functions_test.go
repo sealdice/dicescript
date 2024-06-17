@@ -23,12 +23,14 @@ func TestNativeFunctionFloat(t *testing.T) {
 	assert.True(t, valueEqual(funcCeil(vm, nil, []*VMValue{nf(1.0)}), ni(1)))
 
 	assert.True(t, valueEqual(funcRound(vm, nil, []*VMValue{nf(1.6)}), ni(2)))
-	funcRound(vm, nil, []*VMValue{ni(1)})
+	assert.True(t, valueEqual(funcRound(vm, nil, []*VMValue{ni(2)}), ni(2)))
+	funcRound(vm, nil, []*VMValue{ns("1.6")})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
 
 	assert.True(t, valueEqual(funcFloor(vm, nil, []*VMValue{nf(1.6)}), ni(1)))
-	funcFloor(vm, nil, []*VMValue{ni(1)})
+	assert.True(t, valueEqual(funcFloor(vm, nil, []*VMValue{ni(1)}), ni(1)))
+	funcFloor(vm, nil, []*VMValue{ns("1.6")})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
 }

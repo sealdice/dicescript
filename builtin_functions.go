@@ -7,31 +7,40 @@ import (
 )
 
 func funcCeil(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	if params[0].TypeId == VMTypeInt {
+		return params[0]
+	}
 	v, ok := params[0].ReadFloat()
 	if ok {
 		return NewIntVal(IntType(math.Ceil(v)))
 	} else {
-		ctx.Error = errors.New("类型错误: 只能是float")
+		ctx.Error = errors.New("(ceil)类型错误: 只能是数字类型")
 	}
 	return nil
 }
 
 func funcRound(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	if params[0].TypeId == VMTypeInt {
+		return params[0]
+	}
 	v, ok := params[0].ReadFloat()
 	if ok {
 		return NewIntVal(IntType(math.Round(v)))
 	} else {
-		ctx.Error = errors.New("类型错误: 只能是float")
+		ctx.Error = errors.New("(round)类型错误: 只能是数字类型")
 	}
 	return nil
 }
 
 func funcFloor(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	if params[0].TypeId == VMTypeInt {
+		return params[0]
+	}
 	v, ok := params[0].ReadFloat()
 	if ok {
 		return NewIntVal(IntType(math.Floor(v)))
 	} else {
-		ctx.Error = errors.New("类型错误: 只能是float")
+		ctx.Error = errors.New("(floor)类型错误: 只能是数字类型")
 	}
 	return nil
 }
@@ -53,7 +62,7 @@ func funcAbs(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		return v
 	}
 
-	ctx.Error = errors.New("类型错误: 参数必须为int或float")
+	ctx.Error = errors.New("(abs)类型错误: 参数必须为int或float")
 	return nil
 }
 
@@ -78,10 +87,10 @@ func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		if err == nil {
 			return NewIntVal(IntType(val))
 		} else {
-			ctx.Error = errors.New("值错误: 无法进行 int() 转换: " + s)
+			ctx.Error = errors.New("(int)值错误: 无法进行 int() 转换: " + s)
 		}
 	default:
-		ctx.Error = errors.New("类型错误: 只能是数字类型")
+		ctx.Error = errors.New("(int)类型错误: 只能是数字类型")
 	}
 	return nil
 }
@@ -99,10 +108,10 @@ func funcFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		if err == nil {
 			return NewFloatVal(val)
 		} else {
-			ctx.Error = errors.New("值错误: 无法进行 float() 转换: " + s)
+			ctx.Error = errors.New("(float)值错误: 无法进行 float() 转换: " + s)
 		}
 	default:
-		ctx.Error = errors.New("类型错误: 只能是数字类型")
+		ctx.Error = errors.New("(float)类型错误: 只能是数字类型")
 	}
 	return nil
 }

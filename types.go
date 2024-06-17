@@ -84,6 +84,7 @@ type RollConfig struct {
 	// 读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil)
 	HookFuncValueLoadOverwrite func(name string, curVal *VMValue, detail *BufferSpan) *VMValue
 
+	// st回调，注意val和extra都经过clone，可以放心储存
 	CallbackSt           func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
 	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan, dataBuffer []byte) string                      // 自定义计算过程
 

@@ -630,7 +630,11 @@ func (ctx *Context) evaluate() {
 				details[len(details)-1].Text = ""
 			}
 			if ctx.Config.HookFuncValueLoadOverwrite != nil {
+				oldRet := details[len(details)-1].Ret
 				val = ctx.Config.HookFuncValueLoadOverwrite(name, val, &details[len(details)-1])
+				if oldRet == details[len(details)-1].Ret {
+					details[len(details)-1].Ret = val
+				}
 			}
 			stackPush(val)
 
