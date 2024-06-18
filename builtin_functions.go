@@ -120,6 +120,30 @@ func funcStr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return NewStrVal(params[0].ToString())
 }
 
+func funcRepr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	return NewStrVal(params[0].ToRepr())
+}
+
+func funcLoad(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	v := params[0]
+	if v.TypeId != VMTypeString {
+		ctx.Error = errors.New("(load)类型错误: 参数类型必须为str")
+		return nil
+	}
+
+	name := v.Value.(string)
+	val := ctx.LoadName(name, false, true)
+	if ctx.Error != nil {
+		return nil
+	}
+
+	if ctx.Config.HookFuncValueLoadOverwrite != nil {
+		val = ctx.Config.HookFuncValueLoadOverwrite(name, val, nil)
+	}
+
+	return val.Clone()
+}
+
 func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	typeId := params[0].TypeId
 	var arr []*VMValue
@@ -156,11 +180,22 @@ var builtinValues = map[string]*VMValue{
 	"int":   nnf(&ndf{"int", []string{"value"}, nil, nil, funcInt}),
 	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
 	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
+	"repr":  nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
 	"abs":   nnf(&ndf{"abs", []string{"value"}, nil, nil, funcAbs}),
 	"bool":  nnf(&ndf{"bool", []string{"value"}, nil, nil, funcBool}),
+	"load":  nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
 	// TODO: roll()
 
 	// 要不要进行权限隔绝？
 	"dir": nnf(&ndf{"dir", []string{"value"}, nil, nil, funcDir}),
 	// "help": nnf(&ndf{"help", []string{"value"}, nil, nil, funcHelp}),
 }
+
+func _init() bool {
+	// 因循环引用问题无法在上面声明
+	nfd, _ := builtinValues["load"].ReadNativeFunctionData()
+	nfd.NativeFunc = funcLoad
+	return false
+}
+
+var _ = _init()

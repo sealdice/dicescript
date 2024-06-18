@@ -67,3 +67,17 @@ func TestNativeFunctionConvert(t *testing.T) {
 	assert.True(t, valueEqual(funcStr(vm, nil, []*VMValue{na(ni(1), ni(2))}), ns("[1, 2]")))
 	assert.True(t, valueEqual(funcStr(vm, nil, []*VMValue{na(na(), ni(2))}), ns("[[], 2]")))
 }
+
+func TestNativeFunctionLoad(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("val = '123'; load('val')")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("123")))
+	}
+
+	vm = NewVM()
+	err = vm.Run("load('load')")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, builtinValues["load"]))
+	}
+}
