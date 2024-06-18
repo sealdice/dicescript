@@ -1240,11 +1240,14 @@ func (v *VMValue) Length(ctx *Context) IntType {
 	case VMTypeArray:
 		arr, _ := v.ReadArray()
 		length = IntType(len(arr.List))
+	case VMTypeDict:
+		d := v.MustReadDictData()
+		length = IntType(d.Dict.Length())
 	case VMTypeString:
 		str, _ := v.ReadString()
 		length = IntType(len([]rune(str)))
 	default:
-		ctx.Error = errors.New("这个类型无法取得分片")
+		ctx.Error = errors.New("这个类型无法取得长度")
 		return 0
 	}
 

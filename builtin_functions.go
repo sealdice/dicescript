@@ -177,13 +177,15 @@ var builtinValues = map[string]*VMValue{
 	"ceil":  nnf(&ndf{"ceil", []string{"value"}, nil, nil, funcCeil}),
 	"floor": nnf(&ndf{"floor", []string{"value"}, nil, nil, funcFloor}),
 	"round": nnf(&ndf{"round", []string{"value"}, nil, nil, funcRound}),
+	"abs":   nnf(&ndf{"abs", []string{"value"}, nil, nil, funcAbs}),
+
 	"int":   nnf(&ndf{"int", []string{"value"}, nil, nil, funcInt}),
 	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
 	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
-	"repr":  nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
-	"abs":   nnf(&ndf{"abs", []string{"value"}, nil, nil, funcAbs}),
 	"bool":  nnf(&ndf{"bool", []string{"value"}, nil, nil, funcBool}),
-	"load":  nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
+
+	"repr": nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
+	"load": nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
 	// TODO: roll()
 
 	// 要不要进行权限隔绝？

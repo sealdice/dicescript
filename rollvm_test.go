@@ -146,6 +146,42 @@ func TestDice(t *testing.T) {
 	simpleExecute(t, "4d1k5", ni(4))
 }
 
+func TestVMMultiply(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("2*3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(6)))
+	}
+
+	err = vm.Run("2*  3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(6)))
+	}
+
+	err = vm.Run("2  *3")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(6)))
+	}
+}
+
+func TestVMDivideModulus(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("3/2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	err = vm.Run("3/  2.0")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(1.5)))
+	}
+
+	err = vm.Run("3.0  /2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, nf(1.5)))
+	}
+}
+
 func TestDiceNoSpaceForModifier(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("3d1 k2")
@@ -1600,7 +1636,7 @@ func TestFStringV1IfCompatible(t *testing.T) {
 	}
 }
 
-func TestNeg(t *testing.T) {
+func TestNegExpr(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("-1 + 5")
 	if assert.NoError(t, err) {
@@ -1608,7 +1644,7 @@ func TestNeg(t *testing.T) {
 	}
 }
 
-func TestNeg2(t *testing.T) {
+func TestNegExpr2(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("-1-5")
 	if assert.NoError(t, err) {
@@ -1630,5 +1666,28 @@ func TestFStringCRBug(t *testing.T) {
 	err = vm.Run("\x1eAAAAA\n1234\\n5678\x1e")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("AAAAA\n1234\n5678")))
+	}
+}
+
+func TestDicePushDefaultExpr(t *testing.T) {
+	vm := NewVM()
+	vm.Config.DefaultDiceSideExpr = "12d1 - 11"
+	err := vm.Run("d") // 1d1
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	// 测试缓存
+	vm.Config.DefaultDiceSideExpr = "12d1 - 11"
+	err = vm.Run("d") // 1d1
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+
+	// 无缓存，默认为d100，同时测试缓存失效情况
+	vm.Config.DefaultDiceSideExpr = ""
+	err = vm.Run("2d") // 2d100
+	if assert.NoError(t, err) {
+		assert.True(t, vm.Ret.MustReadInt() >= 2)
 	}
 }

@@ -299,30 +299,54 @@ text = 'Hello, ' + 'world' + '!'
 ```
 
 
-特别的，如果你需要在文本中插入一段程序，但又不希望影响输出\[尚未实装]：
+以及两种模板写法，首先是\`\`：
 
 ```
-`你好，{% '这段文本是不会显示出来的' %}`
+`玩家的生命值为，{hp}`
 ```
 
-还有一种隐藏的用法，用的符号是 \x1e，他跟`的作用完全相同，也支持 f-string。
+{hp} 表示会带入hp变量并格式化输出。
 
-这个是专用于跑团机器人环境的，举个例子，你希望用户能在一段文本中插入变量，可以这么做：
+```
+`玩家目前状态：{%
+  if float(hp) / hpmax < 0.1 {
+    '生命垂危'
+  } else {
+    '还顶得住'
+  }
+ %}`
+```
+
+注意，{}中只允许写**表达式**，表达式可以看成是不带if while的句子，较为抽象的定义说法是不带语句块的句子。
+
+而 {% %} 中允许写语句块。目前的语句语法有四种：if while return 函数定义
+
+{% %} 段落会返回里面最后一个表达式的值，如果没有值会自动补空字符串。
+
+
+第二种隐藏的模板语法，用的符号是 \x1e，他跟`的作用完全相同，也支持 f-string。
+
+这个是专用于开发者进行接入的，解决的唯一问题就是不占用`这个符号，让用户的输入有更大自由度。
+
+举个例子，你希望用户能在一段文本中插入变量，比如他会这样：
+
+```
+User: /text 我的生命值是{hp}
+```
+
+
+你可以这么做：
 
 ```go
 vm.Run("\x1e" + input + "\x1e")
 ```
 
-这样拿到的结果就是一个字符串了。你可以将上面代码中的"\x1e"换成\`，效果是一样的，但是用户就不能在文本里输入`了。
+如果将上面代码中的"\x1e"换成\`，效果是一样的，但是用户就不能在文本里输入`了。
 
 
-#### undefined 和 null
+#### null
 
-注: null 尚未实装
-
-undefined 代表不存在，而null代表空值。
-
-之所以分开的原因是：例如你有一段语句，会从指定的api接口取一个值，赋值给变量x，但是有可能找不到数据。你不知道这段语句什么时候调用，那么如果你看到x是undefined，你会知道程序没有调用过。如果你看到x是null，那可以知道已经调用过，但是取到的结果是空的。
+null代表空值。
 
 
 #### 计算类型
@@ -343,6 +367,8 @@ undefined 代表不存在，而null代表空值。
 &a = this.x + d10 //
 &a.x = 5
 ```
+
+这里的this是指该变量内部的一个空间，如果你有其他编程语言经验，可以理解为函数的内部变量。
 
 >this的解释请参考：https://www.runoob.com/js/js-this.html ，在DiceScript中this的用法基本与JS相同。
 
@@ -511,14 +537,14 @@ while t1 < 10 {
 条件判断相关的逻辑算符有：
 
 ```
-> //判断左侧是否大于右侧
-< //判断左侧是否小于右侧
-== //判断左右两侧是否相等，请注意 = 会被视为赋值，不会视为判断
-!= //判断左右两侧是否不相等
->= //判断左侧是否大于等于右侧
-<= //判断左侧是否小于等于右侧
-&& //逻辑与，即都为真时才为真，有一个不为真时为假
-|| //逻辑或，即有一个为真时即为真，都不为真时为假
+> // 判断左侧是否大于右侧
+< // 判断左侧是否小于右侧
+== // 判断左右两侧是否相等，请注意 = 会被视为赋值，不会视为判断
+!= // 判断左右两侧是否不相等
+>= // 判断左侧是否大于等于右侧
+<= // 判断左侧是否小于等于右侧
+&& // 逻辑与，即都为真时才为真，有一个不为真时为假
+|| // 逻辑或，即有一个为真时即为真，都不为真时为假
 ```
 
 逻辑与`&&`：以 `expr1 && expr2` 为例， 如果 expr1 能被转换为 false，那么返回 expr1；否则，返回expr2。因此，&&用于布尔值时，当操作数都为 true 时返回 true；否则返回 false。
@@ -580,22 +606,30 @@ val1 = expr1 || expr2
 
 #### 空值合并算符
 
-对于可能为 `undefined` 或 `null` 的值，通过该算符 `??` 提供默认值。
+?? 如果左侧为`null`，则使用右侧值。
 
-`expr1 ?? expr2`：当 `expr1` 不为 `undefined` 或 `null` 时取 `expr1`，为空时取 `expr2`。
+`expr1 ?? expr2`：当 `expr1` 不为 `null` 时取 `expr1`，为空时取 `expr2`。
 
+举例：
+0 ?? 1 为 0
+null ?? 1 为 1
 
 ### 内置函数
 
 ```
-//将输入变量：
-floor() //对float类型向下取整
-ceil() //对float类型向上取整
-round() //对float类型四舍五入
-abs() //取绝对值
-int() //转化为int类型，向下取整
-float() //转化为float类型
-str() //转化为str类型
+floor(num) // 对int/float类型向下取整
+ceil(num) // 对int/float类型向上取整
+round(num) // 对int/float类型四舍五入
+abs(num) // 取绝对值
+
+int(num) // 转化为int类型，向下取整
+float(num) // 转化为float类型
+str(obj) // 转化为str类型
+bool(obj) // 将对象二值化，结果为0或1
+
+repr(obj) // 将对象转化为供解释器读取的形式
+load(name) // 根据给出的名字，获取对象。 load('a') == a
+dir(obj) // 查看这个对象的方法函数，可用于字典、数组等
 ```
 
 
@@ -613,7 +647,7 @@ a2
 ```
 // #EnableDiceWoD false
 a2
-> undefined[a2=undefined] // 此时当作变量处理，因此获得undefined
+> null[a2=null] // 此时当作变量处理，因此获得null
 ```
 
 可用的四个宏为：
@@ -673,9 +707,9 @@ function roll(text) {
 依次执行:
 ```
 go mod install
-go install github.com/pointlander/peg@v1.0.1
+go install github.com/fy0/pigeon@latest
 go install github.com/gopherjs/gopherjs@v1.18.0-beta1
-peg -switch -inline roll.peg
+pigeon -nolint -optimize-parser -optimize-ref-expr-by-index -o .\roll.peg.go .\roll.peg
 ```
 
 如果你使用golang:
@@ -685,5 +719,5 @@ go build
 
 如果你使用JS:
 ```
-gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.js
+gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.cjs
 ```

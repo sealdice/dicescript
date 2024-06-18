@@ -213,6 +213,13 @@ func TestCompare(t *testing.T) {
 	}
 }
 
+func TestPositiveAndNegative(t *testing.T) {
+	assert.True(t, valueEqual((*VMValue).OpPositive(ni(1)), ni(1)))
+	assert.True(t, valueEqual((*VMValue).OpPositive(nf(1.2)), nf(1.2)))
+	assert.True(t, valueEqual((*VMValue).OpNegation(ni(1)), ni(-1)))
+	assert.True(t, valueEqual((*VMValue).OpNegation(nf(1.2)), nf(-1.2)))
+}
+
 func TestAdditive(t *testing.T) {
 	ctx := NewVM()
 	// + add
@@ -345,12 +352,14 @@ func TestAttrGet(t *testing.T) {
 	}
 }
 
-func TestDict(t *testing.T) {
+func TestDictProto(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run("&a = d + 1; &a.d = 2; &a")
+	err := vm.Run("_d1 = {'a':1, 'b':2}")
+	assert.NoError(t, err)
+	err = vm.Run("_d2 = {'__proto__': _d1}")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "d"), ni(2)))
-		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), NewNullVal()))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "a"), ni(1)))
+		assert.True(t, valueEqual(vm.Ret.AttrGet(vm, "b"), ni(2)))
 	}
 }
 

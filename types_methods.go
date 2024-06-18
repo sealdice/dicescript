@@ -52,7 +52,6 @@ func funcArrayLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 
 func funcArrayShuttle(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	arr, _ := this.ReadArray()
-
 	lst := arr.List
 	for i := len(lst) - 1; i > 0; i-- { // Fisher–Yates shuffle
 		j := rand.Intn(i + 1)
@@ -76,7 +75,7 @@ func funcArrayRandSize(ctx *Context, this *VMValue, params []*VMValue) *VMValue 
 		arr.List = arr.List[:val]
 		return newArr
 	} else {
-		ctx.Error = errors.New("类型不符")
+		ctx.Error = errors.New("(arr.randSize)类型不符")
 		return nil
 	}
 }
@@ -139,12 +138,7 @@ func funcDictItems(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 
 func funcDictLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	d := this.MustReadDictData()
-	var size IntType
-	d.Dict.Range(func(key string, value *VMValue) bool {
-		size++
-		return true
-	})
-	return NewIntVal(size)
+	return NewIntVal(IntType(d.Dict.Length()))
 }
 
 var builtinProto = map[VMValueType]*VMDictValue{
@@ -155,7 +149,7 @@ var builtinProto = map[VMValueType]*VMDictValue{
 		NewStrVal("len"), nnf(&ndf{"Array.len", []string{}, nil, nil, funcArrayLen}),
 		NewStrVal("shuffle"), nnf(&ndf{"Array.shuffle", []string{}, nil, nil, funcArrayShuttle}),
 		NewStrVal("rand"), nnf(&ndf{"Array.rand", []string{}, nil, nil, funcArrayRand}),
-		NewStrVal("randSize"), nnf(&ndf{"Array.rand", []string{"num"}, nil, nil, funcArrayRandSize}),
+		NewStrVal("randSize"), nnf(&ndf{"Array.randSize", []string{"num"}, nil, nil, funcArrayRandSize}),
 		NewStrVal("pop"), nnf(&ndf{"Array.pop", []string{}, nil, nil, funcArrayPop}),
 		NewStrVal("shift"), nnf(&ndf{"Array.shift", []string{}, nil, nil, funcArrayShift}),
 		NewStrVal("push"), nnf(&ndf{"Array.push", []string{"value"}, nil, nil, funcArrayPush}),

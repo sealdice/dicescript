@@ -36,16 +36,6 @@ type BufferSpan struct {
 	Tag string
 }
 
-func (pd *ParserData) init() {
-	pd.counterStack = []IntType{}
-	pd.varnameStack = []string{}
-	pd.jmpStack = []IntType{} // 不复用counterStack的原因是在 ?: 算符中两个都有用到
-	pd.codeStack = []struct {
-		code  []ByteCode
-		index int
-	}{} // 用于处理函数
-}
-
 func (e *ParserData) LoopBegin() {
 	e.loopLayer += 1
 	e.loopInfo = append(e.loopInfo, struct {
