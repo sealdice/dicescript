@@ -272,7 +272,6 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 	}
 	if !isRaw && ret.TypeId == VMTypeComputedValue {
 		ret = ret.ComputedExecute(ctx)
-		ctx.IsComputedLoaded = true
 		if ctx.Error != nil {
 			return nil
 		}
@@ -1444,9 +1443,7 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 	}
 
 	ctx.NumOpCount = vm.NumOpCount
-	if vm.IsComputedLoaded {
-		ctx.IsComputedLoaded = true
-	}
+	ctx.IsComputedLoaded = true
 	return ret
 }
 
@@ -1519,9 +1516,7 @@ func (v *VMValue) FuncInvokeRaw(ctx *Context, params []*VMValue, useUpCtxLocal b
 	if !useUpCtxLocal {
 		vm.Attrs = &ValueMap{} // 清空
 	}
-	if vm.IsComputedLoaded {
-		ctx.IsComputedLoaded = true
-	}
+	ctx.IsComputedLoaded = true
 	return ret
 }
 

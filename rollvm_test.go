@@ -1412,6 +1412,45 @@ func TestIsDiceCalculateExists(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.False(t, vm.IsCalculateExists())
 	}
+
+	err = vm.Parse("1+2")
+	if assert.NoError(t, err) {
+		assert.True(t, vm.IsCalculateExists())
+	}
+
+	err = vm.Parse("f()")
+	if assert.NoError(t, err) {
+		assert.True(t, vm.IsCalculateExists())
+	}
+}
+
+func TestIsDiceCalculateExists2(t *testing.T) {
+	vm := NewVM()
+	assert.Equal(t, vm.IsComputedLoaded, false)
+	err := vm.Run("&a=4d1; a")
+	if assert.NoError(t, err) {
+		assert.Equal(t, vm.IsComputedLoaded, true)
+	}
+
+	err = vm.Run("1+1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, vm.IsComputedLoaded, false)
+	}
+}
+
+func TestIsDiceCalculateExists3(t *testing.T) {
+	vm := NewVM()
+	vm.GlobalValueLoadFunc = func(name string) *VMValue {
+		if name == "a" {
+			return NewComputedVal("4d1")
+		}
+		return nil
+	}
+	err := vm.Run("a")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(ni(4), vm.Ret))
+		assert.Equal(t, vm.IsComputedLoaded, true)
+	}
 }
 
 func TestDiceExprIndexBug(t *testing.T) {
