@@ -1456,7 +1456,7 @@ func TestIsDiceCalculateExists3(t *testing.T) {
 func TestDiceExprIndexBug(t *testing.T) {
 	// 12.1 于言诺发现，如 2d(3d1) 会被错误计算为 9[2d(3d1)=9=3+3+3,3d1=3]
 	// 经查原因为Dice字节指令执行时，并未将骰子栈正确出栈
-	reResult := regexp.MustCompile(`2d\(3d1\)=(\d+)=(\d+)\+(\d+),`)
+	reResult := regexp.MustCompile(`2d\(3d1\)=(\d+)\+(\d+),`)
 
 	vm := NewVM()
 	err := vm.Run("2d(3d1)")
@@ -1543,7 +1543,7 @@ func TestNameDetailBug(t *testing.T) {
 	err := vm.Run(`a = 1;a   `)
 	if assert.NoError(t, err) {
 		// TODO: 后面的空格
-		assert.Equal(t, "a = 1;1[a=1]   ", vm.GetDetailText())
+		assert.Equal(t, "a = 1;1   ", vm.GetDetailText())
 	}
 }
 
@@ -1728,5 +1728,55 @@ func TestDicePushDefaultExpr(t *testing.T) {
 	err = vm.Run("2d") // 2d100
 	if assert.NoError(t, err) {
 		assert.True(t, vm.Ret.MustReadInt() >= 2)
+	}
+}
+
+func TestDetailTextComputed(t *testing.T) {
+	vm := NewVM()
+	vm.Attrs.Store("a", NewComputedVal("4d1"))
+	err := vm.Run("a")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "4[a=4d1=4]", vm.GetDetailText())
+	}
+}
+
+func TestDetailTextComputed2(t *testing.T) {
+	vm := NewVM()
+	vm.Attrs.Store("a", NewComputedVal("4d(1d1)"))
+	err := vm.Run("a")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "4[a=4d(1d1)=4]", vm.GetDetailText())
+	}
+}
+
+func TestDetailText1(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("(6d1)d1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "6[(6d1)d1=1+1+1+1+1+1,6d1=6]", vm.GetDetailText())
+	}
+}
+
+func TestDetailTextRule13(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("d1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "1", vm.GetDetailText())
+	}
+}
+
+func TestDetailText2(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("2d1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "2[2d1=1+1]", vm.GetDetailText())
+	}
+}
+
+func TestDetailText3(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("(2d1)d1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "2[(2d1)d1=1+1,2d1=2]", vm.GetDetailText())
 	}
 }

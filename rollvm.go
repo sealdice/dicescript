@@ -17,6 +17,7 @@
 package dicescript
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"sort"
@@ -166,6 +167,35 @@ func (a spanByEnd) Less(i, j int) bool { return a[i].End < a[j].End }
 //	return errors.New("E5: 超出单指令允许算力，不予计算")
 // }
 
+/*
+计算过程标注
+
+基础格式1: 算式=结果
+基础格式2: 算式=多个过程=结果
+过程: 值[小算式=值=文本标注, 子过程] - 即 span.Ret[expr=span.Ret=span.Text, subDetails]
+多个过程: 过程的集合，如 a + b，如果过程只有一个，那么多个过程与过程相同
+文本标注区分: 目前骰点式有文本标注，如2d1,1d2,f2,a10等，加减乘除等算式没有，计算类型和变量读取有，函数调用有
+补丁: 过程进行调整，取消"=值"这部分输出
+
+分为三种情况再进行细分
+1. 直接相等，一级，单项，无子句
+d10=10[d10=10=10]=10 首先进行一次省略，即文本标注如果等于值，那么=10=10 可以省略为=10
+基于d10=10[d10=10]=10二次省略，如果单项过程的文本标注=值，进行省略，那么 d10=10[d10]=10
+基于d10=10[d10]=10三次省略，如果只有一项过程，且没有子项，且大算式=小算式，过程可全部省略
+最终: d10=10
+疑点: 2d10=12[2d10=12=2+10]=12 这种三项都不满足，但是2d10=12=2+10是否过于繁琐？
+
+2.一级，单项，有子句
+(2d1)d1=2[(2d1)d1=2=1+1,2d1=2]=2
+(2d1+((2d1)d1)d1)d1=4[(2d1+((2d1)d1)d1)d1=4=1+1+1+1,2d1=2,2d1=2,(2d1)d1=2,((2d1)d1)d1=2]=4
+一下不知道怎么弄了
+
+3.组合算式
+种类1和种类2使用加减乘除等符号相连
+也包括 [] {} 等数据组合形式
+值得注意的是，目前 [2d1,2]kl 这种形式，2d1和2都属于一级，未来可能会修改。
+同理还有 [2d1,2].kl() 这个与上面等价，只是写法不同
+*/
 func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 	if ctx.Config.CustomMakeDetailFunc != nil {
 		return ctx.Config.CustomMakeDetailFunc(ctx, details, ctx.parser.data)
@@ -175,21 +205,20 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 	curPoint := IntType(-1) // nolint
 	lastEnd := IntType(-1)  // nolint
 
-	var m []struct {
+	type Group struct {
 		begin IntType
 		end   IntType
+		tag   string
 		spans []BufferSpan
+		val   *VMValue
 	}
 
+	var m []Group
 	for _, i := range details {
 		// fmt.Println("?", i, lastEnd)
 		if i.Begin > lastEnd {
 			curPoint = i.Begin
-			m = append(m, struct {
-				begin IntType
-				end   IntType
-				spans []BufferSpan
-			}{begin: curPoint, end: i.End, spans: []BufferSpan{i}})
+			m = append(m, Group{begin: curPoint, end: i.End, tag: i.Tag, spans: []BufferSpan{i}, val: i.Ret})
 		} else {
 			m[len(m)-1].spans = append(m[len(m)-1].spans, i)
 			if i.End > m[len(m)-1].end {
@@ -203,7 +232,14 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 	}
 
 	for i := len(m) - 1; i >= 0; i-- {
-		// for i := 0; i < len(m); i++ {
+		buf := bytes.Buffer{}
+		writeBuf := func(p []byte) {
+			buf.Write(p)
+		}
+		writeBufStr := func(s string) {
+			buf.WriteString(s)
+		}
+
 		item := m[i]
 		size := len(item.spans)
 		sort.Sort(spanByEnd(item.spans))
@@ -220,20 +256,31 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		}
 
 		exprText := string(detailResult[item.begin:item.end])
+		writeBuf(detailResult[:item.begin])
 
-		var r []byte
-		r = append(r, detailResult[:item.begin]...)
+		// 主体结果部分，如 (10d3)d5=63[(10d3)d5=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
+		partRet := last.Ret.ToString()
 
-		// 主体结果部分，如 (10d3)d5=63[(10d3)d5=63=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
-		detail := "[" + exprText + "=" + last.Ret.ToString()
-		if last.Text != "" {
+		detail := "[" + exprText
+		if last.Text != "" && partRet != last.Text { // 规则1.1
 			detail += "=" + last.Text
 		}
-		detail += subDetailsText + "]"
 
-		r = append(r, ([]byte)(last.Ret.ToString()+detail)...)
-		r = append(r, detailResult[item.end:]...)
-		detailResult = r
+		switch item.tag {
+		case "load.computed":
+			detail += "=" + partRet
+		}
+
+		detail += subDetailsText + "]"
+		if len(m) == 1 && detail == "["+exprText+"]" {
+			detail = "" // 规则1.3
+		}
+		if len(detail) > 400 {
+			detail = "[略]"
+		}
+		writeBufStr(partRet + detail)
+		writeBuf(detailResult[item.end:])
+		detailResult = buf.Bytes()
 	}
 
 	return string(detailResult)
@@ -620,15 +667,21 @@ func (ctx *Context) evaluate() {
 			e.top++
 		case typeLoadName, typeLoadNameRaw, typeLoadNameWithDetail:
 			name := code.Value.(string)
-			val := ctx.LoadName(name, typeLoadNameRaw == code.T, true)
+			var val *VMValue
+			if typeLoadNameWithDetail == code.T {
+				detail := &details[len(details)-1]
+				detail.Tag = "load"
+				detail.Text = ""
+
+				val = ctx.LoadNameWithDetail(name, typeLoadNameRaw == code.T, true, detail)
+				detail.Ret = val
+			} else {
+				val = ctx.LoadName(name, typeLoadNameRaw == code.T, true)
+			}
 			if ctx.Error != nil {
 				return
 			}
-			if typeLoadNameWithDetail == code.T {
-				details[len(details)-1].Tag = "load"
-				details[len(details)-1].Ret = val
-				details[len(details)-1].Text = ""
-			}
+
 			if ctx.Config.HookFuncValueLoadOverwrite != nil {
 				oldRet := details[len(details)-1].Ret
 				val = ctx.Config.HookFuncValueLoadOverwrite(name, val, &details[len(details)-1])

@@ -220,7 +220,7 @@ func (ctx *Context) loadInnerVar(name string) *VMValue {
 	return builtinValues[name]
 }
 
-func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
+func (ctx *Context) LoadNameGlobalWithDetail(name string, isRaw bool, detail *BufferSpan) *VMValue {
 	var loadFunc func(name string) *VMValue
 	if loadFunc == nil {
 		loadFunc = ctx.GlobalValueLoadFunc
@@ -231,7 +231,7 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 		val := loadFunc(name)
 		if val != nil {
 			if !isRaw && val.TypeId == VMTypeComputedValue {
-				val = val.ComputedExecute(ctx)
+				val = val.ComputedExecute(ctx, detail)
 				if ctx.Error != nil {
 					return nil
 				}
@@ -253,7 +253,7 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 		val = NewNullVal()
 	}
 	if !isRaw && val.TypeId == VMTypeComputedValue {
-		val = val.ComputedExecute(ctx)
+		val = val.ComputedExecute(ctx, detail)
 		if ctx.Error != nil {
 			return nil
 		}
@@ -261,7 +261,11 @@ func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
 	return val
 }
 
-func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
+func (ctx *Context) LoadNameGlobal(name string, isRaw bool) *VMValue {
+	return ctx.LoadNameGlobalWithDetail(name, isRaw, nil)
+}
+
+func (ctx *Context) LoadNameLocalWithDetail(name string, isRaw bool, detail *BufferSpan) *VMValue {
 	// if ctx.currentThis != nil {
 	//	return ctx.currentThis.AttrGet(ctx, name)
 	// } else {
@@ -271,7 +275,7 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 		ret = NewNullVal()
 	}
 	if !isRaw && ret.TypeId == VMTypeComputedValue {
-		ret = ret.ComputedExecute(ctx)
+		ret = ret.ComputedExecute(ctx, detail)
 		if ctx.Error != nil {
 			return nil
 		}
@@ -281,7 +285,11 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 	// }
 }
 
-func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
+func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
+	return ctx.LoadNameLocalWithDetail(name, isRaw, nil)
+}
+
+func (ctx *Context) LoadNameWithDetail(name string, isRaw bool, useHook bool, detail *BufferSpan) *VMValue {
 	if useHook && ctx.Config.HookFuncValueLoad != nil {
 		var overwrite *VMValue
 		name, overwrite = ctx.Config.HookFuncValueLoad(name)
@@ -295,7 +303,7 @@ func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
 	// 先local再global
 	curCtx := ctx
 	for {
-		ret := curCtx.LoadNameLocal(name, isRaw)
+		ret := curCtx.LoadNameLocalWithDetail(name, isRaw, detail)
 
 		if curCtx.Error != nil {
 			ctx.Error = curCtx.Error
@@ -311,23 +319,11 @@ func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
 		}
 	}
 
-	return ctx.LoadNameGlobal(name, isRaw)
-	// if ctx.GlobalValueLoadFunc != nil {
-	//	Ret := ctx.GlobalValueLoadFunc(name)
-	//	if ctx.Error != nil {
-	//		return nil
-	//	}
-	//	if Ret != nil {
-	//		if !isRaw && Ret.TypeId == VMTypeComputedValue {
-	//			Ret = Ret.ComputedExecute(ctx)
-	//			if ctx.Error != nil {
-	//				return nil
-	//			}
-	//		}
-	//		return Ret
-	//	}
-	// }
-	// return VMValueNewUndefined()
+	return ctx.LoadNameGlobalWithDetail(name, isRaw, detail)
+}
+
+func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
+	return ctx.LoadNameWithDetail(name, isRaw, useHook, nil)
 }
 
 // StoreName 储存变量
@@ -1396,7 +1392,7 @@ func (v *VMValue) GetTypeName() string {
 	return "unknown"
 }
 
-func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
+func (v *VMValue) ComputedExecute(ctx *Context, detail *BufferSpan) *VMValue {
 	cd, _ := v.ReadComputed()
 
 	vm := NewVM()
@@ -1444,6 +1440,11 @@ func (v *VMValue) ComputedExecute(ctx *Context) *VMValue {
 
 	ctx.NumOpCount = vm.NumOpCount
 	ctx.IsComputedLoaded = true
+
+	if detail != nil {
+		detail.Tag = "load.computed"
+		detail.Text = cd.Expr
+	}
 	return ret
 }
 
