@@ -4015,9 +4015,22 @@ var g = &grammar{
 								run: (*parser).call_onst_modify_rest_12,
 								expr: &seqExpr{
 									exprs: []any{
-										&litMatcher{val: "-", want: "\"-\""},
-										&zeroOrOneExpr{
-											expr: &litMatcher{val: "=", want: "\"=\""},
+										&litMatcher{val: "-=", want: "\"-=\""},
+										&ruleIRefExpr{index: 122 /* sp */},
+										&labeledExpr{
+											label:       "text",
+											expr:        &ruleIRefExpr{index: 26 /* exprRoot */},
+											textCapture: true,
+										},
+									},
+								},
+							},
+							&actionExpr{
+								run: (*parser).call_onst_modify_rest_18,
+								expr: &seqExpr{
+									exprs: []any{
+										&andExpr{
+											expr: &litMatcher{val: "-", want: "\"-\""},
 										},
 										&ruleIRefExpr{index: 122 /* sp */},
 										&labeledExpr{
@@ -5658,7 +5671,7 @@ func (p *parser) call_onst_modify_rest1_4() any {
 func (p *parser) call_onst_modify_rest1_10() any {
 	stack := p.vstack[len(p.vstack)-1]
 	return (func(c *current, text any) any {
-		c.data.AddStModify("-", text.(string))
+		c.data.AddStModify("-=", text.(string))
 		return nil
 	})(&p.cur, stack["text"])
 }
@@ -5672,6 +5685,14 @@ func (p *parser) call_onst_modify_rest_4() any {
 }
 
 func (p *parser) call_onst_modify_rest_12() any {
+	stack := p.vstack[len(p.vstack)-1]
+	return (func(c *current, text any) any {
+		c.data.AddStModify("-=", text.(string))
+		return nil
+	})(&p.cur, stack["text"])
+}
+
+func (p *parser) call_onst_modify_rest_18() any {
 	stack := p.vstack[len(p.vstack)-1]
 	return (func(c *current, text any) any {
 		c.data.AddStModify("-", text.(string))

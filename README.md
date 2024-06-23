@@ -83,11 +83,11 @@ DiceScript将更好的实现骰点功能，语法规范化的同时，具有更�
 
 ## TODO
 
-* d2d(4d4d5)d6 计算过程问题
+* ~~d2d(4d4d5)d6 计算过程问题~~
 
 ## 开发
 
-如果修改了文法:
+如果修改了文法，使用这个工具重新生成:
 ```
 go install github.com/fy0/pigeon@latest
 pigeon -nolint -optimize-parser -optimize-ref-expr-by-index -o .\roll.peg.go .\roll.peg

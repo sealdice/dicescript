@@ -19,6 +19,9 @@ func (item *checkItem) check(t *testing.T, _type string, name string, val *VMVal
 	if item.Extra != nil {
 		assert.True(t, valueEqual(extra, item.Extra))
 	}
+	if item.Op != "" {
+		assert.Equal(t, op, item.Op)
+	}
 	assert.Equal(t, _type, item.Type)
 }
 
@@ -175,7 +178,7 @@ func TestStMod1(t *testing.T) {
 		checkItem{Name: "力量", Value: ni(1), Type: "mod"},
 		checkItem{Name: "力量", Value: ni(4), Type: "mod"},
 		checkItem{Name: "力量", Value: ni(6), Type: "mod"},
-		checkItem{Name: "力量", Value: ni(6), Type: "mod", Op: "-"},
+		checkItem{Name: "力量", Value: ni(2), Type: "mod", Op: "-"},
 	}
 
 	index := 0
@@ -204,5 +207,41 @@ func TestStMod2(t *testing.T) {
 	}
 
 	err := vm.Run(`^st'力量123'+=3`)
+	assert.NoError(t, err)
+}
+
+func TestStModMinus(t *testing.T) {
+	vm := NewVM()
+
+	items := []checkItem{
+		checkItem{Name: "力量", Value: ni(4), Type: "mod", Op: "-"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!", _type, name, val, extra, op, detail)
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st力量-3d1-1 `)
+	assert.NoError(t, err)
+}
+
+func TestStModMinus2(t *testing.T) {
+	vm := NewVM()
+
+	items := []checkItem{
+		checkItem{Name: "力量", Value: ni(2), Type: "mod", Op: "-="},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!", _type, name, val, extra, op, detail)
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^st力量-=3d1-1 `)
 	assert.NoError(t, err)
 }

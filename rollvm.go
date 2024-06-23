@@ -950,6 +950,10 @@ func (ctx *Context) evaluate() {
 
 			if e.Config.CallbackSt != nil {
 				name, _ := stName.ReadString()
+				if stInfo.Op == "-" {
+					// 负号取正，以免-和-=出现符号一正一反的情况
+					stVal = stVal.OpNegation()
+				}
 				e.Config.CallbackSt("mod", name, stVal.Clone(), nil, stInfo.Op, stInfo.Text)
 			}
 		case typeStX0:

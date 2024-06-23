@@ -491,13 +491,13 @@ st_modify_multi_rest <- (st_modify_lead sp ','? sp)*
 
 st_modify_rest1 <- sp (
      "+=" sp text:< exprRoot > {c.data.AddStModify("+", text.(string))} /
-     "-=" sp text:< exprRoot > {c.data.AddStModify("-", text.(string))}
+     "-=" sp text:< exprRoot > {c.data.AddStModify("-=", text.(string))}
 )
 
 st_modify_rest <- sp (
      '+' '='? sp text:< exprRoot > {c.data.AddStModify("+", text.(string))} /
-     '-' '='? sp text:< exprRoot > {c.data.AddStModify("-", text.(string))}
-     /// &( '-' ) sp text:< exprRoot > {c.data.AddStModify("-", text.(string))} /
+     "-=" sp text:< exprRoot > {c.data.AddStModify("-=", text.(string))} /
+     &( '-' ) sp text:< exprRoot > {c.data.AddStModify("-", text.(string))} // 这一个式子是为了兼容st a-1-1视为a-2
 )
 
 st_name1 <- text:<( id_ch+ ":" id_ch+ )> { c.data.PushStr(text.(string)) } // 结尾不带数字
