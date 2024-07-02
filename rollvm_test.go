@@ -1799,6 +1799,24 @@ func TestDetailText5(t *testing.T) {
 	}
 }
 
+func TestDetailText6(t *testing.T) {
+	vm := NewVM()
+	vm.Config.DiceMaxMode = true
+	err := vm.Run("d + 1")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "100[D100] + 1", vm.GetDetailText())
+	}
+}
+
+func TestDetailText7(t *testing.T) {
+	vm := NewVM()
+	vm.Config.DiceMaxMode = true
+	err := vm.Run("d")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "100[D100]", vm.GetDetailText())
+	}
+}
+
 func TestDiceAdvantage(t *testing.T) {
 	vm := NewVM()
 	vm.Config.DefaultDiceSideExpr = "1"

@@ -48,7 +48,7 @@ func main() {
 	vm.Config.DefaultDiceSideExpr = "面数 ?? 50"
 	vm.Config.OpCountLimit = 30000
 
-	vm.Config.HookFuncValueLoad = func(name string) (string, *ds.VMValue) {
+	vm.Config.HookFuncValueLoad = func(ctx *ds.Context, name string) (string, *ds.VMValue) {
 		re := regexp.MustCompile(`^(困难|极难|大成功|常规|失败|困難|極難|常規|失敗)?([^\d]+)(\d+)?$`)
 		m := re.FindStringSubmatch(name)
 		var cocFlagVarPrefix string

@@ -258,8 +258,9 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		}
 
 		exprText := last.Expr
+		baseExprText := string(detailResult[item.begin:item.end])
 		if last.Expr == "" {
-			exprText = string(detailResult[item.begin:item.end])
+			exprText = baseExprText
 		}
 
 		writeBuf(detailResult[:item.begin])
@@ -278,7 +279,7 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		}
 
 		detail += subDetailsText + "]"
-		if len(m) == 1 && detail == "["+exprText+"]" {
+		if len(m) == 1 && detail == "["+baseExprText+"]" {
 			detail = "" // 规则1.3
 		}
 		if len(detail) > 400 {
@@ -729,7 +730,7 @@ func (ctx *Context) evaluate() {
 
 			if ctx.Config.HookFuncValueLoadOverwrite != nil {
 				oldRet := details[len(details)-1].Ret
-				val = ctx.Config.HookFuncValueLoadOverwrite(name, val, &details[len(details)-1])
+				val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &details[len(details)-1])
 				if oldRet == details[len(details)-1].Ret {
 					details[len(details)-1].Ret = val
 				}

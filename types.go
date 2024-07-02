@@ -77,12 +77,13 @@ type RollConfig struct {
 	DisableStmts     bool // 禁用语句语法(如if while等)，仅允许表达式
 	DisableNDice     bool // 禁用Nd语法，即只能2d6这样写，不能写2d
 
-	// 如果返回值为true，那么跳过剩下的储存流程。如果overwrite不为nil，对v进行覆盖
+	// 如果返回值为true，那么跳过剩下的储存流程。如果overwrite不为nil，对v进行覆盖。
+	// 另注: 钩子函数中含有ctx的原因是可能在函数中进行调用，此时ctx会发生变化
 	HookFuncValueStore func(ctx *Context, name string, v *VMValue) (overwrite *VMValue, solved bool)
 	// 如果overwrite不为nil，将结束值加载并使用overwrite值。如果为nil，将以newName为key进行加载
-	HookFuncValueLoad func(name string) (newName string, overwrite *VMValue)
+	HookFuncValueLoad func(ctx *Context, name string) (newName string, overwrite *VMValue)
 	// 读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil)
-	HookFuncValueLoadOverwrite func(name string, curVal *VMValue, detail *BufferSpan) *VMValue
+	HookFuncValueLoadOverwrite func(ctx *Context, name string, curVal *VMValue, detail *BufferSpan) *VMValue
 
 	// st回调，注意val和extra都经过clone，可以放心储存
 	CallbackSt           func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
@@ -291,7 +292,7 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 func (ctx *Context) LoadNameWithDetail(name string, isRaw bool, useHook bool, detail *BufferSpan) *VMValue {
 	if useHook && ctx.Config.HookFuncValueLoad != nil {
 		var overwrite *VMValue
-		name, overwrite = ctx.Config.HookFuncValueLoad(name)
+		name, overwrite = ctx.Config.HookFuncValueLoad(ctx, name)
 
 		if overwrite != nil {
 			// 使用弄进来的替代值进行计算

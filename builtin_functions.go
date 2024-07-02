@@ -138,7 +138,7 @@ func funcLoad(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	}
 
 	if ctx.Config.HookFuncValueLoadOverwrite != nil {
-		val = ctx.Config.HookFuncValueLoadOverwrite(name, val, nil)
+		val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, nil)
 	}
 
 	return val.Clone()
