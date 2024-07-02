@@ -20,9 +20,15 @@ func getSource() *rand.PCGSource {
 
 var randSource = getSource()
 
-func Roll(src *rand.PCGSource, dicePoints IntType) IntType {
+func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
 	if dicePoints == 0 {
 		return 0
+	}
+	if mod == -1 {
+		return 1
+	}
+	if mod == 1 {
+		return dicePoints
 	}
 	if src == nil {
 		src = randSource
@@ -63,7 +69,7 @@ func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, thresho
 }
 
 // RollWoD 返回: 成功数，总骰数，轮数，细节
-func RollWoD(src *rand.PCGSource, addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool) (IntType, IntType, IntType, string) {
+func RollWoD(src *rand.PCGSource, addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool, mode int) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
@@ -78,7 +84,7 @@ func RollWoD(src *rand.PCGSource, addLine IntType, pool IntType, points IntType,
 		for i := IntType(0); i < pool; i++ {
 			var reachSuccess bool
 			var reachAddRound bool
-			one := Roll(src, points)
+			one := Roll(src, points, mode)
 
 			if addLine != 0 {
 				reachAddRound = one >= addLine
@@ -162,7 +168,7 @@ func doubleCrossCheck(ctx *Context, addLine, pool, points IntType) bool {
 	return true
 }
 
-func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points IntType) (IntType, IntType, IntType, string) {
+func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points IntType, mode int) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
@@ -176,7 +182,7 @@ func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points 
 		maxDice := IntType(0)
 
 		for i := IntType(0); i < pool; i++ {
-			one := Roll(src, points)
+			one := Roll(src, points, mode)
 			if one > maxDice {
 				maxDice = one
 			}
@@ -239,10 +245,10 @@ func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points 
 }
 
 // RollCommon (times)d(dicePoints)kl(lowNum) 或 (times)d(dicePoints)kh(highNum)
-func RollCommon(src *rand.PCGSource, times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType) (IntType, string) {
+func RollCommon(src *rand.PCGSource, times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType, mode int) (IntType, string) {
 	var nums []IntType
 	for i := IntType(0); i < times; i += 1 {
-		die := Roll(src, dicePoints)
+		die := Roll(src, dicePoints, mode)
 		if diceMax != nil {
 			if die > *diceMax {
 				die = *diceMax
@@ -324,8 +330,8 @@ func RollCommon(src *rand.PCGSource, times, dicePoints IntType, diceMin, diceMax
 	return num, text
 }
 
-func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType) (IntType, string) {
-	diceResult := Roll(src, 100)
+func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType, mode int) (IntType, string) {
+	diceResult := Roll(src, 100, mode)
 	diceTens := diceResult / 10
 	diceUnits := diceResult % 10
 
@@ -335,7 +341,7 @@ func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType) (IntType, strin
 	num10Exists := false
 
 	for i := IntType(0); i < diceNum; i++ {
-		n := Roll(src, 10)
+		n := Roll(src, 10, mode)
 
 		if n == 10 {
 			num10Exists = true
@@ -374,11 +380,11 @@ func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType) (IntType, strin
 	}
 }
 
-func RollFate(src *rand.PCGSource) (IntType, string) {
+func RollFate(src *rand.PCGSource, mode int) (IntType, string) {
 	detail := ""
 	sum := IntType(0)
 	for i := 0; i < 4; i++ {
-		n := Roll(src, 3) - 2
+		n := Roll(src, 3, mode) - 2
 		sum += n
 		switch n {
 		case -1:

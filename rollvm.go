@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -200,7 +201,8 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 	if ctx.Config.CustomMakeDetailFunc != nil {
 		return ctx.Config.CustomMakeDetailFunc(ctx, details, ctx.parser.data)
 	}
-	detailResult := ctx.parser.data
+	offset := ctx.parser.pt.offset
+	detailResult := ctx.parser.data[:offset]
 
 	curPoint := IntType(-1) // nolint
 	lastEnd := IntType(-1)  // nolint
@@ -255,7 +257,11 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 			}
 		}
 
-		exprText := string(detailResult[item.begin:item.end])
+		exprText := last.Expr
+		if last.Expr == "" {
+			exprText = string(detailResult[item.begin:item.end])
+		}
+
 		writeBuf(detailResult[:item.begin])
 
 		// 主体结果部分，如 (10d3)d5=63[(10d3)d5=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
@@ -310,7 +316,7 @@ func (ctx *Context) evaluate() {
 	diceStateIndex := -1
 	var diceStates []struct {
 		times    IntType // 次数，如 2d10，times为2
-		isKeepLH IntType // 为1对应取低个数，为2对应取高个数，3为丢弃低个数，4为丢弃高个数
+		isKeepLH IntType // 为1对应取低个数kl，为2对应取高个数kh，3为丢弃低个数dl，4为丢弃高个数dh
 		lowNum   IntType
 		highNum  IntType
 		min      *IntType
@@ -401,6 +407,16 @@ func (ctx *Context) evaluate() {
 	stackPush := func(v *VMValue) {
 		e.stack[e.top] = *v
 		e.top += 1
+	}
+
+	getRollMode := func() int {
+		if ctx.Config.DiceMinMode {
+			return -1
+		}
+		if ctx.Config.DiceMaxMode {
+			return 1
+		}
+		return 0
 	}
 
 	var fstrBlockStack [5]int
@@ -535,6 +551,35 @@ func (ctx *Context) evaluate() {
 				stackPush(v)
 			} else {
 				stackPush(NewIntVal(100))
+			}
+
+			d := &details[len(details)-1]
+			dText := string(ctx.parser.data[d.Begin:d.End])
+
+			if !regexp.MustCompile("[dD][优優劣][势勢]").MatchString(dText) {
+				s := &diceStates[diceStateIndex]
+				if s.times > 1 {
+					d.Expr = fmt.Sprintf("%dD%s", s.times, stack[e.top-1].ToString())
+				} else {
+					d.Expr = fmt.Sprintf("D%s", stack[e.top-1].ToString())
+				}
+
+				switch s.isKeepLH {
+				case 1:
+					d.Expr += fmt.Sprintf("kl%d", s.lowNum)
+				case 2:
+					d.Expr += fmt.Sprintf("kh%d", s.highNum)
+				case 3:
+					d.Expr += fmt.Sprintf("dl%d", s.lowNum)
+				case 4:
+					d.Expr += fmt.Sprintf("dh%d", s.highNum)
+				}
+				if s.min != nil {
+					d.Expr += fmt.Sprintf("min%d", *s.min)
+				}
+				if s.max != nil {
+					d.Expr += fmt.Sprintf("max%d", *s.max)
+				}
 			}
 
 		case typeLogicAnd:
@@ -815,7 +860,7 @@ func (ctx *Context) evaluate() {
 				return
 			}
 
-			num, detail := RollCommon(ctx.randSrc, diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum)
+			num, detail := RollCommon(ctx.randSrc, diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum, getRollMode())
 			diceStateIndex -= 1
 
 			ret := NewIntVal(num)
@@ -825,7 +870,7 @@ func (ctx *Context) evaluate() {
 			stackPush(ret)
 
 		case typeDiceFate:
-			sum, detail := RollFate(ctx.randSrc)
+			sum, detail := RollFate(ctx.randSrc, getRollMode())
 			ret := NewIntVal(sum)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detail
@@ -841,7 +886,7 @@ func (ctx *Context) evaluate() {
 			}
 
 			isBonus := code.T == typeDiceCocBonus
-			r, detailText := RollCoC(ctx.randSrc, isBonus, diceNum)
+			r, detailText := RollCoC(ctx.randSrc, isBonus, diceNum, getRollMode())
 			ret := NewIntVal(r)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
@@ -880,7 +925,7 @@ func (ctx *Context) evaluate() {
 				return
 			}
 
-			num, _, _, detailText := RollWoD(ctx.randSrc, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE)
+			num, _, _, detailText := RollWoD(ctx.randSrc, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE, getRollMode())
 			ret := NewIntVal(num)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
@@ -901,7 +946,7 @@ func (ctx *Context) evaluate() {
 			if !doubleCrossCheck(ctx, v.MustReadInt(), dcState.pool, dcState.points) {
 				return
 			}
-			success, _, _, detailText := RollDoubleCross(nil, v.MustReadInt(), dcState.pool, dcState.points)
+			success, _, _, detailText := RollDoubleCross(nil, v.MustReadInt(), dcState.pool, dcState.points, getRollMode())
 			ret := NewIntVal(success)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText

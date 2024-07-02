@@ -245,3 +245,21 @@ func TestStModMinus2(t *testing.T) {
 	err := vm.Run(`^st力量-=3d1-1 `)
 	assert.NoError(t, err)
 }
+
+func TestStModMinus3(t *testing.T) {
+	vm := NewVM()
+
+	items := []checkItem{
+		checkItem{Name: "hp", Value: ni(0), Type: "mod", Op: "-="},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		// fmt.Println("!!", _type, name, val, extra, op, detail)
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index += 1
+	}
+
+	err := vm.Run(`^sthp-=1-1 `)
+	assert.NoError(t, err)
+}

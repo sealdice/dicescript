@@ -98,7 +98,6 @@ type RollConfig struct {
 
 	EnableV1IfCompatible bool // 一种特殊的兼容，fstring中如果最后一个语句是if那么此项为空字符串
 
-	// 以下尚未实现
 	DiceMinMode bool // 骰子以最小值结算，用于获取下界
 	DiceMaxMode bool // 以最大值结算 获取上界
 }

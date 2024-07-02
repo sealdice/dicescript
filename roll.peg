@@ -243,8 +243,8 @@ _diceMod <- ("kl" / [qQ]) nos { c.data.AddOp(typeDiceSetKeepLowNum); }  // 这�
 _diceModType2 <- "min" nos { c.data.AddOp(typeDiceSetMin) }
                / "max" nos { c.data.AddOp(typeDiceSetMax) }
 
-_dicePearMod <- "优势" { c.data.PushIntNumber("2"); c.data.AddOp(typeDiceSetTimes); c.data.PushIntNumber("1"); c.data.AddOp(typeDiceSetKeepHighNum); }
-              / "劣势" { c.data.PushIntNumber("2"); c.data.AddOp(typeDiceSetTimes); c.data.PushIntNumber("1"); c.data.AddOp(typeDiceSetKeepLowNum); }
+_dicePearMod <- ("优势"/"優勢") { c.data.PushIntNumber("2"); c.data.AddOp(typeDiceSetTimes); c.data.PushIntNumber("1"); c.data.AddOp(typeDiceSetKeepHighNum); }
+              / ("劣势"/"劣勢") { c.data.PushIntNumber("2"); c.data.AddOp(typeDiceSetTimes); c.data.PushIntNumber("1"); c.data.AddOp(typeDiceSetKeepLowNum); }
 
 // 3d20, 3d20d2, 2d20优势
 _diceType1 <- nos [dD] nos
@@ -252,13 +252,14 @@ _diceType1 <- nos [dD] nos
 _diceType2 <- [dD] nos
 // 3d
 _diceType3 <- nos [dD]
-// d
-_diceType4 <- [dD] !xidStart
+// d / d优势 / d劣势
+_diceType4 <- [dD] ("优势" / "優勢" / "劣势" / "劣勢" / !xidStart)
 
 // XdY/dY/Xd 中的 dy + 后缀部分，跟上面 _diceTypeX 一一对应
 _diceExpr1 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes);  } nos _diceMod? _diceModType2?
 _diceExpr2 <- [dD] { c.data.AddOp(typeDiceInit); } nos (_dicePearMod / _diceMod)? _diceModType2? // 注: 这一条是 dY 而不是 xdY
 _diceExpr3 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes); } _diceMod? _diceModType2?
+_diceExpr4 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes); } (_dicePearMod / _diceMod)? _diceModType2?
 
 // 多重式子 d4d6d8
 _diceExprX <- &_diceType2 detailStart _diceExpr1 detailEnd { c.data.AddOp(typeDice) }
@@ -283,7 +284,7 @@ _fateDiceType <- [fF] !xidContinue
 exprDice <- &_diceType1 detailStart nos _diceExpr1 detailEnd { c.data.AddOp(typeDice); } _diceExprX*
           / &_diceType2 detailStart _diceExpr2 detailEnd { c.data.AddOp(typeDice) } _diceExprX*
           / &{return !c.data.Config.DisableNDice} &_diceType3 detailStart nos _diceExpr3 detailEnd { c.data.AddOp(typePushDefaultExpr); c.data.AddOp(typeDice) } _diceExprX*
-          / &{return !c.data.Config.DisableNDice} &_diceType4 detailStart { c.data.PushIntNumber("1") } _diceExpr3 detailEnd { c.data.AddOp(typePushDefaultExpr); c.data.AddOp(typeDice) } _diceExprX*
+          / &{return !c.data.Config.DisableNDice} &_diceType4 detailStart { c.data.PushIntNumber("1") } _diceExpr4 detailEnd { c.data.AddOp(typePushDefaultExpr); c.data.AddOp(typeDice) } _diceExprX*
           / &{return c.data.Config.EnableDiceCoC} &_cocDiceType detailStart (_diceCocBonus / _diceCocPenalty)
           / &{return c.data.Config.EnableDiceWoD} &_wodDiceType detailStart { c.data.AddOp(typeWodSetInit) } (nos { c.data.AddOp(typeWodSetPool) } _wodMain / _wodMain !xidContinue) detailEnd { c.data.AddOp(typeDiceWod) }
           / &{return c.data.Config.EnableDiceDoubleCross} &_dcDiceType detailStart { c.data.AddOp(typeDCSetInit) } nos { c.data.AddOp(typeDCSetPool) } [cC] nos (([mM] nos { c.data.AddOp(typeDCSetPoints) }) )* detailEnd { c.data.AddOp(typeDiceDC) }

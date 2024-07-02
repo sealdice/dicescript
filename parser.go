@@ -32,8 +32,9 @@ type BufferSpan struct {
 	End   IntType
 	Ret   *VMValue
 	Text  string
-	// 来源标记
-	Tag string
+
+	Expr string // 如果存在Expr，用来替代等号左边的内容，不存在的话用Begin和End从原文提取
+	Tag  string // 来源标记
 }
 
 func (e *ParserData) LoopBegin() {
