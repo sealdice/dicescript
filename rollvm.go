@@ -45,8 +45,11 @@ func (ctx *Context) RunExpr(value string, useUpCtxLocal bool) (*VMValue, error) 
 		codeIndex: 0,
 	})
 
+	oldErr := ctx.Error // 注意，这一储存在并发状态下可能并不准确
 	v := val.FuncInvokeRaw(ctx, nil, useUpCtxLocal)
-	return v, ctx.Error
+	curErr := ctx.Error
+	ctx.Error = oldErr // 这是临时方案，本质上不应对当前ctx的状态做出改变
+	return v, curErr
 }
 
 // GetErrorText 主要用于js，因为ctx.Error是数组，在js那边不被当做正常的异常对象，所以会报错
@@ -729,10 +732,12 @@ func (ctx *Context) evaluate() {
 			}
 
 			if ctx.Config.HookFuncValueLoadOverwrite != nil {
-				oldRet := details[len(details)-1].Ret
-				val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &details[len(details)-1])
-				if oldRet == details[len(details)-1].Ret {
-					details[len(details)-1].Ret = val
+				if len(details) > 0 {
+					oldRet := details[len(details)-1].Ret
+					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &details[len(details)-1])
+					if oldRet == details[len(details)-1].Ret {
+						details[len(details)-1].Ret = val
+					}
 				}
 			}
 			stackPush(val)

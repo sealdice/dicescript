@@ -6254,18 +6254,19 @@ func (p *parser) addErrAt(err error, pos position, expected []string) {
 	if buf.Len() > 0 {
 		buf.WriteString(":")
 	}
-	buf.WriteString(fmt.Sprintf("%d:%d (%d)", pos.line, pos.col, pos.offset))
+	buf.WriteString(fmt.Sprintf("%d:%d", pos.line, pos.col))
 	if len(p.rstack) > 0 {
 		if buf.Len() > 0 {
-			buf.WriteString(": ")
+			buf.WriteString(" ")
 		}
 		rule := p.rstack[len(p.rstack)-1]
 		if rule.displayName != "" {
-			buf.WriteString("rule " + rule.displayName)
+			buf.WriteString(rule.displayName[1:len(rule.displayName)-1])
 		} else {
-			buf.WriteString("rule " + rule.name)
+			buf.WriteString(rule.name)
 		}
 	}
+	// x(p.filename, pos.line, pos.col, pos.offset, ruleName)
 	pe := &parserError{Inner: err, pos: pos, prefix: buf.String(), expected: expected}
 	p.errs.add(pe)
 }
