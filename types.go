@@ -82,10 +82,8 @@ type RollConfig struct {
 	HookFuncValueStore func(ctx *Context, name string, v *VMValue) (overwrite *VMValue, solved bool)
 	// 如果overwrite不为nil，将结束值加载并使用overwrite值。如果为nil，将以newName为key进行加载
 	HookFuncValueLoad func(ctx *Context, name string) (newName string, overwrite *VMValue)
-	// 读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil，这个回调处于computed计算之前)
-	HookFuncValueLoadOverwriteBeforeComputed func(ctx *Context, name string, curVal *VMValue) *VMValue
-	// 读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil)
-	HookFuncValueLoadOverwrite func(ctx *Context, name string, curVal *VMValue, detail *BufferSpan) *VMValue
+	// 读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil)，用户需要在里面调用doCompute保证结果正确
+	HookFuncValueLoadOverwrite func(ctx *Context, name string, curVal *VMValue, doCompute func(curVal *VMValue) *VMValue, detail *BufferSpan) *VMValue
 
 	// st回调，注意val和extra都经过clone，可以放心储存
 	CallbackSt           func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调

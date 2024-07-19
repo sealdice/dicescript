@@ -27,7 +27,11 @@ func TestGlobalValueLoadOverwrite(t *testing.T) {
 
 func TestHookFuncValueLoadOverwrite(t *testing.T) {
 	vm := NewVM()
-	vm.Config.HookFuncValueLoadOverwrite = func(ctx *Context, name string, curVal *VMValue, detail *BufferSpan) *VMValue {
+	vm.Config.HookFuncValueLoadOverwrite = func(ctx *Context, name string, curVal *VMValue, doCompute func(v *VMValue) *VMValue, detail *BufferSpan) *VMValue {
+		doCompute(curVal)
+		if ctx.Error != nil {
+			return nil
+		}
 		return ni(123)
 	}
 

@@ -731,38 +731,46 @@ func (ctx *Context) evaluate() {
 				return
 			}
 
-			// computed 回调
-			if ctx.Config.HookFuncValueLoadOverwriteBeforeComputed != nil {
-				val = ctx.Config.HookFuncValueLoadOverwriteBeforeComputed(ctx, name, val)
-			}
-
 			// 计算真实结果
 			isRaw := typeLoadNameRaw == code.T
-			if !isRaw && val.TypeId == VMTypeComputedValue {
-				detail := &details[len(details)-1]
-				val = val.ComputedExecute(ctx, detail)
-				if ctx.Error != nil {
-					return
+			doCompute := func(val *VMValue) *VMValue {
+				if !isRaw && val.TypeId == VMTypeComputedValue {
+					if withDetail {
+						detail := &details[len(details)-1]
+						val = val.ComputedExecute(ctx, detail)
+					} else {
+						val = val.ComputedExecute(ctx, &BufferSpan{})
+					}
+					if ctx.Error != nil {
+						return nil
+					}
 				}
-			}
 
-			// 追加计算结果到detail
-			if withDetail {
-				detail := &details[len(details)-1]
-				detail.Ret = val
+				// 追加计算结果到detail
+				if withDetail {
+					detail := &details[len(details)-1]
+					detail.Ret = val
+				}
+				return val
 			}
 
 			if ctx.Config.HookFuncValueLoadOverwrite != nil {
 				if len(details) > 0 {
 					oldRet := details[len(details)-1].Ret
-					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &details[len(details)-1])
+					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, doCompute, &details[len(details)-1])
 					if oldRet == details[len(details)-1].Ret {
 						// 如果ret发生变化才修改，顺便修改detail中的结果为最终结果
 						details[len(details)-1].Ret = val
 					}
 				} else {
-					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &BufferSpan{})
+					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, doCompute, &BufferSpan{})
 				}
+			} else {
+				val = doCompute(val)
+			}
+
+			if ctx.Error != nil {
+				return
 			}
 			stackPush(val)
 
