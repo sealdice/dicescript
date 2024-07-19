@@ -128,7 +128,7 @@ func funcTypeId(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return NewIntVal(IntType(params[0].TypeId))
 }
 
-func funcLoad(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+func funcLoadBase(ctx *Context, this *VMValue, params []*VMValue, isRaw bool) *VMValue {
 	v := params[0]
 	if v.TypeId != VMTypeString {
 		ctx.Error = errors.New("(load)类型错误: 参数类型必须为str")
@@ -136,16 +136,36 @@ func funcLoad(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	}
 
 	name := v.Value.(string)
-	val := ctx.LoadName(name, false, true)
+	val := ctx.LoadName(name, true, true)
 	if ctx.Error != nil {
 		return nil
 	}
 
-	if ctx.Config.HookFuncValueLoadOverwrite != nil {
-		val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, nil)
+	// computed 回调
+	if ctx.Config.HookFuncValueLoadOverwriteBeforeComputed != nil {
+		val = ctx.Config.HookFuncValueLoadOverwriteBeforeComputed(ctx, name, val)
 	}
 
-	return val.Clone()
+	if !isRaw && val.TypeId == VMTypeComputedValue {
+		val = val.ComputedExecute(ctx, nil)
+		if ctx.Error != nil {
+			return nil
+		}
+	}
+
+	if ctx.Config.HookFuncValueLoadOverwrite != nil {
+		val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &BufferSpan{})
+	}
+
+	return val
+}
+
+func funcLoad(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	return funcLoadBase(ctx, this, params, false)
+}
+
+func funcLoadRaw(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	return funcLoadBase(ctx, this, params, true)
 }
 
 func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
@@ -188,8 +208,9 @@ var builtinValues = map[string]*VMValue{
 	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
 	"bool":  nnf(&ndf{"bool", []string{"value"}, nil, nil, funcBool}),
 
-	"repr": nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
-	"load": nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
+	"repr":    nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
+	"load":    nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
+	"loadRaw": nnf(&ndf{"loadRaw", []string{"value"}, nil, nil, nil}),
 
 	// TODO: roll()
 
@@ -203,6 +224,9 @@ func _init() bool {
 	// 因循环引用问题无法在上面声明
 	nfd, _ := builtinValues["load"].ReadNativeFunctionData()
 	nfd.NativeFunc = funcLoad
+
+	nfd, _ = builtinValues["loadRaw"].ReadNativeFunctionData()
+	nfd.NativeFunc = funcLoadRaw
 	return false
 }
 
