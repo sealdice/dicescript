@@ -5,6 +5,10 @@ import (
 	"math/rand"
 )
 
+func funcComputedCompute(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	return this.ComputedExecute(ctx, nil)
+}
+
 func funcArrayKeepLow(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	isAllInt, ret := this.ArrayFuncKeepLow(ctx, params[0].MustReadInt())
 	if isAllInt {
@@ -142,6 +146,9 @@ func funcDictLen(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 }
 
 var builtinProto = map[VMValueType]*VMDictValue{
+	VMTypeComputedValue: NewDictValWithArrayMust(
+		NewStrVal("compute"), nnf(&ndf{"Computed.compute", []string{}, nil, nil, nil}),
+	),
 	VMTypeArray: NewDictValWithArrayMust(
 		NewStrVal("kh"), nnf(&ndf{"Array.kh", []string{"num"}, []*VMValue{NewIntVal(1)}, nil, funcArrayKeepHigh}),
 		NewStrVal("kl"), nnf(&ndf{"Array.kl", []string{"num"}, []*VMValue{NewIntVal(1)}, nil, funcArrayKeepLow}),
@@ -185,3 +192,12 @@ func getBindMethod(v *VMValue, funcDef *VMValue) *VMValue {
 	}
 	return nil
 }
+
+func _init2() bool {
+	// 因循环引用问题无法在上面声明
+	funcCompute := nnf(&ndf{"Computed.compute", []string{}, nil, nil, funcComputedCompute})
+	builtinProto[VMTypeComputedValue].Store("compute", funcCompute)
+	return false
+}
+
+var _ = _init2()

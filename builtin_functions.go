@@ -124,6 +124,10 @@ func funcRepr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return NewStrVal(params[0].ToRepr())
 }
 
+func funcTypeId(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	return NewIntVal(IntType(params[0].TypeId))
+}
+
 func funcLoad(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v := params[0]
 	if v.TypeId != VMTypeString {
@@ -186,11 +190,13 @@ var builtinValues = map[string]*VMValue{
 
 	"repr": nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
 	"load": nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
+
 	// TODO: roll()
 
 	// 要不要进行权限隔绝？
 	"dir": nnf(&ndf{"dir", []string{"value"}, nil, nil, funcDir}),
 	// "help": nnf(&ndf{"help", []string{"value"}, nil, nil, funcHelp}),
+	"typeId": nnf(&ndf{"typeId", []string{"value"}, nil, nil, funcTypeId}),
 }
 
 func _init() bool {

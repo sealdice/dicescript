@@ -1,9 +1,21 @@
 package dicescript
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestTypesMethodComputedCompute(t *testing.T) {
+	_attrs := &ValueMap{}
+	_attrs.Store("x", ni(1))
+	c := NewComputedValRaw(&ComputedData{Expr: "this.x + 10", Attrs: _attrs})
+
+	vm := NewVM()
+	ret := funcComputedCompute(vm, c, nil)
+
+	assert.Equal(t, ret.ToString(), "11")
+}
 
 func TestTypesMethodArraySum(t *testing.T) {
 	d := NewArrayVal(ni(1), nf(2.2), ni(3))

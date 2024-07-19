@@ -79,6 +79,7 @@ https://sealdice.github.io/dicescript/
 ## TODO
 
 * 骰点运算 - 自定义算符
+* computed 的repr格式无法读入
 
 ## 开发
 

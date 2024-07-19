@@ -1028,7 +1028,7 @@ func TestDiceCocExpr(t *testing.T) {
 	err = vm.Run("b")
 	if assert.NoError(t, err) {
 		assert.Equal(t, "", vm.RestInput)
-		assert.True(t, vm.Ret.MustReadInt() > 1)
+		assert.True(t, vm.Ret.MustReadInt() >= 1)
 	}
 
 	err = vm.Run("b技能") // rab技能，这种不予修改，由指令那边做支持

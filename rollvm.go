@@ -612,7 +612,7 @@ func (ctx *Context) evaluate() {
 				}
 				stackPush(ret)
 			} else {
-				ctx.Error = errors.New("类型错误: 无法调用，必须是一个函数")
+				ctx.Error = fmt.Errorf("类型错误: [%s]无法被调用，必须是一个函数", funcObj.ToString())
 			}
 
 		case typeItemGet:
@@ -717,18 +717,39 @@ func (ctx *Context) evaluate() {
 		case typeLoadName, typeLoadNameRaw, typeLoadNameWithDetail:
 			name := code.Value.(string)
 			var val *VMValue
-			if typeLoadNameWithDetail == code.T {
+
+			withDetail := typeLoadNameWithDetail == code.T
+			if withDetail {
 				detail := &details[len(details)-1]
 				detail.Tag = "load"
 				detail.Text = ""
-
-				val = ctx.LoadNameWithDetail(name, typeLoadNameRaw == code.T, true, detail)
-				detail.Ret = val
+				val = ctx.LoadNameWithDetail(name, true, true, detail)
 			} else {
-				val = ctx.LoadName(name, typeLoadNameRaw == code.T, true)
+				val = ctx.LoadName(name, true, true)
 			}
 			if ctx.Error != nil {
 				return
+			}
+
+			// computed 回调
+			if ctx.Config.HookFuncValueLoadOverwriteBeforeComputed != nil {
+				val = ctx.Config.HookFuncValueLoadOverwriteBeforeComputed(ctx, name, val)
+			}
+
+			// 计算真实结果
+			isRaw := typeLoadNameRaw == code.T
+			if !isRaw && val.TypeId == VMTypeComputedValue {
+				detail := &details[len(details)-1]
+				val = val.ComputedExecute(ctx, detail)
+				if ctx.Error != nil {
+					return
+				}
+			}
+
+			// 追加计算结果到detail
+			if withDetail {
+				detail := &details[len(details)-1]
+				detail.Ret = val
 			}
 
 			if ctx.Config.HookFuncValueLoadOverwrite != nil {
@@ -736,8 +757,11 @@ func (ctx *Context) evaluate() {
 					oldRet := details[len(details)-1].Ret
 					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &details[len(details)-1])
 					if oldRet == details[len(details)-1].Ret {
+						// 如果ret发生变化才修改，顺便修改detail中的结果为最终结果
 						details[len(details)-1].Ret = val
 					}
+				} else {
+					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, &BufferSpan{})
 				}
 			}
 			stackPush(val)

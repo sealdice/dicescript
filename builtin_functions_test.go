@@ -81,3 +81,11 @@ func TestNativeFunctionLoad(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, builtinValues["load"]))
 	}
 }
+
+func TestNativeFunctionTypeId(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("typeId(1)")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(IntType(VMTypeInt))))
+	}
+}
