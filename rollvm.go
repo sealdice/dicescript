@@ -293,7 +293,11 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		detailResult = buf.Bytes()
 	}
 
-	return string(detailResult)
+	detailStr := string(detailResult)
+	if detailStr == ctx.Ret.ToString() {
+		detailStr = "" // 如果detail和结果值完全一致，那么将其置空
+	}
+	return detailStr
 }
 
 func (ctx *Context) evaluate() {

@@ -363,9 +363,10 @@ strEscape <- "\\n" { return []byte("\n") }
            / "\\}" { return []byte("}") }
            / '\\' { return []byte("\\") }
 
-fstringExpr1 <- exprRoot {c.data.CounterAdd(1)} / &{ p.addErr(errors.New("{} 内必须是一个表达式")); return false; }
-fstringExpr <- '{' sp fstringExpr1 sp ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
+// fstringExpr1 <- exprRoot {c.data.CounterAdd(1)} / &{ p.addErr(errors.New("{} 内必须是一个表达式")); return false; }
+// fstringExpr <- '{' sp fstringExpr1 sp ('}' / &{ p.addErr(errors.New("无法处理字符 " + string(p.pt.rn))); return false })
 fstringStmt <- "{%" sp ({ c.data.AddOp(typeFStringBlockPush) } stmtRoot { c.data.AddOp(typeFStringBlockPop); c.data.CounterAdd(1) } / &{ p.addErr(errors.New("{% %} 内必须是语句块或表达式")); return false; }) sp "%}"
+fstringStmt2 <- "{" sp ({ c.data.AddOp(typeFStringBlockPush) } stmtRoot { c.data.AddOp(typeFStringBlockPop); c.data.CounterAdd(1) } / &{ p.addErr(errors.New("{} 内必须是语句块或表达式")); return false; }) sp "}"
 
 fstring <- (
         ('\'' '\'' { c.data.PushStr("") })
@@ -374,8 +375,8 @@ fstring <- (
       / ('`' '`' { c.data.PushStr("") })
       / ('\'' { c.data.CounterPush() } strPart1* '\'' { c.data.CounterPop() } )
       / ('"' { c.data.CounterPush() } strPart2* '"' { c.data.CounterPop() })
-      / ('`' { c.data.CounterPush() } ( strPart3 / fstringStmt / fstringExpr )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
-      / ('\x1e' { c.data.CounterPush() } ( strPart4 / fstringStmt / fstringExpr )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
+      / ('`' { c.data.CounterPush() } ( strPart3 / fstringStmt / fstringStmt2 )* '`' { c.data.AddFormatString(c.data.CounterPop()) })
+      / ('\x1e' { c.data.CounterPush() } ( strPart4 / fstringStmt / fstringStmt2 )* '\x1e' { c.data.AddFormatString(c.data.CounterPop()) }) // 特殊标记 0x1E
     ) sp
 
 keywords <- "while" / "if" / "else" / "continue" / "break" / "return" / "func"

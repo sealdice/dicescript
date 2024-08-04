@@ -1616,18 +1616,19 @@ func TestFStringBlock(t *testing.T) {
 	}
 
 	err = vm.Run("`{  if b=3 {} }`")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "关键字作为变量名")
+	assert.NoError(t, err)
+	// assert.Contains(t, err.Error(), "关键字作为变量名")
 
 	err = vm.Run("`{ a=1;b=2 }`")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "无法处理字符 ;")
+	assert.NoError(t, err)
+	// assert.Contains(t, err.Error(), "无法处理字符 ;")
 }
 
 func TestFStringIf(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("`{ if }`")
-	assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
+	// assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
+	assert.Contains(t, err.Error(), "stmtIf:")
 }
 
 func TestFStringStackOverflowBug(t *testing.T) {
@@ -1761,7 +1762,8 @@ func TestDetailTextRule13(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("d1")
 	if assert.NoError(t, err) {
-		assert.Equal(t, "1", vm.GetDetailText())
+		// 简易式子，可以吃掉所有detail，所以为0。否则会出现d1=1=1，吃掉后表现为d1=1
+		assert.Equal(t, "", vm.GetDetailText())
 	}
 }
 
