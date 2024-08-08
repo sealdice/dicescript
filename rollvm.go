@@ -110,19 +110,7 @@ func (ctx *Context) IsCalculateExists() bool {
 	return false
 }
 
-// IsV1IfCompatibleExists 是否存在v1的fstring-if兼容指令
-func (ctx *Context) IsV1IfCompatibleExists() bool {
-	for _, i := range ctx.code {
-		switch i.T {
-		case typeV1IfMark:
-			return true
-		}
-	}
-	return false
-}
-
 func (ctx *Context) RunAfterParsed() error {
-	ctx.V1IfCompatibleCount = 0
 	ctx.IsComputedLoaded = false
 	// 以下为eval
 	ctx.evaluate()
@@ -427,8 +415,11 @@ func (ctx *Context) evaluate() {
 		return 0
 	}
 
-	var fstrBlockStack [5]int
+	var fstrBlockStack [20]int
 	var fstrBlockIndex int
+
+	var blockStack [20]int // TODO: 如果在while循环中return会使得 blockIndex+1，用完之后就不能用了
+	var blockIndex int
 
 	startTime := time.Now().UnixMilli()
 	for opIndex := 0; opIndex < e.codeIndex; opIndex += 1 {
@@ -902,7 +893,7 @@ func (ctx *Context) evaluate() {
 				return
 			}
 
-			num, detail := RollCommon(ctx.randSrc, diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum, getRollMode())
+			num, detail := RollCommon(ctx.RandSrc, diceState.times, bInt, diceState.min, diceState.max, diceState.isKeepLH, diceState.lowNum, diceState.highNum, getRollMode())
 			diceStateIndex -= 1
 
 			ret := NewIntVal(num)
@@ -912,7 +903,7 @@ func (ctx *Context) evaluate() {
 			stackPush(ret)
 
 		case typeDiceFate:
-			sum, detail := RollFate(ctx.randSrc, getRollMode())
+			sum, detail := RollFate(ctx.RandSrc, getRollMode())
 			ret := NewIntVal(sum)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detail
@@ -928,7 +919,7 @@ func (ctx *Context) evaluate() {
 			}
 
 			isBonus := code.T == typeDiceCocBonus
-			r, detailText := RollCoC(ctx.randSrc, isBonus, diceNum, getRollMode())
+			r, detailText := RollCoC(ctx.RandSrc, isBonus, diceNum, getRollMode())
 			ret := NewIntVal(r)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
@@ -967,7 +958,7 @@ func (ctx *Context) evaluate() {
 				return
 			}
 
-			num, _, _, detailText := RollWoD(ctx.randSrc, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE, getRollMode())
+			num, _, _, detailText := RollWoD(ctx.RandSrc, v.MustReadInt(), wodState.pool, wodState.points, wodState.threshold, wodState.isGE, getRollMode())
 			ret := NewIntVal(num)
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detailText
@@ -995,14 +986,32 @@ func (ctx *Context) evaluate() {
 			details[len(details)-1].Tag = "dice-dc"
 			stackPush(ret)
 
+		case typeBlockPush:
+			if blockIndex > 20 {
+				ctx.Error = errors.New("语句块嵌套层数过多")
+				return
+			}
+			blockStack[blockIndex] = e.top
+			blockIndex += 1
+		case typeBlockPop:
+			newTop := blockStack[blockIndex-1]
+			e.top = newTop
+			blockIndex -= 1
+			if fstrBlockIndex > 0 {
+				stackPush(NewStrVal("")) // 在fstring中返回空字符串
+			} else {
+				stackPush(NewNullVal())
+			}
+
 		case typeFStringBlockPush:
-			if fstrBlockIndex >= 4 {
+			if fstrBlockIndex > 20 {
 				ctx.Error = errors.New("字符串模板嵌套层数过多")
 				return
 			}
 			fstrBlockStack[fstrBlockIndex] = e.top
 			fstrBlockIndex += 1
 		case typeFStringBlockPop:
+			// 不管栈里多少东西，一律清空
 			newTop := fstrBlockStack[fstrBlockIndex-1]
 			var v *VMValue
 			if newTop != e.top {
@@ -1014,15 +1023,6 @@ func (ctx *Context) evaluate() {
 				stackPush(v)
 			} else {
 				stackPush(NewStrVal(""))
-			}
-		case typeV1IfMark:
-			// 满足条件: 首先在fstring中，其次栈里目前有东西
-			if fstrBlockIndex > 0 {
-				newTop := fstrBlockStack[fstrBlockIndex-1]
-				if newTop != e.top {
-					stackPush(NewStrVal("")) // 填入空字符串，模拟v1行为
-					ctx.V1IfCompatibleCount += 1
-				}
 			}
 
 		case typeStSetName:

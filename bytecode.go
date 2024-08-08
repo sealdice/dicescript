@@ -106,7 +106,9 @@ const (
 
 	typeFStringBlockPush // fstring标记 用于栈平衡
 	typeFStringBlockPop
-	typeV1IfMark // 特殊兼容标记
+
+	typeBlockPush
+	typeBlockPop
 
 	typeStSetName
 	typeStModify
@@ -286,12 +288,15 @@ func (code *ByteCode) CodeString() string {
 	case typeReturn:
 		return "ret"
 
+	case typeBlockPush:
+		return "block.push"
+	case typeBlockPop:
+		return "block.pop"
+
 	case typeFStringBlockPush:
 		return "fstr.block.push"
 	case typeFStringBlockPop:
 		return "fstr.block.pop"
-	case typeV1IfMark:
-		return "v1.if.mark"
 
 	case typeStSetName:
 		return "st.set"

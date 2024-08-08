@@ -265,21 +265,25 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&actionExpr{
-						run:  (*parser).call_onstmtWhile_2,
-						expr: &litMatcher{val: "while", want: "\"while\""},
-					},
-					&actionExpr{
-						run: (*parser).call_onstmtWhile_4,
+						run: (*parser).call_onstmtWhile_2,
 						expr: &seqExpr{
 							exprs: []any{
+								&litMatcher{val: "while", want: "\"while\""},
 								&ruleIRefExpr{index: 124 /* sp1x */},
+							},
+						},
+					},
+					&actionExpr{
+						run: (*parser).call_onstmtWhile_6,
+						expr: &seqExpr{
+							exprs: []any{
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 								&ruleIRefExpr{index: 122 /* sp */},
 							},
 						},
 					},
 					&actionExpr{
-						run:  (*parser).call_onstmtWhile_9,
+						run:  (*parser).call_onstmtWhile_10,
 						expr: &ruleIRefExpr{index: 12 /* block */},
 					},
 				},
@@ -4284,13 +4288,14 @@ func (p *parser) call_onstmtReturn_7() any {
 
 func (p *parser) call_onstmtWhile_2() any {
 	return (func(c *current) any {
+		c.data.AddOp(typeBlockPush)
 		c.data.LoopBegin()
 		c.data.OffsetPush()
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onstmtWhile_4() any {
+func (p *parser) call_onstmtWhile_6() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
@@ -4298,7 +4303,7 @@ func (p *parser) call_onstmtWhile_4() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onstmtWhile_9() any {
+func (p *parser) call_onstmtWhile_10() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeJmp)
 		c.data.OffsetPush()
@@ -4308,12 +4313,14 @@ func (p *parser) call_onstmtWhile_9() any {
 		c.data.BreakSet()
 		c.data.OffsetPopN(3)
 		c.data.LoopEnd()
+		c.data.AddOp(typeBlockPop)
 		return nil
 	})(&p.cur)
 }
 
 func (p *parser) call_onstmtIf_6() any {
 	return (func(c *current) any {
+		c.data.AddOp(typeBlockPush)
 		c.data.AddOp(typeJne)
 		c.data.OffsetPush()
 		return nil
@@ -4332,9 +4339,7 @@ func (p *parser) call_onstmtIf_10() any {
 func (p *parser) call_onstmtIf_12() any {
 	return (func(c *current) any {
 		c.data.OffsetPopAndSet()
-		if c.data.Config.EnableV1IfCompatible {
-			c.data.AddOp(typeV1IfMark)
-		}
+		c.data.AddOp(typeBlockPop)
 		return nil
 	})(&p.cur)
 }

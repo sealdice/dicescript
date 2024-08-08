@@ -1,6 +1,7 @@
 package dicescript
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1659,20 +1660,38 @@ func TestIfError(t *testing.T) {
 }
 
 func TestFStringV1IfCompatible(t *testing.T) {
-	// `1 {% if 1 {'test'} %} 2`
-	// 在v1中会返回1  2，中间的if语句执行后栈中是空的
-	// 但是v2改为不进行栈平衡，所以会得到1 test 2，这个兼容选项用于模拟这一行为
 	vm := NewVM()
 	err := vm.Run("`1 {% if 1 {'test'} %} 2`")
 	if assert.NoError(t, err) {
-		assert.True(t, valueEqual(vm.Ret, ns("1 test 2")))
+		assert.True(t, valueEqual(vm.Ret, ns("1  2")))
 	}
+}
 
-	vm.Config.EnableV1IfCompatible = true
-	err = vm.Run("`1 {% if 1 {'test'} %} 2`")
+func TestFStringV1IfCompatibleWhile(t *testing.T) {
+	// while 不返回内容，所以如果是字符串模板的最后一项，无输出
+	vm := NewVM()
+	err := vm.Run("`1 {% x = 0; while x < 5 { x = x + 1 } %} 2`")
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("1  2")))
-		assert.Equal(t, vm.V1IfCompatibleCount, 1)
+	}
+}
+
+func TestReturnValueWithWhile(t *testing.T) {
+	// while 不返回内容，所以如果是字符串模板的最后一项，无输出
+	vm := NewVM()
+	err := vm.Run("x = 0; while x < 5 { x = x + 1 }")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
+	}
+}
+
+func TestReturnValueWithIf(t *testing.T) {
+	// while 不返回内容，所以如果是字符串模板的最后一项，无输出
+	vm := NewVM()
+	err := vm.Run("x = 0; if 1 { x = 10 }")
+	if assert.NoError(t, err) {
+		fmt.Println(vm.Ret.ToString())
+		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
 	}
 }
 

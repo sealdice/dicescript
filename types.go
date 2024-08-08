@@ -97,8 +97,6 @@ type RollConfig struct {
 	PrintBytecode bool // 执行时打印字节码
 	IgnoreDiv0    bool // 当div0时暂不报错
 
-	EnableV1IfCompatible bool // 一种特殊的兼容，fstring中如果最后一个语句是if那么此项为空字符串
-
 	DiceMinMode bool // 骰子以最小值结算，用于获取下界
 	DiceMaxMode bool // 以最大值结算 获取上界
 }
@@ -145,8 +143,6 @@ type Context struct {
 	NumOpCount IntType // 算力计数
 	// CocFlagVarPrefix string // 解析过程中出现，当VarNumber开启时有效，可以是困难极难常规大成功
 
-	V1IfCompatibleCount int
-
 	Config RollConfig // 标记
 	Error  error      // 报错信息
 
@@ -158,7 +154,7 @@ type Context struct {
 	IsComputedLoaded bool
 
 	Seed    []byte          // 随机种子，16个字节，即双uint64
-	randSrc *rand.PCGSource // 根据种子生成的source
+	RandSrc *rand.PCGSource // 根据种子生成的source
 
 	IsRunning      bool // 是否正在运行，Run时会置为true，halt时会置为false
 	CustomDiceInfo []*customDiceItem
@@ -205,13 +201,13 @@ func (ctx *Context) Init() {
 	if ctx.Seed != nil {
 		s := rand.PCGSource{}
 		_ = s.UnmarshalBinary(ctx.Seed)
-		ctx.randSrc = &s
+		ctx.RandSrc = &s
 	}
 }
 
 func (ctx *Context) GetCurSeed() ([]byte, error) {
-	if ctx.randSrc != nil {
-		return ctx.randSrc.MarshalBinary()
+	if ctx.RandSrc != nil {
+		return ctx.RandSrc.MarshalBinary()
 	}
 	return randSource.MarshalBinary()
 }
@@ -1409,7 +1405,7 @@ func (v *VMValue) ComputedExecute(ctx *Context, detail *BufferSpan) *VMValue {
 	vm.UpCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
-	vm.randSrc = ctx.randSrc
+	vm.RandSrc = ctx.RandSrc
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
@@ -1484,7 +1480,7 @@ func (v *VMValue) FuncInvokeRaw(ctx *Context, params []*VMValue, useUpCtxLocal b
 	vm.UpCtx = ctx
 	vm.NumOpCount = ctx.NumOpCount + 100 // 递归视为消耗 + 100
 	ctx.NumOpCount = vm.NumOpCount       // 防止无限递归
-	vm.randSrc = ctx.randSrc
+	vm.RandSrc = ctx.RandSrc
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error

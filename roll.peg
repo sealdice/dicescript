@@ -94,8 +94,8 @@ stmtContinue <- "continue" sp {
 stmtReturn <- "return" sp1x exprRoot { c.data.AddOp(typeReturn); }
             / "return" sp { c.data.PushNull(); c.data.AddOp(typeReturn); }
 
-stmtWhile <- "while" { c.data.LoopBegin(); c.data.OffsetPush() } sp1x exprRoot sp { c.data.AddOp(typeJne); c.data.OffsetPush() }
-             block { c.data.AddOp(typeJmp); c.data.OffsetPush(); c.data.OffsetJmpSetX(0, 2, true); c.data.OffsetJmpSetX(1, 1, false); c.data.ContinueSet(2); c.data.BreakSet(); c.data.OffsetPopN(3);c.data.LoopEnd(); }
+stmtWhile <- "while" sp1x { c.data.AddOp(typeBlockPush); c.data.LoopBegin(); c.data.OffsetPush() } exprRoot sp { c.data.AddOp(typeJne); c.data.OffsetPush() }
+             block { c.data.AddOp(typeJmp); c.data.OffsetPush(); c.data.OffsetJmpSetX(0, 2, true); c.data.OffsetJmpSetX(1, 1, false); c.data.ContinueSet(2); c.data.BreakSet(); c.data.OffsetPopN(3);c.data.LoopEnd(); c.data.AddOp(typeBlockPop) }
 // push xxx // 这里是while后面的exprRoot
 // jne 1
 // ...
@@ -103,8 +103,8 @@ stmtWhile <- "while" { c.data.LoopBegin(); c.data.OffsetPush() } sp1x exprRoot s
 
 block <- ( '{' sp '}' / '{' sp stmtRoot '}' ) sp
 stmtElse <- "else" (sp block / sp1x stmtIf)
-stmtIf <- "if" sp1x (exprRoot sp { c.data.AddOp(typeJne); c.data.OffsetPush() } block { c.data.AddOp(typeJmp); c.data.OffsetPopAndSet(); c.data.OffsetPush(); }
-               stmtElse? { c.data.OffsetPopAndSet(); if c.data.Config.EnableV1IfCompatible { c.data.AddOp(typeV1IfMark) } } / &{ p.addErr(errors.New("不符合if语法: if expr {...} [else {...}]")); return false; })
+stmtIf <- "if" sp1x (exprRoot sp { c.data.AddOp(typeBlockPush); c.data.AddOp(typeJne); c.data.OffsetPush() } block { c.data.AddOp(typeJmp); c.data.OffsetPopAndSet(); c.data.OffsetPush(); }
+               stmtElse? { c.data.OffsetPopAndSet(); c.data.AddOp(typeBlockPop) } / &{ p.addErr(errors.New("不符合if语法: if expr {...} [else {...}]")); return false; })
 
 // 'if' exprRoot block
 // ('else' block)?
