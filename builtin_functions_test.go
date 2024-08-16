@@ -89,3 +89,11 @@ func TestNativeFunctionTypeId(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ni(IntType(VMTypeInt))))
 	}
 }
+
+func TestNativeFunctionStore(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("store('test', 123); test")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(123)))
+	}
+}

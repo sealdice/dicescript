@@ -3218,8 +3218,8 @@ var g = &grammar{
 		{
 			name: "xidContinue",
 			expr: &charClassMatcher{
-				val:     "[$\\p{L}\\p{Other_ID_Start}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Other_ID_Continue}]",
-				chars:   []rune{'$'},
+				val:     "[$\\p{L}\\p{Other_ID_Start}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Other_ID_Continue}（）【】]",
+				chars:   []rune{'$', '（', '）', '【', '】'},
 				classes: []*unicode.RangeTable{unicode.L, unicode.Other_ID_Start, unicode.Nl, unicode.Mn, unicode.Mc, unicode.Nd, unicode.Pc, unicode.Other_ID_Continue},
 			},
 		},

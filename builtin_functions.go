@@ -174,6 +174,18 @@ func funcLoadRaw(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return funcLoadBase(ctx, this, params, true)
 }
 
+func funcStore(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+	name := params[0]
+	if name.TypeId != VMTypeString {
+		ctx.Error = errors.New("(store)类型错误: 参数1类型必须为str")
+		return nil
+	}
+
+	val := params[1]
+	ctx.StoreName(name.Value.(string), val, true)
+	return val
+}
+
 func funcDir(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	typeId := params[0].TypeId
 	var arr []*VMValue
@@ -217,6 +229,7 @@ var builtinValues = map[string]*VMValue{
 	"repr":    nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
 	"load":    nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),
 	"loadRaw": nnf(&ndf{"loadRaw", []string{"value"}, nil, nil, nil}),
+	"store":   nnf(&ndf{"store", []string{"name", "value"}, nil, nil, nil}),
 
 	// TODO: roll()
 
@@ -233,6 +246,9 @@ func _init() bool {
 
 	nfd, _ = builtinValues["loadRaw"].ReadNativeFunctionData()
 	nfd.NativeFunc = funcLoadRaw
+
+	nfd, _ = builtinValues["store"].ReadNativeFunctionData()
+	nfd.NativeFunc = funcStore
 	return false
 }
 

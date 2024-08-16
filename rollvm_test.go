@@ -1667,6 +1667,14 @@ func TestFStringV1IfCompatible(t *testing.T) {
 	}
 }
 
+func TestFStringV1IdentCompatible(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("$t（测试） = 1; $t（测试）")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(1)))
+	}
+}
+
 func TestFStringV1IfCompatibleWhile(t *testing.T) {
 	// while 不返回内容，所以如果是字符串模板的最后一项，无输出
 	vm := NewVM()
