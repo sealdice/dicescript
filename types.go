@@ -28,8 +28,8 @@ import (
 )
 
 type VMValueType int
-type IntType int      // :IntType
-const IntTypeSize = 4 // 只能为 4 或 8(32位/64位)
+type IntType int                        // :IntType
+const IntTypeSize = strconv.IntSize / 8 // 只能为 4 或 8(32位/64位)
 
 const (
 	VMTypeInt            VMValueType = 0

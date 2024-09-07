@@ -20,22 +20,51 @@ func getSource() *rand.PCGSource {
 
 var randSource = getSource()
 
-func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
-	if dicePoints == 0 {
-		return 0
-	}
-	// 这里判断不了IntType的长度，但编译器会自动优化掉没用的分支
-	// 注: 由于 gopherJs 会因为 MaxInt64 > uint_max 而编译错误，所以限制最大值为int32，看他后续版本是否会有改进
-	// if IntTypeSize == 8 && dicePoints > math.MaxInt64-1 {
-	// 	return 0
-	// }
-	// if IntTypeSize == 4 && dicePoints > math.MaxInt32-1 {
-	// 	return 0
-	// }
+func _roll32(src *rand.PCGSource, dicePoints int) int {
+	// 注: int的长度至少为32位，也可以高于此数，此处只是当作32位处理
 	if dicePoints > math.MaxInt32-1 {
 		return 0
 	}
 
+	v := uint32(src.Uint64() >> 32)
+	n := uint32(dicePoints)
+	// 下面这段取整代码来自 golang 的 exp/rand
+	if n&(n-1) == 0 { // n is power of two, can mask
+		return int(v&(n-1) + 1)
+	}
+	if v > math.MaxUint32-n { // Fast check.
+		ceiling := math.MaxUint32 - math.MaxUint32%n
+		for v >= ceiling {
+			v = uint32(src.Uint64() >> 32)
+		}
+	}
+	return int(v%n + 1)
+}
+
+func _roll64(src *rand.PCGSource, dicePoints int64, mod int) int64 {
+	if dicePoints > math.MaxInt64-1 {
+		return 0
+	}
+
+	v := src.Uint64()
+	n := uint64(dicePoints)
+	// 下面这段取整代码来自 golang 的 exp/rand
+	if n&(n-1) == 0 { // n is power of two, can mask
+		return int64(v&(n-1) + 1)
+	}
+	if v > math.MaxUint64-n { // Fast check.
+		ceiling := math.MaxUint64 - math.MaxUint64%n
+		for v >= ceiling {
+			v = src.Uint64()
+		}
+	}
+	return int64(v%n + 1)
+}
+
+func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
+	if dicePoints == 0 {
+		return 0
+	}
 	if mod == -1 {
 		return 1
 	}
@@ -46,19 +75,12 @@ func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
 		src = randSource
 	}
 
-	v := src.Uint64() // 如果弄32位版本，可以写成 uint32(src.Uint64() >> 32)
-	n := uint64(dicePoints)
-	// 下面这段取整代码来自 golang 的 exp/rand
-	if n&(n-1) == 0 { // n is power of two, can mask
-		return IntType(v&(n-1) + 1)
+	// 大部分情况会走这个分支
+	if IntTypeSize == 8 {
+		return IntType(_roll64(src, int64(dicePoints), mod))
 	}
-	if v > math.MaxUint64-n { // Fast check.
-		ceiling := math.MaxUint64 - math.MaxUint64%n
-		for v >= ceiling {
-			v = src.Uint64()
-		}
-	}
-	return IntType(v%n + 1)
+
+	return IntType(_roll32(src, int(dicePoints)))
 }
 
 func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, threshold IntType) bool {
