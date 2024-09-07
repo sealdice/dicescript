@@ -28,7 +28,8 @@ import (
 )
 
 type VMValueType int
-type IntType int // :IntType
+type IntType int      // :IntType
+const IntTypeSize = 4 // 只能为 4 或 8(32位/64位)
 
 const (
 	VMTypeInt            VMValueType = 0
@@ -158,6 +159,8 @@ type Context struct {
 
 	IsRunning      bool // 是否正在运行，Run时会置为true，halt时会置为false
 	CustomDiceInfo []*customDiceItem
+
+	forceSolveDetail bool // 一个辅助属性，用于computed时强制获取计算过程
 
 	/** 全局变量 */
 	globalNames *ValueMap
@@ -1406,6 +1409,7 @@ func (v *VMValue) ComputedExecute(ctx *Context, detail *BufferSpan) *VMValue {
 	vm.NumOpCount = ctx.NumOpCount + 100
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
 	vm.RandSrc = ctx.RandSrc
+	vm.forceSolveDetail = true
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
@@ -1428,8 +1432,15 @@ func (v *VMValue) ComputedExecute(ctx *Context, detail *BufferSpan) *VMValue {
 	}
 
 	var ret *VMValue
+	var detailText string
 	if vm.top != 0 {
 		ret = vm.stack[vm.top-1].Clone()
+		if vm.parser == nil {
+			// 兼容: 如果没有parser填充一个避免报错，不过会占用一些额外的内存
+			vm.parser = &parser{data: []byte(cd.Expr)}
+			vm.parser.pt.offset = len(vm.parser.data)
+		}
+		detailText = vm.makeDetailStr(vm.DetailSpans)
 	} else {
 		ret = NewNullVal()
 	}
@@ -1438,8 +1449,9 @@ func (v *VMValue) ComputedExecute(ctx *Context, detail *BufferSpan) *VMValue {
 	ctx.IsComputedLoaded = true
 
 	if detail != nil {
+		// detail.Expr = cd.Expr
 		detail.Tag = "load.computed"
-		detail.Text = cd.Expr
+		detail.Text = detailText
 	}
 	return ret
 }

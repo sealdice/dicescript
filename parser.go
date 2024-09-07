@@ -22,8 +22,9 @@ type ParserData struct {
 	}
 	loopLayer int // 当前loop层数
 	codeStack []struct {
-		code  []ByteCode
-		index int
+		code    []ByteCode
+		index   int
+		textPos int
 	}
 }
 
@@ -286,8 +287,21 @@ func (e *ParserData) AddInvoke(paramsNum IntType) {
 	e.WriteCode(typeInvoke, paramsNum)
 }
 
+func fixCodeByOffset(code []ByteCode, offset int) {
+	for index, i := range code {
+		switch i.T {
+		case typeDetailMark:
+			v := i.Value.(BufferSpan)
+			v.Begin -= IntType(offset)
+			v.End -= IntType(offset)
+			code[index].Value = v
+		}
+	}
+}
+
 func (p *ParserData) AddStoreComputed(name string, text string) {
-	code, length := p.CodePop()
+	code, length, offset := p.CodePop()
+	fixCodeByOffset(code, offset)
 	val := NewComputedValRaw(&ComputedData{
 		Expr:      text,
 		code:      code,
@@ -299,7 +313,8 @@ func (p *ParserData) AddStoreComputed(name string, text string) {
 }
 
 func (p *ParserData) AddStoreComputedOnStack(text string) {
-	code, length := p.CodePop()
+	code, length, offset := p.CodePop()
+	fixCodeByOffset(code, offset)
 	val := NewComputedValRaw(&ComputedData{
 		Expr:      text,
 		code:      code,
@@ -310,7 +325,8 @@ func (p *ParserData) AddStoreComputedOnStack(text string) {
 }
 
 func (p *ParserData) AddStoreFunction(name string, paramsReversed []string, text string) {
-	code, length := p.CodePop()
+	code, length, offset := p.CodePop()
+	fixCodeByOffset(code, offset)
 
 	// 翻转一次
 	for i, j := 0, len(paramsReversed)-1; i < j; i, j = i+1, j-1 {
@@ -340,16 +356,17 @@ func (p *ParserData) AddAttrSet(objName string, attr string, isRaw bool) {
 	p.WriteCode(typeAttrSet, attr)
 }
 
-func (p *ParserData) CodePush() {
+func (p *ParserData) CodePush(textPos int) {
 	p.codeStack = append(p.codeStack, struct {
-		code  []ByteCode
-		index int
-	}{code: p.code, index: p.codeIndex})
+		code    []ByteCode
+		index   int
+		textPos int
+	}{code: p.code, index: p.codeIndex, textPos: textPos})
 	p.code = make([]ByteCode, 256)
 	p.codeIndex = 0
 }
 
-func (p *ParserData) CodePop() ([]ByteCode, int) {
+func (p *ParserData) CodePop() ([]ByteCode, int, int) {
 	lastCode, lastIndex := p.code, p.codeIndex
 
 	last := len(p.codeStack) - 1
@@ -357,5 +374,5 @@ func (p *ParserData) CodePop() ([]ByteCode, int) {
 	p.codeStack = p.codeStack[:last]
 	p.code = info.code
 	p.codeIndex = info.index
-	return lastCode, lastIndex
+	return lastCode, lastIndex, info.textPos
 }

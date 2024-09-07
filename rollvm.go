@@ -365,7 +365,7 @@ func (ctx *Context) evaluate() {
 	}
 
 	solveDetail := func() {
-		if ctx.subThreadDepth != 0 {
+		if !ctx.forceSolveDetail && ctx.subThreadDepth != 0 {
 			return
 		}
 		sort.Sort(spanByBegin(details))
@@ -1059,6 +1059,8 @@ func (ctx *Context) evaluate() {
 			}
 		}
 	}
+
+	solveDetail()
 }
 
 func (ctx *Context) GetAsmText() string {

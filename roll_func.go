@@ -24,6 +24,14 @@ func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
 	if dicePoints == 0 {
 		return 0
 	}
+	// 这里判断不了IntType的长度，但编译器会自动优化掉没用的分支
+	if IntTypeSize == 8 && dicePoints > math.MaxInt64-1 {
+		return 0
+	}
+	if IntTypeSize == 4 && dicePoints > math.MaxInt32-1 {
+		return 0
+	}
+
 	if mod == -1 {
 		return 1
 	}
@@ -33,11 +41,20 @@ func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
 	if src == nil {
 		src = randSource
 	}
-	// js端有bug，如果当前IntType为32位，Int63会得到负数
-	// val := IntType(rand.Int31())%dicePoints + 1
-	// 同样问题也存在于这里，所以需要 &math.MaxInt32
-	val := IntType(src.Uint64()&math.MaxInt32)%dicePoints + 1
-	return val
+
+	v := src.Uint64() // 如果弄32位版本，可以写成 uint32(src.Uint64() >> 32)
+	n := uint64(dicePoints)
+	// 下面这段取整代码来自 golang 的 exp/rand
+	if n&(n-1) == 0 { // n is power of two, can mask
+		return IntType(v&(n-1) + 1)
+	}
+	if v > math.MaxUint64-n { // Fast check.
+		ceiling := math.MaxUint64 - math.MaxUint64%n
+		for v >= ceiling {
+			v = src.Uint64()
+		}
+	}
+	return IntType(v%n + 1)
 }
 
 func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, threshold IntType) bool {

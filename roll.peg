@@ -120,12 +120,12 @@ stmtIf <- "if" sp1x (exprRoot sp { c.data.AddOp(typeBlockPush); c.data.AddOp(typ
 func_def_params <- '(' sp ')' sp { c.data.CounterPush() }
                  / '(' sp { c.data.CounterPush(); c.data.CounterAdd(1) } id:identifier sp { c.data.NamePush(id.(string)) } (',' sp id2:identifier sp { c.data.NamePush(id2.(string)) } {c.data.CounterAdd(1)} )* ')' sp
 
-stmtFunc <- "func" sp1x id:identifier sp { c.data.NamePush(id.(string)) } func_def_params '{' sp { c.data.CodePush() } exprText:< stmtRoot? > '}' sp
+stmtFunc <- "func" sp1x id:identifier sp { c.data.NamePush(id.(string)) } func_def_params '{' sp { c.data.CodePush(p.pt.offset) } exprText:< stmtRoot? > '}' sp
             {  num := c.data.CounterPop(); arr := []string{}; for i:=IntType(0); i<num; i++ { arr = append(arr, c.data.NamePop()) }; c.data.AddStoreFunction(c.data.NamePop(), arr, exprText.(string)) }
 
 // 赋值
 stmtAssignType1 <- id:identifier sp { c.data.NamePush(id.(string)) } '=' sp exprRoot { c.data.AddStore(c.data.NamePop()) }
-stmtAssignType2 <- '&' id:identifier sp { c.data.NamePush(id.(string)) } '=' sp { c.data.CodePush() } expr:<exprRoot> { c.data.AddStoreComputed(c.data.NamePop(), expr.(string)) }
+stmtAssignType2 <- '&' id:identifier sp { c.data.NamePush(id.(string)) } '=' sp { c.data.CodePush(p.pt.offset) } expr:<exprRoot> { c.data.AddStoreComputed(c.data.NamePop(), expr.(string)) }
 stmtAssignType3 <- '&' id:identifier sp { c.data.NamePush(id.(string)) } '.' id2:identifier sp { c.data.NamePush(id2.(string)) } sp '=' sp exprRoot { attr, objName := c.data.NamePop(), c.data.NamePop(); c.data.AddAttrSet(objName, attr, true) }
 stmtAssignType4 <- "this" sp '.' sp id:identifier sp { c.data.NamePush(id.(string)) } '=' sp exprRoot { c.data.AddStoreLocal(c.data.NamePop()) }
 stmtAssignType5 <- id:identifier sp { c.data.NamePush(id.(string)) } '.' sp id2:identifier sp { c.data.NamePush(id2.(string)) } '=' sp exprRoot { attr, objName := c.data.NamePop(), c.data.NamePop(); c.data.AddAttrSet(objName, attr, false) }
@@ -475,8 +475,8 @@ st_assign <- &(st_name2 sp (':' / '=') sp est) st_name2 sp (':' / '=') sp est { 
            / &(st_name2r sp '*' sp (':' / '=') sp est) st_name2r sp '*' sp (':' / '=') sp est { c.data.AddOp(typeStX0) } // 属性*: 4
            / &(st_name2r sp (':' / '=') sp est) st_name2r sp (':' / '=') sp est { c.data.AddStName() } // 属性2: 70
            / &(st_name1r est) st_name1r est { c.data.AddStName() } // 力量60
-           / &('&' st_name2 sp (':' / '=') est) '&' st_name2 sp (':' / '=') sp { c.data.CodePush(); } text:< est > { c.data.AddStoreComputedOnStack(text.(string)); c.data.AddStName() } // &手枪 = 1d4
-           / &('&' st_name2r sp (':' / '=') est) '&' st_name2r sp (':' / '=') sp {c.data.CodePush(); } text:< est > { c.data.AddStoreComputedOnStack(text.(string)); c.data.AddStName() } // &手枪 = 1d4
+           / &('&' st_name2 sp (':' / '=') est) '&' st_name2 sp (':' / '=') sp { c.data.CodePush(p.pt.offset); } text:< est > { c.data.AddStoreComputedOnStack(text.(string)); c.data.AddStName() } // &手枪 = 1d4
+           / &('&' st_name2r sp (':' / '=') est) '&' st_name2r sp (':' / '=') sp { c.data.CodePush(p.pt.offset); } text:< est > { c.data.AddStoreComputedOnStack(text.(string)); c.data.AddStName() } // &手枪 = 1d4
 
 // 第一类:
 // 力量+1d3

@@ -4401,7 +4401,7 @@ func (p *parser) call_onstmtFunc_2() any {
 func (p *parser) call_onstmtFunc_9() any {
 	stack := p.vstack[len(p.vstack)-1]
 	return (func(c *current, id any) any {
-		c.data.CodePush()
+		c.data.CodePush(p.pt.offset)
 		return nil
 	})(&p.cur, stack["id"])
 }
@@ -4446,7 +4446,7 @@ func (p *parser) call_onstmtAssignType2_2() any {
 func (p *parser) call_onstmtAssignType2_8() any {
 	stack := p.vstack[len(p.vstack)-1]
 	return (func(c *current, id any) any {
-		c.data.CodePush()
+		c.data.CodePush(p.pt.offset)
 		return nil
 	})(&p.cur, stack["id"])
 }
@@ -5689,7 +5689,7 @@ func (p *parser) call_onst_assign_90() any {
 
 func (p *parser) call_onst_assign_99() any {
 	return (func(c *current) any {
-		c.data.CodePush()
+		c.data.CodePush(p.pt.offset)
 		return nil
 	})(&p.cur)
 }
@@ -5705,7 +5705,7 @@ func (p *parser) call_onst_assign_117() any {
 
 func (p *parser) call_onst_assign_121() any {
 	return (func(c *current) any {
-		c.data.CodePush()
+		c.data.CodePush(p.pt.offset)
 		return nil
 	})(&p.cur)
 }

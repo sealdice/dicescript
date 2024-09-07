@@ -1764,7 +1764,8 @@ func TestDetailTextComputed(t *testing.T) {
 	vm.Attrs.Store("a", NewComputedVal("4d1"))
 	err := vm.Run("a")
 	if assert.NoError(t, err) {
-		assert.Equal(t, "4[a=4d1=4]", vm.GetDetailText())
+		assert.Equal(t, "4[a=4[4d1=1+1+1+1]=4]", vm.GetDetailText())
+		// assert.Equal(t, "4[a=4d1=4]", vm.GetDetailText())
 	}
 }
 
@@ -1773,7 +1774,8 @@ func TestDetailTextComputed2(t *testing.T) {
 	vm.Attrs.Store("a", NewComputedVal("4d(1d1)"))
 	err := vm.Run("a")
 	if assert.NoError(t, err) {
-		assert.Equal(t, "4[a=4d(1d1)=4]", vm.GetDetailText())
+		assert.Equal(t, "4[a=4[4d(1d1)=1+1+1+1,1d1=1]=4]", vm.GetDetailText())
+		// assert.Equal(t, "4[a=4d(1d1)=4]", vm.GetDetailText())
 	}
 }
 
