@@ -25,10 +25,14 @@ func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
 		return 0
 	}
 	// 这里判断不了IntType的长度，但编译器会自动优化掉没用的分支
-	if IntTypeSize == 8 && dicePoints > math.MaxInt64-1 {
-		return 0
-	}
-	if IntTypeSize == 4 && dicePoints > math.MaxInt32-1 {
+	// 注: 由于 gopherJs 会因为 MaxInt64 > uint_max 而编译错误，所以限制最大值为int32，看他后续版本是否会有改进
+	// if IntTypeSize == 8 && dicePoints > math.MaxInt64-1 {
+	// 	return 0
+	// }
+	// if IntTypeSize == 4 && dicePoints > math.MaxInt32-1 {
+	// 	return 0
+	// }
+	if dicePoints > math.MaxInt32-1 {
 		return 0
 	}
 
