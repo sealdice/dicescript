@@ -60,6 +60,10 @@ func (ctx *Context) GetErrorText() string {
 	return ""
 }
 
+func (ctx *Context) GetParsedOffset() int {
+	return ctx.parser.pt.offset
+}
+
 func (ctx *Context) Parse(value string) error {
 	// 检测是否正在执行，正在执行则使用新的上下文
 	if ctx.IsRunning {
@@ -189,10 +193,10 @@ d10=10[d10=10=10]=10 首先进行一次省略，即文本标注如果等于值�
 同理还有 [2d1,2].kl() 这个与上面等价，只是写法不同
 */
 func (ctx *Context) makeDetailStr(details []BufferSpan) string {
-	if ctx.Config.CustomMakeDetailFunc != nil {
-		return ctx.Config.CustomMakeDetailFunc(ctx, details, ctx.parser.data)
-	}
 	offset := ctx.parser.pt.offset
+	if ctx.Config.CustomMakeDetailFunc != nil {
+		return ctx.Config.CustomMakeDetailFunc(ctx, details, ctx.parser.data, offset)
+	}
 	detailResult := ctx.parser.data[:offset]
 
 	curPoint := IntType(-1) // nolint
