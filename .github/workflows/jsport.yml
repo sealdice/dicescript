@@ -32,4 +32,5 @@ jobs:
       with:
         github_token: ${{ secrets.MY_TOKEN }}
         publish_dir: ./jsport
-        exclude_assets: './jsport/node_modules,./jsport/dicescript.cjs,./jsport/dicescript.cjs.map'
+        exclude_assets: './node_modules,./dicescript.cjs,./dicescript.cjs.map'
+        force_orphan: true
