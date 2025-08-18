@@ -1865,3 +1865,27 @@ func TestDiceAdvantage2(t *testing.T) {
 		assert.Equal(t, "3[3D1=1+1+1]", vm.GetDetailText())
 	}
 }
+
+func TestGetDetailBug(t *testing.T) {
+	// 语法解析bug，此时报错 slice bounds out of range
+	// 从生成的字节码可以看出，实际生成的字节码比应有的更多，也就是(a的时候后面这个a本来应该回溯，但是却继续走了
+	// 经查是 func_invoke 引起的问题，另外还有一个类似的 sub 表达式也会影响 detail 的生成，都做了正向先行断言处理
+	// !!! mark.detail 0, 1     1/5 0ms
+	// !!! ld.d a               2/5 0ms
+	// !!! mark.detail 2, 3     3/5 0ms
+	// !!! ld.d a               4/5 0ms
+	// !!! halt                 5/5 0ms
+	vm := NewVM()
+	err := vm.Run("a(a")
+	// fmt.Println(vm.GetAsmText())
+	assert.NoError(t, err)
+	assert.Equal(t, "(a", vm.RestInput)
+}
+
+func TestGetDetailBug2(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("a(1+1+23=3")
+	assert.NoError(t, err)
+	assert.Equal(t, vm.RestInput, "(1+1+23=3")
+	assert.Equal(t, "", vm.GetDetailText())
+}

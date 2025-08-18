@@ -2,7 +2,8 @@ package dicescript
 
 import (
 	"errors"
-	"math/rand"
+
+	"golang.org/x/exp/rand"
 )
 
 func funcComputedCompute(ctx *Context, this *VMValue, params []*VMValue) *VMValue {

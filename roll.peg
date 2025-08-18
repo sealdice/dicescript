@@ -304,8 +304,9 @@ item_get <- (&&(item_getX) item_getX)?
 attr_getX <- ('.' (sp id:identifier sp { c.data.WriteCode(typeAttrGet, id.(string)) }) func_invoke? )*
 attr_get <- (&&attr_getX attr_getX)?
 
+func_invoke2 <- '(' sp { c.data.CounterPush(); c.data.CounterAdd(1) } exprRoot sp (',' sp exprRoot {c.data.CounterAdd(1)} )* sp ')' { c.data.AddInvoke(c.data.CounterPop()) }
 func_invoke <- '(' sp ')' { c.data.AddInvoke(0) }
-             / '(' sp { c.data.CounterPush(); c.data.CounterAdd(1) } exprRoot sp (',' sp exprRoot {c.data.CounterAdd(1)} )* sp ')' { c.data.AddInvoke(c.data.CounterPop()) }
+             / &func_invoke2 func_invoke2
 
 dict_item <- ((value_id_without_colon / exprRoot) sp ':' sp exprRoot) sp { c.data.CounterAdd(1) }
 
@@ -398,7 +399,7 @@ xidStart <- [_$\p{L}\p{Other_ID_Start}]
 xidContinue <- [$\p{L}\p{Other_ID_Start}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Other_ID_Continue}（）【】]
 
 // 括号
-sub <- parenOpen exprRoot parenClose
+sub <- &(parenOpen exprRoot parenClose) parenOpen exprRoot parenClose
 subX <- sub item_get attr_get
 parenOpen <- '(' sp
 parenClose <- ')' sp

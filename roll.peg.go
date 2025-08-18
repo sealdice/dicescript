@@ -39,9 +39,9 @@ var g = &grammar{
 				run: (*parser).call_ondicescript_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&ruleIRefExpr{index: 1 /* stmtSt */},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -53,7 +53,7 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&litMatcher{val: "^st", want: "\"^st\""},
-							&ruleIRefExpr{index: 129 /* st_expr */},
+							&ruleIRefExpr{index: 130 /* st_expr */},
 						},
 					},
 					&ruleIRefExpr{index: 2 /* stmtRoot */},
@@ -65,7 +65,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&ruleIRefExpr{index: 3 /* stmtLines */},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -92,8 +92,8 @@ var g = &grammar{
 					},
 					&seqExpr{
 						exprs: []any{
-							&ruleIRefExpr{index: 126 /* comment */},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 127 /* comment */},
+							&ruleIRefExpr{index: 123 /* sp */},
 							&zeroOrOneExpr{
 								expr: &ruleIRefExpr{index: 3 /* stmtLines */},
 							},
@@ -113,7 +113,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: ";", want: "\";\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -133,14 +133,14 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&litMatcher{val: "//", want: "\"//\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&litMatcher{val: "#EnableDice", want: "\"#EnableDice\""},
-						&ruleIRefExpr{index: 124 /* sp1x */},
+						&ruleIRefExpr{index: 125 /* sp1x */},
 						&labeledExpr{
 							label: "id",
-							expr:  &ruleIRefExpr{index: 97 /* identifier */},
+							expr:  &ruleIRefExpr{index: 98 /* identifier */},
 						},
-						&ruleIRefExpr{index: 124 /* sp1x */},
+						&ruleIRefExpr{index: 125 /* sp1x */},
 						&labeledExpr{
 							label: "on",
 							expr: &choiceExpr{
@@ -151,7 +151,7 @@ var g = &grammar{
 							},
 							textCapture: true,
 						},
-						&ruleIRefExpr{index: 127 /* commentLineRest */},
+						&ruleIRefExpr{index: 128 /* commentLineRest */},
 					},
 				},
 			},
@@ -188,19 +188,19 @@ var g = &grammar{
 									alternatives: []any{
 										&seqExpr{
 											exprs: []any{
-												&ruleIRefExpr{index: 125 /* spNoCR */},
+												&ruleIRefExpr{index: 126 /* spNoCR */},
 												&litMatcher{val: "\n", want: "\"\\n\""},
 											},
 										},
 										&seqExpr{
 											exprs: []any{
-												&ruleIRefExpr{index: 122 /* sp */},
+												&ruleIRefExpr{index: 123 /* sp */},
 												&litMatcher{val: ";", want: "\";\""},
 											},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -217,7 +217,7 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&litMatcher{val: "break", want: "\"break\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -229,7 +229,7 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&litMatcher{val: "continue", want: "\"continue\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -243,7 +243,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "return", want: "\"return\""},
-								&ruleIRefExpr{index: 124 /* sp1x */},
+								&ruleIRefExpr{index: 125 /* sp1x */},
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 							},
 						},
@@ -253,7 +253,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "return", want: "\"return\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -269,7 +269,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "while", want: "\"while\""},
-								&ruleIRefExpr{index: 124 /* sp1x */},
+								&ruleIRefExpr{index: 125 /* sp1x */},
 							},
 						},
 					},
@@ -278,7 +278,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 26 /* exprRoot */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -298,21 +298,21 @@ var g = &grammar{
 							&seqExpr{
 								exprs: []any{
 									&litMatcher{val: "{", want: "\"{\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&litMatcher{val: "}", want: "\"}\""},
 								},
 							},
 							&seqExpr{
 								exprs: []any{
 									&litMatcher{val: "{", want: "\"{\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&ruleIRefExpr{index: 2 /* stmtRoot */},
 									&litMatcher{val: "}", want: "\"}\""},
 								},
 							},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -325,13 +325,13 @@ var g = &grammar{
 						alternatives: []any{
 							&seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&ruleIRefExpr{index: 12 /* block */},
 								},
 							},
 							&seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 124 /* sp1x */},
+									&ruleIRefExpr{index: 125 /* sp1x */},
 									&ruleIRefExpr{index: 14 /* stmtIf */},
 								},
 							},
@@ -345,7 +345,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "if", want: "\"if\""},
-					&ruleIRefExpr{index: 124 /* sp1x */},
+					&ruleIRefExpr{index: 125 /* sp1x */},
 					&choiceExpr{
 						alternatives: []any{
 							&seqExpr{
@@ -355,7 +355,7 @@ var g = &grammar{
 										expr: &seqExpr{
 											exprs: []any{
 												&ruleIRefExpr{index: 26 /* exprRoot */},
-												&ruleIRefExpr{index: 122 /* sp */},
+												&ruleIRefExpr{index: 123 /* sp */},
 											},
 										},
 									},
@@ -387,9 +387,9 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "(", want: "\"(\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: ")", want: "\")\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -400,7 +400,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "(", want: "\"(\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -410,9 +410,9 @@ var g = &grammar{
 									exprs: []any{
 										&labeledExpr{
 											label: "id",
-											expr:  &ruleIRefExpr{index: 97 /* identifier */},
+											expr:  &ruleIRefExpr{index: 98 /* identifier */},
 										},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -426,12 +426,12 @@ var g = &grammar{
 													expr: &seqExpr{
 														exprs: []any{
 															&litMatcher{val: ",", want: "\",\""},
-															&ruleIRefExpr{index: 122 /* sp */},
+															&ruleIRefExpr{index: 123 /* sp */},
 															&labeledExpr{
 																label: "id2",
-																expr:  &ruleIRefExpr{index: 97 /* identifier */},
+																expr:  &ruleIRefExpr{index: 98 /* identifier */},
 															},
-															&ruleIRefExpr{index: 122 /* sp */},
+															&ruleIRefExpr{index: 123 /* sp */},
 														},
 													},
 												},
@@ -442,7 +442,7 @@ var g = &grammar{
 										},
 									},
 									&litMatcher{val: ")", want: "\")\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 								},
 							},
 						},
@@ -460,12 +460,12 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "func", want: "\"func\""},
-								&ruleIRefExpr{index: 124 /* sp1x */},
+								&ruleIRefExpr{index: 125 /* sp1x */},
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -475,7 +475,7 @@ var g = &grammar{
 							exprs: []any{
 								&ruleIRefExpr{index: 15 /* func_def_params */},
 								&litMatcher{val: "{", want: "\"{\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -491,7 +491,7 @@ var g = &grammar{
 									textCapture: true,
 								},
 								&litMatcher{val: "}", want: "\"}\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -509,9 +509,9 @@ var g = &grammar{
 							exprs: []any{
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -520,7 +520,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "=", want: "\"=\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 							},
 						},
@@ -540,9 +540,9 @@ var g = &grammar{
 								&litMatcher{val: "&", want: "\"&\""},
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -551,7 +551,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "=", want: "\"=\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -578,9 +578,9 @@ var g = &grammar{
 								&litMatcher{val: "&", want: "\"&\""},
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -591,9 +591,9 @@ var g = &grammar{
 								&litMatcher{val: ".", want: "\".\""},
 								&labeledExpr{
 									label: "id2",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -601,9 +601,9 @@ var g = &grammar{
 						run: (*parser).call_onstmtAssignType3_14,
 						expr: &seqExpr{
 							exprs: []any{
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: "=", want: "\"=\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 							},
 						},
@@ -621,14 +621,14 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "this", want: "\"this\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: ".", want: "\".\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -637,7 +637,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "=", want: "\"=\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 							},
 						},
@@ -656,9 +656,9 @@ var g = &grammar{
 							exprs: []any{
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -667,12 +667,12 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: ".", want: "\".\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&labeledExpr{
 									label: "id2",
-									expr:  &ruleIRefExpr{index: 97 /* identifier */},
+									expr:  &ruleIRefExpr{index: 98 /* identifier */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -681,7 +681,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "=", want: "\"=\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 							},
 						},
@@ -697,12 +697,12 @@ var g = &grammar{
 					exprs: []any{
 						&ruleIRefExpr{index: 30 /* exprSlice */},
 						&litMatcher{val: "[", want: "\"[\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&ruleIRefExpr{index: 26 /* exprRoot */},
 						&litMatcher{val: "]", want: "\"]\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&litMatcher{val: "=", want: "\"=\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&ruleIRefExpr{index: 26 /* exprRoot */},
 					},
 				},
@@ -717,7 +717,7 @@ var g = &grammar{
 						&ruleIRefExpr{index: 30 /* exprSlice */},
 						&ruleIRefExpr{index: 28 /* _sliceSuffix */},
 						&litMatcher{val: "=", want: "\"=\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&ruleIRefExpr{index: 26 /* exprRoot */},
 					},
 				},
@@ -795,8 +795,8 @@ var g = &grammar{
 							&andExpr{
 								expr: &seqExpr{
 									exprs: []any{
-										&ruleIRefExpr{index: 102 /* subX */},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 103 /* subX */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&charClassMatcher{
 											val:   "[-+*/%^dDcCaA&|?<>=]",
 											chars: []rune{'-', '+', '*', '/', '%', '^', 'd', 'D', 'c', 'C', 'a', 'A', '&', '|', '?', '<', '>', '='},
@@ -815,9 +815,9 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&andExpr{
-								expr: &ruleIRefExpr{index: 102 /* subX */},
+								expr: &ruleIRefExpr{index: 103 /* subX */},
 							},
-							&ruleIRefExpr{index: 102 /* subX */},
+							&ruleIRefExpr{index: 103 /* subX */},
 						},
 					},
 				},
@@ -840,13 +840,13 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&litMatcher{val: ":", want: "\":\""},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 123 /* sp */},
 							&choiceExpr{
 								alternatives: []any{
 									&ruleIRefExpr{index: 26 /* exprRoot */},
 									&actionExpr{
 										run:  (*parser).call_on_step_7,
-										expr: &ruleIRefExpr{index: 122 /* sp */},
+										expr: &ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -854,7 +854,7 @@ var g = &grammar{
 					},
 					&actionExpr{
 						run:  (*parser).call_on_step_9,
-						expr: &ruleIRefExpr{index: 122 /* sp */},
+						expr: &ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -864,31 +864,31 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "[", want: "\"[\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
 							&ruleIRefExpr{index: 26 /* exprRoot */},
 							&actionExpr{
 								run:  (*parser).call_on_sliceSuffix_6,
-								expr: &ruleIRefExpr{index: 122 /* sp */},
+								expr: &ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
 					&litMatcher{val: ":", want: "\":\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
 							&ruleIRefExpr{index: 26 /* exprRoot */},
 							&actionExpr{
 								run:  (*parser).call_on_sliceSuffix_12,
-								expr: &ruleIRefExpr{index: 122 /* sp */},
+								expr: &ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
 					&ruleIRefExpr{index: 27 /* _step */},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&litMatcher{val: "]", want: "\"]\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -932,9 +932,9 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 35 /* exprLogicOr */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: "?", want: "\"?\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -943,7 +943,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 35 /* exprLogicOr */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -959,9 +959,9 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 35 /* exprLogicOr */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: "?", want: "\"?\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -970,9 +970,9 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 35 /* exprLogicOr */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: ":", want: "\":\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -981,7 +981,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&ruleIRefExpr{index: 35 /* exprLogicOr */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -1004,7 +1004,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: ",", want: "\",\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&ruleIRefExpr{index: 31 /* exprValueIfExists */},
 									},
 								},
@@ -1050,8 +1050,8 @@ var g = &grammar{
 									run: (*parser).call_onexprLogicOr_5,
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 114 /* logicOr */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 115 /* logicOr */},
 										},
 									},
 								},
@@ -1078,8 +1078,8 @@ var g = &grammar{
 							run: (*parser).call_onexprLogicAnd_4,
 							expr: &seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 122 /* sp */},
-									&ruleIRefExpr{index: 115 /* logicAnd */},
+									&ruleIRefExpr{index: 123 /* sp */},
+									&ruleIRefExpr{index: 116 /* logicAnd */},
 									&ruleIRefExpr{index: 37 /* exprBitwiseOr */},
 								},
 							},
@@ -1106,8 +1106,8 @@ var g = &grammar{
 									run: (*parser).call_onexprBitwiseOr_8,
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 112 /* bitwiseOr */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 113 /* bitwiseOr */},
 											&ruleIRefExpr{index: 38 /* exprBitwiseAnd */},
 										},
 									},
@@ -1128,8 +1128,8 @@ var g = &grammar{
 							run: (*parser).call_onexprBitwiseAnd_4,
 							expr: &seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 122 /* sp */},
-									&ruleIRefExpr{index: 113 /* bitwiseAnd */},
+									&ruleIRefExpr{index: 123 /* sp */},
+									&ruleIRefExpr{index: 114 /* bitwiseAnd */},
 									&ruleIRefExpr{index: 39 /* exprCompare */},
 								},
 							},
@@ -1146,14 +1146,14 @@ var g = &grammar{
 					&zeroOrMoreExpr{
 						expr: &seqExpr{
 							exprs: []any{
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&actionExpr{
 											run: (*parser).call_onexprCompare_7,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 116 /* lt */},
+													&ruleIRefExpr{index: 117 /* lt */},
 													&ruleIRefExpr{index: 40 /* exprAdditive */},
 												},
 											},
@@ -1162,7 +1162,7 @@ var g = &grammar{
 											run: (*parser).call_onexprCompare_11,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 118 /* le */},
+													&ruleIRefExpr{index: 119 /* le */},
 													&ruleIRefExpr{index: 40 /* exprAdditive */},
 												},
 											},
@@ -1171,7 +1171,7 @@ var g = &grammar{
 											run: (*parser).call_onexprCompare_15,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 120 /* eq */},
+													&ruleIRefExpr{index: 121 /* eq */},
 													&ruleIRefExpr{index: 40 /* exprAdditive */},
 												},
 											},
@@ -1180,7 +1180,7 @@ var g = &grammar{
 											run: (*parser).call_onexprCompare_19,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 121 /* ne */},
+													&ruleIRefExpr{index: 122 /* ne */},
 													&ruleIRefExpr{index: 40 /* exprAdditive */},
 												},
 											},
@@ -1189,7 +1189,7 @@ var g = &grammar{
 											run: (*parser).call_onexprCompare_23,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 119 /* ge */},
+													&ruleIRefExpr{index: 120 /* ge */},
 													&ruleIRefExpr{index: 40 /* exprAdditive */},
 												},
 											},
@@ -1198,7 +1198,7 @@ var g = &grammar{
 											run: (*parser).call_onexprCompare_27,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 117 /* gt */},
+													&ruleIRefExpr{index: 118 /* gt */},
 													&ruleIRefExpr{index: 40 /* exprAdditive */},
 												},
 											},
@@ -1219,14 +1219,14 @@ var g = &grammar{
 					&zeroOrMoreExpr{
 						expr: &seqExpr{
 							exprs: []any{
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&actionExpr{
 											run: (*parser).call_onexprAdditive_7,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 105 /* add */},
+													&ruleIRefExpr{index: 106 /* add */},
 													&ruleIRefExpr{index: 41 /* exprMultiplicative */},
 												},
 											},
@@ -1235,7 +1235,7 @@ var g = &grammar{
 											run: (*parser).call_onexprAdditive_11,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 106 /* minus */},
+													&ruleIRefExpr{index: 107 /* minus */},
 													&ruleIRefExpr{index: 41 /* exprMultiplicative */},
 												},
 											},
@@ -1256,14 +1256,14 @@ var g = &grammar{
 					&zeroOrMoreExpr{
 						expr: &seqExpr{
 							exprs: []any{
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&actionExpr{
 											run: (*parser).call_onexprMultiplicative_7,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 107 /* multiply */},
+													&ruleIRefExpr{index: 108 /* multiply */},
 													&ruleIRefExpr{index: 43 /* exprExp */},
 												},
 											},
@@ -1272,7 +1272,7 @@ var g = &grammar{
 											run: (*parser).call_onexprMultiplicative_11,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 108 /* divide */},
+													&ruleIRefExpr{index: 109 /* divide */},
 													&ruleIRefExpr{index: 43 /* exprExp */},
 												},
 											},
@@ -1281,7 +1281,7 @@ var g = &grammar{
 											run: (*parser).call_onexprMultiplicative_15,
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 109 /* modulus */},
+													&ruleIRefExpr{index: 110 /* modulus */},
 													&ruleIRefExpr{index: 43 /* exprExp */},
 												},
 											},
@@ -1304,8 +1304,8 @@ var g = &grammar{
 							run: (*parser).call_onexprNullCoalescing_4,
 							expr: &seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 122 /* sp */},
-									&ruleIRefExpr{index: 111 /* nullCoalescing */},
+									&ruleIRefExpr{index: 123 /* sp */},
+									&ruleIRefExpr{index: 112 /* nullCoalescing */},
 									&ruleIRefExpr{index: 43 /* exprExp */},
 								},
 							},
@@ -1324,8 +1324,8 @@ var g = &grammar{
 							run: (*parser).call_onexprExp_4,
 							expr: &seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 122 /* sp */},
-									&ruleIRefExpr{index: 110 /* exponentiation */},
+									&ruleIRefExpr{index: 123 /* sp */},
+									&ruleIRefExpr{index: 111 /* exponentiation */},
 									&ruleIRefExpr{index: 44 /* exprUnaryNeg */},
 								},
 							},
@@ -1342,7 +1342,7 @@ var g = &grammar{
 						run: (*parser).call_onexprUnaryNeg_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&ruleIRefExpr{index: 106 /* minus */},
+								&ruleIRefExpr{index: 107 /* minus */},
 								&ruleIRefExpr{index: 69 /* exprDice */},
 							},
 						},
@@ -1359,7 +1359,7 @@ var g = &grammar{
 						run: (*parser).call_onexprUnaryPos_2,
 						expr: &seqExpr{
 							exprs: []any{
-								&ruleIRefExpr{index: 105 /* add */},
+								&ruleIRefExpr{index: 106 /* add */},
 								&ruleIRefExpr{index: 69 /* exprDice */},
 							},
 						},
@@ -1372,8 +1372,8 @@ var g = &grammar{
 			name: "nos",
 			expr: &choiceExpr{
 				alternatives: []any{
-					&ruleIRefExpr{index: 81 /* number */},
-					&ruleIRefExpr{index: 101 /* sub */},
+					&ruleIRefExpr{index: 82 /* number */},
+					&ruleIRefExpr{index: 102 /* sub */},
 				},
 			},
 		},
@@ -1582,7 +1582,7 @@ var g = &grammar{
 							&litMatcher{val: "劣势", want: "\"劣势\""},
 							&litMatcher{val: "劣勢", want: "\"劣勢\""},
 							&notExpr{
-								expr: &ruleIRefExpr{index: 99 /* xidStart */},
+								expr: &ruleIRefExpr{index: 100 /* xidStart */},
 							},
 						},
 					},
@@ -1772,7 +1772,7 @@ var g = &grammar{
 						exprs: []any{
 							&ruleIRefExpr{index: 61 /* _wodTypeMain */},
 							&notExpr{
-								expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+								expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 							},
 						},
 					},
@@ -1847,12 +1847,12 @@ var g = &grammar{
 								exprs: []any{
 									&ruleIRefExpr{index: 46 /* nos */},
 									&notExpr{
-										expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+										expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 									},
 								},
 							},
 							&notExpr{
-								expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+								expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 							},
 						},
 					},
@@ -1875,14 +1875,14 @@ var g = &grammar{
 									exprs: []any{
 										&ruleIRefExpr{index: 46 /* nos */},
 										&notExpr{
-											expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+											expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 										},
 									},
 								},
 								&actionExpr{
 									run: (*parser).call_on_diceCocBonus_9,
 									expr: &notExpr{
-										expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+										expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 									},
 								},
 							},
@@ -1908,14 +1908,14 @@ var g = &grammar{
 									exprs: []any{
 										&ruleIRefExpr{index: 46 /* nos */},
 										&notExpr{
-											expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+											expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 										},
 									},
 								},
 								&actionExpr{
 									run: (*parser).call_on_diceCocPenalty_9,
 									expr: &notExpr{
-										expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+										expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 									},
 								},
 							},
@@ -1958,7 +1958,7 @@ var g = &grammar{
 						chars: []rune{'f', 'F'},
 					},
 					&notExpr{
-						expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+						expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 					},
 				},
 			},
@@ -2106,7 +2106,7 @@ var g = &grammar{
 													exprs: []any{
 														&ruleIRefExpr{index: 63 /* _wodMain */},
 														&notExpr{
-															expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+															expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 														},
 													},
 												},
@@ -2179,13 +2179,13 @@ var g = &grammar{
 									chars: []rune{'f', 'F'},
 								},
 								&notExpr{
-									expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+									expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 								},
 								&ruleIRefExpr{index: 48 /* detailEnd */},
 							},
 						},
 					},
-					&ruleIRefExpr{index: 80 /* value */},
+					&ruleIRefExpr{index: 81 /* value */},
 				},
 			},
 		},
@@ -2203,7 +2203,7 @@ var g = &grammar{
 								alternatives: []any{
 									&actionExpr{
 										run:  (*parser).call_onarray_call_6,
-										expr: &ruleIRefExpr{index: 81 /* number */},
+										expr: &ruleIRefExpr{index: 82 /* number */},
 									},
 									&codeExpr{
 										run: (*parser).call_onarray_call_8,
@@ -2222,7 +2222,7 @@ var g = &grammar{
 								alternatives: []any{
 									&actionExpr{
 										run:  (*parser).call_onarray_call_13,
-										expr: &ruleIRefExpr{index: 81 /* number */},
+										expr: &ruleIRefExpr{index: 82 /* number */},
 									},
 									&codeExpr{
 										run: (*parser).call_onarray_call_15,
@@ -2237,11 +2237,11 @@ var g = &grammar{
 							expr: &seqExpr{
 								exprs: []any{
 									&litMatcher{val: "[", want: "\"[\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&ruleIRefExpr{index: 26 /* exprRoot */},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&litMatcher{val: "]", want: "\"]\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 								},
 							},
 						},
@@ -2259,11 +2259,11 @@ var g = &grammar{
 							expr: &seqExpr{
 								exprs: []any{
 									&litMatcher{val: "[", want: "\"[\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&ruleIRefExpr{index: 26 /* exprRoot */},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&litMatcher{val: "]", want: "\"]\""},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&notExpr{
 										expr: &litMatcher{val: "=", want: "\"=\""},
 									},
@@ -2271,7 +2271,7 @@ var g = &grammar{
 							},
 						},
 						&zeroOrOneExpr{
-							expr: &ruleIRefExpr{index: 75 /* func_invoke */},
+							expr: &ruleIRefExpr{index: 76 /* func_invoke */},
 						},
 					},
 				},
@@ -2301,17 +2301,17 @@ var g = &grammar{
 							run: (*parser).call_onattr_getX_4,
 							expr: &seqExpr{
 								exprs: []any{
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 									&labeledExpr{
 										label: "id",
-										expr:  &ruleIRefExpr{index: 97 /* identifier */},
+										expr:  &ruleIRefExpr{index: 98 /* identifier */},
 									},
-									&ruleIRefExpr{index: 122 /* sp */},
+									&ruleIRefExpr{index: 123 /* sp */},
 								},
 							},
 						},
 						&zeroOrOneExpr{
-							expr: &ruleIRefExpr{index: 75 /* func_invoke */},
+							expr: &ruleIRefExpr{index: 76 /* func_invoke */},
 						},
 					},
 				},
@@ -2331,6 +2331,45 @@ var g = &grammar{
 			},
 		},
 		{
+			name: "func_invoke2",
+			expr: &seqExpr{
+				exprs: []any{
+					&actionExpr{
+						run: (*parser).call_onfunc_invoke2_2,
+						expr: &seqExpr{
+							exprs: []any{
+								&litMatcher{val: "(", want: "\"(\""},
+								&ruleIRefExpr{index: 123 /* sp */},
+							},
+						},
+					},
+					&actionExpr{
+						run: (*parser).call_onfunc_invoke2_6,
+						expr: &seqExpr{
+							exprs: []any{
+								&ruleIRefExpr{index: 26 /* exprRoot */},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&zeroOrMoreExpr{
+									expr: &actionExpr{
+										run: (*parser).call_onfunc_invoke2_11,
+										expr: &seqExpr{
+											exprs: []any{
+												&litMatcher{val: ",", want: "\",\""},
+												&ruleIRefExpr{index: 123 /* sp */},
+												&ruleIRefExpr{index: 26 /* exprRoot */},
+											},
+										},
+									},
+								},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&litMatcher{val: ")", want: "\")\""},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "func_invoke",
 			expr: &choiceExpr{
 				alternatives: []any{
@@ -2339,45 +2378,17 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "(", want: "\"(\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: ")", want: "\")\""},
 							},
 						},
 					},
 					&seqExpr{
 						exprs: []any{
-							&actionExpr{
-								run: (*parser).call_onfunc_invoke_8,
-								expr: &seqExpr{
-									exprs: []any{
-										&litMatcher{val: "(", want: "\"(\""},
-										&ruleIRefExpr{index: 122 /* sp */},
-									},
-								},
+							&andExpr{
+								expr: &ruleIRefExpr{index: 75 /* func_invoke2 */},
 							},
-							&actionExpr{
-								run: (*parser).call_onfunc_invoke_12,
-								expr: &seqExpr{
-									exprs: []any{
-										&ruleIRefExpr{index: 26 /* exprRoot */},
-										&ruleIRefExpr{index: 122 /* sp */},
-										&zeroOrMoreExpr{
-											expr: &actionExpr{
-												run: (*parser).call_onfunc_invoke_17,
-												expr: &seqExpr{
-													exprs: []any{
-														&litMatcher{val: ",", want: "\",\""},
-														&ruleIRefExpr{index: 122 /* sp */},
-														&ruleIRefExpr{index: 26 /* exprRoot */},
-													},
-												},
-											},
-										},
-										&ruleIRefExpr{index: 122 /* sp */},
-										&litMatcher{val: ")", want: "\")\""},
-									},
-								},
-							},
+							&ruleIRefExpr{index: 75 /* func_invoke2 */},
 						},
 					},
 				},
@@ -2393,17 +2404,17 @@ var g = &grammar{
 							exprs: []any{
 								&choiceExpr{
 									alternatives: []any{
-										&ruleIRefExpr{index: 77 /* value_id_without_colon */},
+										&ruleIRefExpr{index: 78 /* value_id_without_colon */},
 										&ruleIRefExpr{index: 26 /* exprRoot */},
 									},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: ":", want: "\":\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&ruleIRefExpr{index: 26 /* exprRoot */},
 							},
 						},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -2419,16 +2430,16 @@ var g = &grammar{
 							exprs: []any{
 								&labeledExpr{
 									label: "id",
-									expr:  &ruleIRefExpr{index: 98 /* identifierWithoutColon */},
+									expr:  &ruleIRefExpr{index: 99 /* identifierWithoutColon */},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
 					&seqExpr{
 						exprs: []any{
 							&zeroOrOneExpr{
-								expr: &ruleIRefExpr{index: 75 /* func_invoke */},
+								expr: &ruleIRefExpr{index: 76 /* func_invoke */},
 							},
 							&ruleIRefExpr{index: 72 /* item_get */},
 							&ruleIRefExpr{index: 74 /* attr_get */},
@@ -2444,13 +2455,13 @@ var g = &grammar{
 				expr: &seqExpr{
 					exprs: []any{
 						&litMatcher{val: "[", want: "\"[\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&ruleIRefExpr{index: 26 /* exprRoot */},
 						&litMatcher{val: "..", want: "\"..\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&ruleIRefExpr{index: 26 /* exprRoot */},
 						&litMatcher{val: "]", want: "\"]\""},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -2464,7 +2475,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "[", want: "\"[\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -2479,14 +2490,14 @@ var g = &grammar{
 										expr: &seqExpr{
 											exprs: []any{
 												&litMatcher{val: ",", want: "\",\""},
-												&ruleIRefExpr{index: 122 /* sp */},
+												&ruleIRefExpr{index: 123 /* sp */},
 												&ruleIRefExpr{index: 26 /* exprRoot */},
 											},
 										},
 									},
 								},
 								&litMatcher{val: "]", want: "\"]\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -2503,7 +2514,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "true", want: "\"true\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -2512,7 +2523,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "false", want: "\"false\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -2521,7 +2532,7 @@ var g = &grammar{
 						expr: &seqExpr{
 							exprs: []any{
 								&litMatcher{val: "null", want: "\"null\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 							},
 						},
 					},
@@ -2532,7 +2543,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "this", want: "\"this\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -2553,17 +2564,17 @@ var g = &grammar{
 										&litMatcher{val: "&", want: "\"&\""},
 										&labeledExpr{
 											label: "id",
-											expr:  &ruleIRefExpr{index: 97 /* identifier */},
+											expr:  &ruleIRefExpr{index: 98 /* identifier */},
 										},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
 							&ruleIRefExpr{index: 74 /* attr_get */},
 						},
 					},
-					&ruleIRefExpr{index: 82 /* float */},
-					&ruleIRefExpr{index: 81 /* number */},
+					&ruleIRefExpr{index: 83 /* float */},
+					&ruleIRefExpr{index: 82 /* number */},
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
@@ -2573,25 +2584,25 @@ var g = &grammar{
 										&andExpr{
 											expr: &seqExpr{
 												exprs: []any{
-													&ruleIRefExpr{index: 97 /* identifier */},
-													&ruleIRefExpr{index: 125 /* spNoCR */},
+													&ruleIRefExpr{index: 98 /* identifier */},
+													&ruleIRefExpr{index: 126 /* spNoCR */},
 												},
 											},
 										},
 										&ruleIRefExpr{index: 47 /* detailStart */},
 										&labeledExpr{
 											label: "id",
-											expr:  &ruleIRefExpr{index: 97 /* identifier */},
+											expr:  &ruleIRefExpr{index: 98 /* identifier */},
 										},
 										&ruleIRefExpr{index: 48 /* detailEnd */},
-										&ruleIRefExpr{index: 125 /* spNoCR */},
+										&ruleIRefExpr{index: 126 /* spNoCR */},
 									},
 								},
 							},
 							&seqExpr{
 								exprs: []any{
 									&zeroOrOneExpr{
-										expr: &ruleIRefExpr{index: 75 /* func_invoke */},
+										expr: &ruleIRefExpr{index: 76 /* func_invoke */},
 									},
 									&ruleIRefExpr{index: 72 /* item_get */},
 									&ruleIRefExpr{index: 74 /* attr_get */},
@@ -2599,10 +2610,10 @@ var g = &grammar{
 							},
 						},
 					},
-					&ruleIRefExpr{index: 94 /* fstring */},
+					&ruleIRefExpr{index: 95 /* fstring */},
 					&seqExpr{
 						exprs: []any{
-							&ruleIRefExpr{index: 101 /* sub */},
+							&ruleIRefExpr{index: 102 /* sub */},
 							&ruleIRefExpr{index: 72 /* item_get */},
 							&ruleIRefExpr{index: 74 /* attr_get */},
 						},
@@ -2614,9 +2625,9 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "[", want: "\"[\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&litMatcher{val: "]", want: "\"]\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -2633,9 +2644,9 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&andExpr{
-								expr: &ruleIRefExpr{index: 78 /* value_array_range */},
+								expr: &ruleIRefExpr{index: 79 /* value_array_range */},
 							},
-							&ruleIRefExpr{index: 78 /* value_array_range */},
+							&ruleIRefExpr{index: 79 /* value_array_range */},
 							&zeroOrOneExpr{
 								expr: &ruleIRefExpr{index: 70 /* array_call */},
 							},
@@ -2645,9 +2656,9 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&andExpr{
-								expr: &ruleIRefExpr{index: 79 /* value_array */},
+								expr: &ruleIRefExpr{index: 80 /* value_array */},
 							},
-							&ruleIRefExpr{index: 79 /* value_array */},
+							&ruleIRefExpr{index: 80 /* value_array */},
 							&zeroOrOneExpr{
 								expr: &ruleIRefExpr{index: 70 /* array_call */},
 							},
@@ -2661,9 +2672,9 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "{", want: "\"{\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&litMatcher{val: "}", want: "\"}\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -2682,7 +2693,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "{", want: "\"{\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -2690,13 +2701,13 @@ var g = &grammar{
 								run: (*parser).call_onvalue_94,
 								expr: &seqExpr{
 									exprs: []any{
-										&ruleIRefExpr{index: 76 /* dict_item */},
+										&ruleIRefExpr{index: 77 /* dict_item */},
 										&zeroOrMoreExpr{
 											expr: &seqExpr{
 												exprs: []any{
 													&litMatcher{val: ",", want: "\",\""},
-													&ruleIRefExpr{index: 122 /* sp */},
-													&ruleIRefExpr{index: 76 /* dict_item */},
+													&ruleIRefExpr{index: 123 /* sp */},
+													&ruleIRefExpr{index: 77 /* dict_item */},
 												},
 											},
 										},
@@ -2704,7 +2715,7 @@ var g = &grammar{
 											expr: &litMatcher{val: ",", want: "\",\""},
 										},
 										&litMatcher{val: "}", want: "\"}\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -2764,8 +2775,8 @@ var g = &grammar{
 					expr: &oneOrMoreExpr{
 						expr: &choiceExpr{
 							alternatives: []any{
-								&ruleIRefExpr{index: 91 /* strEscape */},
-								&ruleIRefExpr{index: 84 /* strPart1Normal */},
+								&ruleIRefExpr{index: 92 /* strEscape */},
+								&ruleIRefExpr{index: 85 /* strPart1Normal */},
 							},
 						},
 					},
@@ -2802,8 +2813,8 @@ var g = &grammar{
 					expr: &oneOrMoreExpr{
 						expr: &choiceExpr{
 							alternatives: []any{
-								&ruleIRefExpr{index: 91 /* strEscape */},
-								&ruleIRefExpr{index: 86 /* strPart2Normal */},
+								&ruleIRefExpr{index: 92 /* strEscape */},
+								&ruleIRefExpr{index: 87 /* strPart2Normal */},
 							},
 						},
 					},
@@ -2840,8 +2851,8 @@ var g = &grammar{
 					expr: &oneOrMoreExpr{
 						expr: &choiceExpr{
 							alternatives: []any{
-								&ruleIRefExpr{index: 91 /* strEscape */},
-								&ruleIRefExpr{index: 88 /* strPart3Normal */},
+								&ruleIRefExpr{index: 92 /* strEscape */},
+								&ruleIRefExpr{index: 89 /* strPart3Normal */},
 							},
 						},
 					},
@@ -2878,8 +2889,8 @@ var g = &grammar{
 					expr: &oneOrMoreExpr{
 						expr: &choiceExpr{
 							alternatives: []any{
-								&ruleIRefExpr{index: 91 /* strEscape */},
-								&ruleIRefExpr{index: 90 /* strPart4Normal */},
+								&ruleIRefExpr{index: 92 /* strEscape */},
+								&ruleIRefExpr{index: 91 /* strPart4Normal */},
 							},
 						},
 					},
@@ -2958,7 +2969,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "{%", want: "\"{%\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
 							&seqExpr{
@@ -2975,7 +2986,7 @@ var g = &grammar{
 							&andCodeExpr{run: (*parser).call_onfstringStmt_9},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&litMatcher{val: "%}", want: "\"%}\""},
 				},
 			},
@@ -2985,7 +2996,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "{", want: "\"{\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
 							&seqExpr{
@@ -3002,7 +3013,7 @@ var g = &grammar{
 							&andCodeExpr{run: (*parser).call_onfstringStmt2_9},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&litMatcher{val: "}", want: "\"}\""},
 				},
 			},
@@ -3060,7 +3071,7 @@ var g = &grammar{
 										expr: &seqExpr{
 											exprs: []any{
 												&zeroOrMoreExpr{
-													expr: &ruleIRefExpr{index: 83 /* strPart1 */},
+													expr: &ruleIRefExpr{index: 84 /* strPart1 */},
 												},
 												&litMatcher{val: "'", want: "\"'\""},
 											},
@@ -3079,7 +3090,7 @@ var g = &grammar{
 										expr: &seqExpr{
 											exprs: []any{
 												&zeroOrMoreExpr{
-													expr: &ruleIRefExpr{index: 85 /* strPart2 */},
+													expr: &ruleIRefExpr{index: 86 /* strPart2 */},
 												},
 												&litMatcher{val: "\"", want: "\"\\\"\""},
 											},
@@ -3100,9 +3111,9 @@ var g = &grammar{
 												&zeroOrMoreExpr{
 													expr: &choiceExpr{
 														alternatives: []any{
-															&ruleIRefExpr{index: 87 /* strPart3 */},
-															&ruleIRefExpr{index: 92 /* fstringStmt */},
-															&ruleIRefExpr{index: 93 /* fstringStmt2 */},
+															&ruleIRefExpr{index: 88 /* strPart3 */},
+															&ruleIRefExpr{index: 93 /* fstringStmt */},
+															&ruleIRefExpr{index: 94 /* fstringStmt2 */},
 														},
 													},
 												},
@@ -3125,9 +3136,9 @@ var g = &grammar{
 												&zeroOrMoreExpr{
 													expr: &choiceExpr{
 														alternatives: []any{
-															&ruleIRefExpr{index: 89 /* strPart4 */},
-															&ruleIRefExpr{index: 92 /* fstringStmt */},
-															&ruleIRefExpr{index: 93 /* fstringStmt2 */},
+															&ruleIRefExpr{index: 90 /* strPart4 */},
+															&ruleIRefExpr{index: 93 /* fstringStmt */},
+															&ruleIRefExpr{index: 94 /* fstringStmt2 */},
 														},
 													},
 												},
@@ -3139,7 +3150,7 @@ var g = &grammar{
 							},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3163,9 +3174,9 @@ var g = &grammar{
 			expr: &notExpr{
 				expr: &seqExpr{
 					exprs: []any{
-						&ruleIRefExpr{index: 95 /* keywords */},
+						&ruleIRefExpr{index: 96 /* keywords */},
 						&notExpr{
-							expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+							expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 						},
 						&andCodeExpr{run: (*parser).call_onkeywords_test_6},
 					},
@@ -3178,12 +3189,12 @@ var g = &grammar{
 				run: (*parser).call_onidentifier_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&ruleIRefExpr{index: 96 /* keywords_test */},
-						&ruleIRefExpr{index: 99 /* xidStart */},
+						&ruleIRefExpr{index: 97 /* keywords_test */},
+						&ruleIRefExpr{index: 100 /* xidStart */},
 						&zeroOrMoreExpr{
 							expr: &choiceExpr{
 								alternatives: []any{
-									&ruleIRefExpr{index: 100 /* xidContinue */},
+									&ruleIRefExpr{index: 101 /* xidContinue */},
 									&litMatcher{val: ":", want: "\":\""},
 								},
 							},
@@ -3198,10 +3209,10 @@ var g = &grammar{
 				run: (*parser).call_onidentifierWithoutColon_1,
 				expr: &seqExpr{
 					exprs: []any{
-						&ruleIRefExpr{index: 96 /* keywords_test */},
-						&ruleIRefExpr{index: 99 /* xidStart */},
+						&ruleIRefExpr{index: 97 /* keywords_test */},
+						&ruleIRefExpr{index: 100 /* xidStart */},
 						&zeroOrMoreExpr{
-							expr: &ruleIRefExpr{index: 100 /* xidContinue */},
+							expr: &ruleIRefExpr{index: 101 /* xidContinue */},
 						},
 					},
 				},
@@ -3227,9 +3238,18 @@ var g = &grammar{
 			name: "sub",
 			expr: &seqExpr{
 				exprs: []any{
-					&ruleIRefExpr{index: 103 /* parenOpen */},
+					&andExpr{
+						expr: &seqExpr{
+							exprs: []any{
+								&ruleIRefExpr{index: 104 /* parenOpen */},
+								&ruleIRefExpr{index: 26 /* exprRoot */},
+								&ruleIRefExpr{index: 105 /* parenClose */},
+							},
+						},
+					},
+					&ruleIRefExpr{index: 104 /* parenOpen */},
 					&ruleIRefExpr{index: 26 /* exprRoot */},
-					&ruleIRefExpr{index: 104 /* parenClose */},
+					&ruleIRefExpr{index: 105 /* parenClose */},
 				},
 			},
 		},
@@ -3237,7 +3257,7 @@ var g = &grammar{
 			name: "subX",
 			expr: &seqExpr{
 				exprs: []any{
-					&ruleIRefExpr{index: 101 /* sub */},
+					&ruleIRefExpr{index: 102 /* sub */},
 					&ruleIRefExpr{index: 72 /* item_get */},
 					&ruleIRefExpr{index: 74 /* attr_get */},
 				},
@@ -3248,7 +3268,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "(", want: "\"(\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3257,7 +3277,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: ")", want: "\")\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3271,7 +3291,7 @@ var g = &grammar{
 							&litMatcher{val: "＋", want: "\"＋\""},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3285,7 +3305,7 @@ var g = &grammar{
 							&litMatcher{val: "－", want: "\"－\""},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3299,7 +3319,7 @@ var g = &grammar{
 							&litMatcher{val: "＊", want: "\"＊\""},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3313,7 +3333,7 @@ var g = &grammar{
 							&litMatcher{val: "／", want: "\"／\""},
 						},
 					},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3322,7 +3342,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "%", want: "\"%\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3333,13 +3353,13 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&litMatcher{val: "^", want: "\"^\""},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 123 /* sp */},
 						},
 					},
 					&seqExpr{
 						exprs: []any{
 							&litMatcher{val: "**", want: "\"**\""},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 123 /* sp */},
 						},
 					},
 				},
@@ -3350,7 +3370,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "??", want: "\"??\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3359,7 +3379,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "|", want: "\"|\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3368,7 +3388,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "&", want: "\"&\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3377,7 +3397,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "||", want: "\"||\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3386,7 +3406,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "&&", want: "\"&&\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3395,7 +3415,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "<", want: "\"<\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3404,7 +3424,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: ">", want: "\">\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3413,7 +3433,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "<=", want: "\"<=\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3422,7 +3442,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: ">=", want: "\">=\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3431,7 +3451,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "==", want: "\"==\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3440,7 +3460,7 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "!=", want: "\"!=\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3465,7 +3485,7 @@ var g = &grammar{
 								val:   "[ \\n\\t\\r]",
 								chars: []rune{' ', '\n', '\t', '\r'},
 							},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 123 /* sp */},
 						},
 					},
 					&notExpr{
@@ -3478,8 +3498,8 @@ var g = &grammar{
 			name: "sp1x",
 			expr: &seqExpr{
 				exprs: []any{
-					&ruleIRefExpr{index: 123 /* sp1 */},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 124 /* sp1 */},
+					&ruleIRefExpr{index: 123 /* sp */},
 				},
 			},
 		},
@@ -3496,9 +3516,9 @@ var g = &grammar{
 			name: "comment",
 			expr: &seqExpr{
 				exprs: []any{
-					&ruleIRefExpr{index: 125 /* spNoCR */},
+					&ruleIRefExpr{index: 126 /* spNoCR */},
 					&litMatcher{val: "//", want: "\"//\""},
-					&ruleIRefExpr{index: 127 /* commentLineRest */},
+					&ruleIRefExpr{index: 128 /* commentLineRest */},
 				},
 			},
 		},
@@ -3561,8 +3581,8 @@ var g = &grammar{
 			name: "st_expr",
 			expr: &choiceExpr{
 				alternatives: []any{
-					&ruleIRefExpr{index: 134 /* st_modify_multi_1 */},
-					&ruleIRefExpr{index: 131 /* st_assign_multi */},
+					&ruleIRefExpr{index: 135 /* st_modify_multi_1 */},
+					&ruleIRefExpr{index: 132 /* st_assign_multi */},
 				},
 			},
 		},
@@ -3600,12 +3620,12 @@ var g = &grammar{
 			expr: &oneOrMoreExpr{
 				expr: &seqExpr{
 					exprs: []any{
-						&ruleIRefExpr{index: 133 /* st_assign */},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 134 /* st_assign */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&zeroOrOneExpr{
 							expr: &litMatcher{val: ",", want: "\",\""},
 						},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -3615,12 +3635,12 @@ var g = &grammar{
 			expr: &seqExpr{
 				exprs: []any{
 					&litMatcher{val: "*", want: "\"*\""},
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
-							&ruleIRefExpr{index: 82 /* float */},
-							&ruleIRefExpr{index: 81 /* number */},
-							&ruleIRefExpr{index: 101 /* sub */},
+							&ruleIRefExpr{index: 83 /* float */},
+							&ruleIRefExpr{index: 82 /* number */},
+							&ruleIRefExpr{index: 102 /* sub */},
 						},
 					},
 				},
@@ -3638,29 +3658,29 @@ var g = &grammar{
 								&andExpr{
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 141 /* st_name2 */},
-											&ruleIRefExpr{index: 122 /* sp */},
+											&ruleIRefExpr{index: 142 /* st_name2 */},
+											&ruleIRefExpr{index: 123 /* sp */},
 											&choiceExpr{
 												alternatives: []any{
 													&litMatcher{val: ":", want: "\":\""},
 													&litMatcher{val: "=", want: "\"=\""},
 												},
 											},
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 130 /* est */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 131 /* est */},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 141 /* st_name2 */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 142 /* st_name2 */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&litMatcher{val: ":", want: "\":\""},
 										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
-								&ruleIRefExpr{index: 130 /* est */},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&ruleIRefExpr{index: 131 /* est */},
 							},
 						},
 					},
@@ -3671,13 +3691,13 @@ var g = &grammar{
 								&andExpr{
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 139 /* st_name1 */},
-											&ruleIRefExpr{index: 130 /* est */},
+											&ruleIRefExpr{index: 140 /* st_name1 */},
+											&ruleIRefExpr{index: 131 /* est */},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 139 /* st_name1 */},
-								&ruleIRefExpr{index: 130 /* est */},
+								&ruleIRefExpr{index: 140 /* st_name1 */},
+								&ruleIRefExpr{index: 131 /* est */},
 							},
 						},
 					},
@@ -3688,33 +3708,33 @@ var g = &grammar{
 								&andExpr{
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 142 /* st_name2r */},
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 132 /* st_star */},
-											&ruleIRefExpr{index: 122 /* sp */},
+											&ruleIRefExpr{index: 143 /* st_name2r */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 133 /* st_star */},
+											&ruleIRefExpr{index: 123 /* sp */},
 											&choiceExpr{
 												alternatives: []any{
 													&litMatcher{val: ":", want: "\":\""},
 													&litMatcher{val: "=", want: "\"=\""},
 												},
 											},
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 130 /* est */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 131 /* est */},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 142 /* st_name2r */},
-								&ruleIRefExpr{index: 122 /* sp */},
-								&ruleIRefExpr{index: 132 /* st_star */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 143 /* st_name2r */},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&ruleIRefExpr{index: 133 /* st_star */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&litMatcher{val: ":", want: "\":\""},
 										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
-								&ruleIRefExpr{index: 130 /* est */},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&ruleIRefExpr{index: 131 /* est */},
 							},
 						},
 					},
@@ -3725,33 +3745,33 @@ var g = &grammar{
 								&andExpr{
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 142 /* st_name2r */},
-											&ruleIRefExpr{index: 122 /* sp */},
+											&ruleIRefExpr{index: 143 /* st_name2r */},
+											&ruleIRefExpr{index: 123 /* sp */},
 											&litMatcher{val: "*", want: "\"*\""},
-											&ruleIRefExpr{index: 122 /* sp */},
+											&ruleIRefExpr{index: 123 /* sp */},
 											&choiceExpr{
 												alternatives: []any{
 													&litMatcher{val: ":", want: "\":\""},
 													&litMatcher{val: "=", want: "\"=\""},
 												},
 											},
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 130 /* est */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 131 /* est */},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 142 /* st_name2r */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 143 /* st_name2r */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&litMatcher{val: "*", want: "\"*\""},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&litMatcher{val: ":", want: "\":\""},
 										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
-								&ruleIRefExpr{index: 130 /* est */},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&ruleIRefExpr{index: 131 /* est */},
 							},
 						},
 					},
@@ -3762,29 +3782,29 @@ var g = &grammar{
 								&andExpr{
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 142 /* st_name2r */},
-											&ruleIRefExpr{index: 122 /* sp */},
+											&ruleIRefExpr{index: 143 /* st_name2r */},
+											&ruleIRefExpr{index: 123 /* sp */},
 											&choiceExpr{
 												alternatives: []any{
 													&litMatcher{val: ":", want: "\":\""},
 													&litMatcher{val: "=", want: "\"=\""},
 												},
 											},
-											&ruleIRefExpr{index: 122 /* sp */},
-											&ruleIRefExpr{index: 130 /* est */},
+											&ruleIRefExpr{index: 123 /* sp */},
+											&ruleIRefExpr{index: 131 /* est */},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 142 /* st_name2r */},
-								&ruleIRefExpr{index: 122 /* sp */},
+								&ruleIRefExpr{index: 143 /* st_name2r */},
+								&ruleIRefExpr{index: 123 /* sp */},
 								&choiceExpr{
 									alternatives: []any{
 										&litMatcher{val: ":", want: "\":\""},
 										&litMatcher{val: "=", want: "\"=\""},
 									},
 								},
-								&ruleIRefExpr{index: 122 /* sp */},
-								&ruleIRefExpr{index: 130 /* est */},
+								&ruleIRefExpr{index: 123 /* sp */},
+								&ruleIRefExpr{index: 131 /* est */},
 							},
 						},
 					},
@@ -3795,13 +3815,13 @@ var g = &grammar{
 								&andExpr{
 									expr: &seqExpr{
 										exprs: []any{
-											&ruleIRefExpr{index: 140 /* st_name1r */},
-											&ruleIRefExpr{index: 130 /* est */},
+											&ruleIRefExpr{index: 141 /* st_name1r */},
+											&ruleIRefExpr{index: 131 /* est */},
 										},
 									},
 								},
-								&ruleIRefExpr{index: 140 /* st_name1r */},
-								&ruleIRefExpr{index: 130 /* est */},
+								&ruleIRefExpr{index: 141 /* st_name1r */},
+								&ruleIRefExpr{index: 131 /* est */},
 							},
 						},
 					},
@@ -3815,28 +3835,28 @@ var g = &grammar{
 											expr: &seqExpr{
 												exprs: []any{
 													&litMatcher{val: "&", want: "\"&\""},
-													&ruleIRefExpr{index: 141 /* st_name2 */},
-													&ruleIRefExpr{index: 122 /* sp */},
+													&ruleIRefExpr{index: 142 /* st_name2 */},
+													&ruleIRefExpr{index: 123 /* sp */},
 													&choiceExpr{
 														alternatives: []any{
 															&litMatcher{val: ":", want: "\":\""},
 															&litMatcher{val: "=", want: "\"=\""},
 														},
 													},
-													&ruleIRefExpr{index: 130 /* est */},
+													&ruleIRefExpr{index: 131 /* est */},
 												},
 											},
 										},
 										&litMatcher{val: "&", want: "\"&\""},
-										&ruleIRefExpr{index: 141 /* st_name2 */},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 142 /* st_name2 */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&choiceExpr{
 											alternatives: []any{
 												&litMatcher{val: ":", want: "\":\""},
 												&litMatcher{val: "=", want: "\"=\""},
 											},
 										},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -3844,7 +3864,7 @@ var g = &grammar{
 								run: (*parser).call_onst_assign_117,
 								expr: &labeledExpr{
 									label:       "text",
-									expr:        &ruleIRefExpr{index: 130 /* est */},
+									expr:        &ruleIRefExpr{index: 131 /* est */},
 									textCapture: true,
 								},
 							},
@@ -3860,28 +3880,28 @@ var g = &grammar{
 											expr: &seqExpr{
 												exprs: []any{
 													&litMatcher{val: "&", want: "\"&\""},
-													&ruleIRefExpr{index: 142 /* st_name2r */},
-													&ruleIRefExpr{index: 122 /* sp */},
+													&ruleIRefExpr{index: 143 /* st_name2r */},
+													&ruleIRefExpr{index: 123 /* sp */},
 													&choiceExpr{
 														alternatives: []any{
 															&litMatcher{val: ":", want: "\":\""},
 															&litMatcher{val: "=", want: "\"=\""},
 														},
 													},
-													&ruleIRefExpr{index: 130 /* est */},
+													&ruleIRefExpr{index: 131 /* est */},
 												},
 											},
 										},
 										&litMatcher{val: "&", want: "\"&\""},
-										&ruleIRefExpr{index: 142 /* st_name2r */},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 143 /* st_name2r */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&choiceExpr{
 											alternatives: []any{
 												&litMatcher{val: ":", want: "\":\""},
 												&litMatcher{val: "=", want: "\"=\""},
 											},
 										},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 									},
 								},
 							},
@@ -3889,7 +3909,7 @@ var g = &grammar{
 								run: (*parser).call_onst_assign_139,
 								expr: &labeledExpr{
 									label:       "text",
-									expr:        &ruleIRefExpr{index: 130 /* est */},
+									expr:        &ruleIRefExpr{index: 131 /* est */},
 									textCapture: true,
 								},
 							},
@@ -3904,15 +3924,15 @@ var g = &grammar{
 				exprs: []any{
 					&seqExpr{
 						exprs: []any{
-							&ruleIRefExpr{index: 135 /* st_modify_lead */},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 136 /* st_modify_lead */},
+							&ruleIRefExpr{index: 123 /* sp */},
 							&zeroOrOneExpr{
 								expr: &litMatcher{val: ",", want: "\",\""},
 							},
-							&ruleIRefExpr{index: 122 /* sp */},
+							&ruleIRefExpr{index: 123 /* sp */},
 						},
 					},
-					&ruleIRefExpr{index: 136 /* st_modify_multi_rest */},
+					&ruleIRefExpr{index: 137 /* st_modify_multi_rest */},
 				},
 			},
 		},
@@ -3925,13 +3945,13 @@ var g = &grammar{
 							&andExpr{
 								expr: &seqExpr{
 									exprs: []any{
-										&ruleIRefExpr{index: 141 /* st_name2 */},
-										&ruleIRefExpr{index: 137 /* st_modify_rest1 */},
+										&ruleIRefExpr{index: 142 /* st_name2 */},
+										&ruleIRefExpr{index: 138 /* st_modify_rest1 */},
 									},
 								},
 							},
-							&ruleIRefExpr{index: 141 /* st_name2 */},
-							&ruleIRefExpr{index: 137 /* st_modify_rest1 */},
+							&ruleIRefExpr{index: 142 /* st_name2 */},
+							&ruleIRefExpr{index: 138 /* st_modify_rest1 */},
 						},
 					},
 					&seqExpr{
@@ -3939,13 +3959,13 @@ var g = &grammar{
 							&andExpr{
 								expr: &seqExpr{
 									exprs: []any{
-										&ruleIRefExpr{index: 142 /* st_name2r */},
-										&ruleIRefExpr{index: 137 /* st_modify_rest1 */},
+										&ruleIRefExpr{index: 143 /* st_name2r */},
+										&ruleIRefExpr{index: 138 /* st_modify_rest1 */},
 									},
 								},
 							},
-							&ruleIRefExpr{index: 142 /* st_name2r */},
-							&ruleIRefExpr{index: 137 /* st_modify_rest1 */},
+							&ruleIRefExpr{index: 143 /* st_name2r */},
+							&ruleIRefExpr{index: 138 /* st_modify_rest1 */},
 						},
 					},
 					&seqExpr{
@@ -3953,13 +3973,13 @@ var g = &grammar{
 							&andExpr{
 								expr: &seqExpr{
 									exprs: []any{
-										&ruleIRefExpr{index: 139 /* st_name1 */},
-										&ruleIRefExpr{index: 138 /* st_modify_rest */},
+										&ruleIRefExpr{index: 140 /* st_name1 */},
+										&ruleIRefExpr{index: 139 /* st_modify_rest */},
 									},
 								},
 							},
-							&ruleIRefExpr{index: 139 /* st_name1 */},
-							&ruleIRefExpr{index: 138 /* st_modify_rest */},
+							&ruleIRefExpr{index: 140 /* st_name1 */},
+							&ruleIRefExpr{index: 139 /* st_modify_rest */},
 						},
 					},
 					&seqExpr{
@@ -3967,13 +3987,13 @@ var g = &grammar{
 							&andExpr{
 								expr: &seqExpr{
 									exprs: []any{
-										&ruleIRefExpr{index: 140 /* st_name1r */},
-										&ruleIRefExpr{index: 138 /* st_modify_rest */},
+										&ruleIRefExpr{index: 141 /* st_name1r */},
+										&ruleIRefExpr{index: 139 /* st_modify_rest */},
 									},
 								},
 							},
-							&ruleIRefExpr{index: 140 /* st_name1r */},
-							&ruleIRefExpr{index: 138 /* st_modify_rest */},
+							&ruleIRefExpr{index: 141 /* st_name1r */},
+							&ruleIRefExpr{index: 139 /* st_modify_rest */},
 						},
 					},
 				},
@@ -3984,12 +4004,12 @@ var g = &grammar{
 			expr: &zeroOrMoreExpr{
 				expr: &seqExpr{
 					exprs: []any{
-						&ruleIRefExpr{index: 135 /* st_modify_lead */},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 136 /* st_modify_lead */},
+						&ruleIRefExpr{index: 123 /* sp */},
 						&zeroOrOneExpr{
 							expr: &litMatcher{val: ",", want: "\",\""},
 						},
-						&ruleIRefExpr{index: 122 /* sp */},
+						&ruleIRefExpr{index: 123 /* sp */},
 					},
 				},
 			},
@@ -3999,7 +4019,7 @@ var g = &grammar{
 			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
 							&actionExpr{
@@ -4007,7 +4027,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "+=", want: "\"+=\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&labeledExpr{
 											label:       "text",
 											expr:        &ruleIRefExpr{index: 26 /* exprRoot */},
@@ -4021,7 +4041,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "-=", want: "\"-=\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&labeledExpr{
 											label:       "text",
 											expr:        &ruleIRefExpr{index: 26 /* exprRoot */},
@@ -4040,7 +4060,7 @@ var g = &grammar{
 			varExists: true,
 			expr: &seqExpr{
 				exprs: []any{
-					&ruleIRefExpr{index: 122 /* sp */},
+					&ruleIRefExpr{index: 123 /* sp */},
 					&choiceExpr{
 						alternatives: []any{
 							&actionExpr{
@@ -4051,7 +4071,7 @@ var g = &grammar{
 										&zeroOrOneExpr{
 											expr: &litMatcher{val: "=", want: "\"=\""},
 										},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&labeledExpr{
 											label:       "text",
 											expr:        &ruleIRefExpr{index: 26 /* exprRoot */},
@@ -4065,7 +4085,7 @@ var g = &grammar{
 								expr: &seqExpr{
 									exprs: []any{
 										&litMatcher{val: "-=", want: "\"-=\""},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&labeledExpr{
 											label:       "text",
 											expr:        &ruleIRefExpr{index: 26 /* exprRoot */},
@@ -4081,7 +4101,7 @@ var g = &grammar{
 										&andExpr{
 											expr: &litMatcher{val: "-", want: "\"-\""},
 										},
-										&ruleIRefExpr{index: 122 /* sp */},
+										&ruleIRefExpr{index: 123 /* sp */},
 										&labeledExpr{
 											label:       "text",
 											expr:        &ruleIRefExpr{index: 26 /* exprRoot */},
@@ -4105,11 +4125,11 @@ var g = &grammar{
 					expr: &seqExpr{
 						exprs: []any{
 							&oneOrMoreExpr{
-								expr: &ruleIRefExpr{index: 143 /* id_ch */},
+								expr: &ruleIRefExpr{index: 144 /* id_ch */},
 							},
 							&litMatcher{val: ":", want: "\":\""},
 							&oneOrMoreExpr{
-								expr: &ruleIRefExpr{index: 143 /* id_ch */},
+								expr: &ruleIRefExpr{index: 144 /* id_ch */},
 							},
 						},
 					},
@@ -4127,7 +4147,7 @@ var g = &grammar{
 						expr: &labeledExpr{
 							label: "text",
 							expr: &oneOrMoreExpr{
-								expr: &ruleIRefExpr{index: 143 /* id_ch */},
+								expr: &ruleIRefExpr{index: 144 /* id_ch */},
 							},
 							textCapture: true,
 						},
@@ -4142,7 +4162,7 @@ var g = &grammar{
 									expr: &oneOrMoreExpr{
 										expr: &choiceExpr{
 											alternatives: []any{
-												&ruleIRefExpr{index: 143 /* id_ch */},
+												&ruleIRefExpr{index: 144 /* id_ch */},
 												&charClassMatcher{
 													val:    "[0-9]",
 													ranges: []rune{'0', '9'},
@@ -4163,7 +4183,7 @@ var g = &grammar{
 		},
 		{
 			name: "st_name2",
-			expr: &ruleIRefExpr{index: 139 /* st_name1 */},
+			expr: &ruleIRefExpr{index: 140 /* st_name1 */},
 		},
 		{
 			name:      "st_name2r",
@@ -4175,7 +4195,7 @@ var g = &grammar{
 						expr: &labeledExpr{
 							label: "text",
 							expr: &oneOrMoreExpr{
-								expr: &ruleIRefExpr{index: 143 /* id_ch */},
+								expr: &ruleIRefExpr{index: 144 /* id_ch */},
 							},
 							textCapture: true,
 						},
@@ -4190,7 +4210,7 @@ var g = &grammar{
 									expr: &oneOrMoreExpr{
 										expr: &choiceExpr{
 											alternatives: []any{
-												&ruleIRefExpr{index: 143 /* id_ch */},
+												&ruleIRefExpr{index: 144 /* id_ch */},
 												&charClassMatcher{
 													val:    "[0-9]",
 													ranges: []rune{'0', '9'},
@@ -4211,7 +4231,7 @@ var g = &grammar{
 		},
 		{
 			name: "id_ch",
-			expr: &ruleIRefExpr{index: 99 /* xidStart */},
+			expr: &ruleIRefExpr{index: 100 /* xidStart */},
 		},
 	},
 }
@@ -5186,14 +5206,7 @@ func (p *parser) call_onattr_getX_4() any {
 	})(&p.cur, stack["id"])
 }
 
-func (p *parser) call_onfunc_invoke_2() any {
-	return (func(c *current) any {
-		c.data.AddInvoke(0)
-		return nil
-	})(&p.cur)
-}
-
-func (p *parser) call_onfunc_invoke_8() any {
+func (p *parser) call_onfunc_invoke2_2() any {
 	return (func(c *current) any {
 		c.data.CounterPush()
 		c.data.CounterAdd(1)
@@ -5201,16 +5214,23 @@ func (p *parser) call_onfunc_invoke_8() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onfunc_invoke_17() any {
+func (p *parser) call_onfunc_invoke2_11() any {
 	return (func(c *current) any {
 		c.data.CounterAdd(1)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onfunc_invoke_12() any {
+func (p *parser) call_onfunc_invoke2_6() any {
 	return (func(c *current) any {
 		c.data.AddInvoke(c.data.CounterPop())
+		return nil
+	})(&p.cur)
+}
+
+func (p *parser) call_onfunc_invoke_2() any {
+	return (func(c *current) any {
+		c.data.AddInvoke(0)
 		return nil
 	})(&p.cur)
 }
@@ -5853,6 +5873,14 @@ func (ss *parserStack) top() *savepoint {
 // the previous setting as an option.
 type option func(*parser) option
 
+func memoized(b bool) option {
+	return func(p *parser) option {
+		old := p.memoized
+		p.memoized = b
+		return memoized(old)
+	}
+}
+
 // Parse parses the data from b using filename as information in the
 // error messages.
 func parse(filename string, b []byte, opts ...option) (any, error) {
@@ -6093,8 +6121,9 @@ type parser struct {
 	data []byte
 	errs *errList
 
-	depth   int
-	recover bool
+	depth    int
+	recover  bool
+	memoized bool
 
 	// memoization table for the packrat algorithm:
 	// map[offset in source] map[expression or rule] {value, match}
@@ -6258,19 +6287,18 @@ func (p *parser) addErrAt(err error, pos position, expected []string) {
 	if buf.Len() > 0 {
 		buf.WriteString(":")
 	}
-	buf.WriteString(fmt.Sprintf("%d:%d", pos.line, pos.col))
+	buf.WriteString(fmt.Sprintf("%d:%d (%d)", pos.line, pos.col, pos.offset))
 	if len(p.rstack) > 0 {
 		if buf.Len() > 0 {
-			buf.WriteString(" ")
+			buf.WriteString(": ")
 		}
 		rule := p.rstack[len(p.rstack)-1]
 		if rule.displayName != "" {
-			buf.WriteString(rule.displayName[1:len(rule.displayName)-1])
+			buf.WriteString("rule " + rule.displayName)
 		} else {
-			buf.WriteString(rule.name)
+			buf.WriteString("rule " + rule.name)
 		}
 	}
-	// x(p.filename, pos.line, pos.col, pos.offset, ruleName)
 	pe := &parserError{Inner: err, pos: pos, prefix: buf.String(), expected: expected}
 	p.errs.add(pe)
 }
@@ -6445,23 +6473,28 @@ func (p *parser) parseExprWrap(expr any) (any, bool) {
 	}
 
 	setMemoized := func(pos int, expr any, val resultTuple) {
+		if !p.memoized {
+			return
+		}
 		if memo[pos] == nil {
 			memo[pos] = map[any]*resultTuple{}
 		}
 		memo[pos][expr] = &val
 	}
 
-	getMemoized := func(expr any) *resultTuple {
-		pos := p.pt.offset
-		if memo[pos] == nil {
-			return nil
+	if p.memoized {
+		getMemoized := func(expr any) *resultTuple {
+			pos := p.pt.offset
+			if memo[pos] == nil {
+				return nil
+			}
+			return memo[pos][expr]
 		}
-		return memo[pos][expr]
-	}
 
-	if m := getMemoized(expr); m != nil {
-		p.restore(&m.end)
-		return m.v, m.b
+		if m := getMemoized(expr); m != nil {
+			p.restore(&m.end)
+			return m.v, m.b
+		}
 	}
 
 	pos := p.pt.offset

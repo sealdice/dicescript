@@ -70,7 +70,7 @@ func (ctx *Context) Parse(value string) error {
 		return errors.New("正在执行中，无法执行新的语句")
 	}
 
-	p := newParser("", []byte(value))
+	p := newParser("", []byte(value), memoized(true))
 	ctx.parser = p
 	d := p.cur.data
 	// p.debug = true
