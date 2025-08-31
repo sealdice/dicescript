@@ -34,8 +34,10 @@ type BufferSpan struct {
 	Ret   *VMValue
 	Text  string
 
-	Expr string // 如果存在Expr，用来替代等号左边的内容，不存在的话用Begin和End从原文提取
-	Tag  string // 来源标记
+	Expr       string // 如果存在Expr，用来替代等号左边的内容，不存在的话用Begin和End从原文提取
+	Tag        string // 来源标记
+	TextOnly   bool   // 不显示expr，只显示text
+	ExprSuffix string // expr后缀，如不写为=，即 [力量=10] 这种格式
 }
 
 func (e *ParserData) LoopBegin() {

@@ -263,14 +263,38 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		// 主体结果部分，如 (10d3)d5=63[(10d3)d5=2+2+2+5+2+5+5+4+1+3+4+1+4+5+4+3+4+5+2,10d3=19]
 		partRet := last.Ret.ToString()
 
-		detail := "[" + exprText
+		detail := "["
+		exprSuffix := last.ExprSuffix
+		if exprSuffix == "" {
+			exprSuffix = "="
+		}
+
+		if !last.TextOnly {
+			detail += exprText
+		} else {
+			exprSuffix = ""
+		}
+
 		if last.Text != "" && partRet != last.Text { // 规则1.1
-			detail += "=" + last.Text
+			detail += exprSuffix + last.Text
 		}
 
 		switch item.tag {
+		case "load":
+			if last.TextOnly {
+				if last.Text != "" {
+					detail = "[" + last.Text
+				} else {
+					detail += "[-"
+				}
+			} else {
+				detail = "[" + exprText
+				if last.Text != "" {
+					detail += "," + last.Text
+				}
+			}
 		case "load.computed":
-			detail += "=" + partRet
+			detail += exprSuffix + partRet
 		}
 
 		detail += subDetailsText + "]"
@@ -280,6 +304,11 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		if len(detail) > 400 {
 			detail = "[略]"
 		}
+
+		if ctx.Config.CustomDetailRewriteFunc != nil {
+			detail = ctx.Config.CustomDetailRewriteFunc(ctx, detail, last, ctx.parser.data, offset)
+		}
+
 		writeBufStr(partRet + detail)
 		writeBuf(detailResult[item.end:])
 		detailResult = buf.Bytes()
@@ -718,59 +747,20 @@ func (ctx *Context) evaluate() {
 			var val *VMValue
 
 			withDetail := typeLoadNameWithDetail == code.T
+			isRaw := typeLoadNameRaw == code.T
+
 			if withDetail {
 				detail := &details[len(details)-1]
 				detail.Tag = "load"
 				detail.Text = ""
-				val = ctx.LoadNameWithDetail(name, true, true, detail)
+				val = ctx.LoadNameWithDetail(name, isRaw, true, detail)
 			} else {
-				val = ctx.LoadName(name, true, true)
+				val = ctx.LoadName(name, isRaw, true)
 			}
 			if ctx.Error != nil {
 				return
 			}
 
-			// 计算真实结果
-			isRaw := typeLoadNameRaw == code.T
-			doCompute := func(val *VMValue) *VMValue {
-				if !isRaw && val.TypeId == VMTypeComputedValue {
-					if withDetail {
-						detail := &details[len(details)-1]
-						val = val.ComputedExecute(ctx, detail)
-					} else {
-						val = val.ComputedExecute(ctx, &BufferSpan{})
-					}
-					if ctx.Error != nil {
-						return nil
-					}
-				}
-
-				// 追加计算结果到detail
-				if withDetail {
-					detail := &details[len(details)-1]
-					detail.Ret = val
-				}
-				return val
-			}
-
-			if ctx.Config.HookFuncValueLoadOverwrite != nil {
-				if len(details) > 0 {
-					oldRet := details[len(details)-1].Ret
-					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, doCompute, &details[len(details)-1])
-					if oldRet == details[len(details)-1].Ret {
-						// 如果ret发生变化才修改，顺便修改detail中的结果为最终结果
-						details[len(details)-1].Ret = val
-					}
-				} else {
-					val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, doCompute, &BufferSpan{})
-				}
-			} else {
-				val = doCompute(val)
-			}
-
-			if ctx.Error != nil {
-				return
-			}
 			stackPush(val)
 
 		case typeStoreName:

@@ -1,8 +1,9 @@
 package dicescript
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGlobalValueLoadOverwrite(t *testing.T) {
@@ -27,7 +28,7 @@ func TestGlobalValueLoadOverwrite(t *testing.T) {
 
 func TestHookFuncValueLoadOverwrite(t *testing.T) {
 	vm := NewVM()
-	vm.Config.HookFuncValueLoadOverwrite = func(ctx *Context, name string, curVal *VMValue, doCompute func(v *VMValue) *VMValue, detail *BufferSpan) *VMValue {
+	vm.Config.HookValueLoadPost = func(ctx *Context, name string, curVal *VMValue, doCompute func(v *VMValue) *VMValue, detail *BufferSpan) *VMValue {
 		doCompute(curVal)
 		if ctx.Error != nil {
 			return nil

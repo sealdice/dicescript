@@ -136,33 +136,11 @@ func funcLoadBase(ctx *Context, this *VMValue, params []*VMValue, isRaw bool) *V
 	}
 
 	name := v.Value.(string)
-	val := ctx.LoadName(name, true, true)
+	val := ctx.LoadName(name, isRaw, true)
 	if ctx.Error != nil {
 		return nil
 	}
 
-	// computed 回调
-	doCompute := func(val *VMValue) *VMValue {
-		if !isRaw {
-			if val.TypeId == VMTypeComputedValue {
-				val = val.ComputedExecute(ctx, nil)
-				if ctx.Error != nil {
-					return nil
-				}
-			}
-		}
-		return val
-	}
-
-	if ctx.Config.HookFuncValueLoadOverwrite != nil {
-		val = ctx.Config.HookFuncValueLoadOverwrite(ctx, name, val, doCompute, &BufferSpan{})
-	} else {
-		val = doCompute(val)
-	}
-
-	if ctx.Error != nil {
-		return nil
-	}
 	return val
 }
 

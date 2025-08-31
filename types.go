@@ -80,15 +80,16 @@ type RollConfig struct {
 
 	// 如果返回值为true，那么跳过剩下的储存流程。如果overwrite不为nil，对v进行覆盖。
 	// 另注: 钩子函数中含有ctx的原因是可能在函数中进行调用，此时ctx会发生变化
-	HookFuncValueStore func(ctx *Context, name string, v *VMValue) (overwrite *VMValue, solved bool)
+	HookValueStore func(ctx *Context, name string, v *VMValue) (overwrite *VMValue, solved bool)
 	// 如果overwrite不为nil，将结束值加载并使用overwrite值。如果为nil，将以newName为key进行加载
-	HookFuncValueLoad func(ctx *Context, name string) (newName string, overwrite *VMValue)
+	HookValueLoadPre func(ctx *Context, name string) (newName string, overwrite *VMValue)
 	// 读取后回调(返回值将覆盖之前读到的值。如果之前未读取到值curVal将为nil)，用户需要在里面调用doCompute保证结果正确
-	HookFuncValueLoadOverwrite func(ctx *Context, name string, curVal *VMValue, doCompute func(curVal *VMValue) *VMValue, detail *BufferSpan) *VMValue
+	HookValueLoadPost func(ctx *Context, name string, curVal *VMValue, doCompute func(curVal *VMValue) *VMValue, detail *BufferSpan) *VMValue
 
 	// st回调，注意val和extra都经过clone，可以放心储存
-	CallbackSt           func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) // st回调
-	CustomMakeDetailFunc func(ctx *Context, details []BufferSpan, dataBuffer []byte, parsedOffset int) string    // 自定义计算过程
+	CallbackSt              func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string)                 // st回调
+	CustomMakeDetailFunc    func(ctx *Context, details []BufferSpan, dataBuffer []byte, parsedOffset int) string                    // 自定义计算过程
+	CustomDetailRewriteFunc func(ctx *Context, curDetail string, detailSpan BufferSpan, dataBuffer []byte, parsedOffset int) string // 自定义单项detail重写
 
 	ParseExprLimit               uint64   // 解析算力限制，防止构造特殊语句进行DOS攻击，0为无限，建议值1000万
 	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
@@ -219,6 +220,46 @@ func (ctx *Context) loadInnerVar(name string) *VMValue {
 	return builtinValues[name]
 }
 
+func (ctx *Context) solveLoadPostAndComputed(name string, val *VMValue, isRaw bool, detail *BufferSpan) *VMValue {
+	withDetail := detail != nil
+
+	// 计算真实结果
+	doCompute := func(val *VMValue) *VMValue {
+		if !isRaw && val.TypeId == VMTypeComputedValue {
+			if withDetail {
+				val = val.ComputedExecute(ctx, detail)
+			} else {
+				val = val.ComputedExecute(ctx, &BufferSpan{})
+			}
+			if ctx.Error != nil {
+				return nil
+			}
+		}
+
+		// 追加计算结果到detail
+		if withDetail {
+			detail.Ret = val
+		}
+		return val
+	}
+
+	if ctx.Config.HookValueLoadPost != nil {
+		if detail != nil {
+			oldRet := detail.Ret
+			val = ctx.Config.HookValueLoadPost(ctx, name, val, doCompute, detail)
+			if oldRet == detail.Ret {
+				// 如果ret发生变化才修改，顺便修改detail中的结果为最终结果
+				detail.Ret = val
+			}
+		} else {
+			val = ctx.Config.HookValueLoadPost(ctx, name, val, doCompute, &BufferSpan{})
+		}
+	} else {
+		val = doCompute(val)
+	}
+	return val
+}
+
 func (ctx *Context) LoadNameGlobalWithDetail(name string, isRaw bool, detail *BufferSpan) *VMValue {
 	var loadFunc func(name string) *VMValue
 	if loadFunc == nil {
@@ -251,12 +292,8 @@ func (ctx *Context) LoadNameGlobalWithDetail(name string, isRaw bool, detail *Bu
 	if val == nil {
 		val = NewNullVal()
 	}
-	if !isRaw && val.TypeId == VMTypeComputedValue {
-		val = val.ComputedExecute(ctx, detail)
-		if ctx.Error != nil {
-			return nil
-		}
-	}
+
+	val = ctx.solveLoadPostAndComputed(name, val, isRaw, detail)
 	return val
 }
 
@@ -269,17 +306,13 @@ func (ctx *Context) LoadNameLocalWithDetail(name string, isRaw bool, detail *Buf
 	//	return ctx.currentThis.AttrGet(ctx, name)
 	// } else {
 	// if ctx.subThreadDepth >= 1 {
-	ret, exists := ctx.Attrs.Load(name)
+	val, exists := ctx.Attrs.Load(name)
 	if !exists {
-		ret = NewNullVal()
+		val = NewNullVal()
 	}
-	if !isRaw && ret.TypeId == VMTypeComputedValue {
-		ret = ret.ComputedExecute(ctx, detail)
-		if ctx.Error != nil {
-			return nil
-		}
-	}
-	return ret
+
+	val = ctx.solveLoadPostAndComputed(name, val, isRaw, detail)
+	return val
 	// }
 	// }
 }
@@ -289,9 +322,10 @@ func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
 }
 
 func (ctx *Context) LoadNameWithDetail(name string, isRaw bool, useHook bool, detail *BufferSpan) *VMValue {
-	if useHook && ctx.Config.HookFuncValueLoad != nil {
+	// 有个疑问，这里useHook真有用吗，什么情况下有用？
+	if useHook && ctx.Config.HookValueLoadPre != nil {
 		var overwrite *VMValue
-		name, overwrite = ctx.Config.HookFuncValueLoad(ctx, name)
+		name, overwrite = ctx.Config.HookValueLoadPre(ctx, name)
 
 		if overwrite != nil {
 			// 使用弄进来的替代值进行计算
@@ -327,8 +361,8 @@ func (ctx *Context) LoadName(name string, isRaw bool, useHook bool) *VMValue {
 
 // StoreName 储存变量
 func (ctx *Context) StoreName(name string, v *VMValue, useHook bool) {
-	if useHook && ctx.Config.HookFuncValueStore != nil {
-		overwrite, solved := ctx.Config.HookFuncValueStore(ctx, name, v)
+	if useHook && ctx.Config.HookValueStore != nil {
+		overwrite, solved := ctx.Config.HookValueStore(ctx, name, v)
 		if solved {
 			return
 		}
