@@ -163,6 +163,9 @@ type Context struct {
 
 	forceSolveDetail bool // 一个辅助属性，用于computed时强制获取计算过程
 
+	/** 自定义标志位 */
+	CustomFlag map[string]any
+
 	/** 全局变量 */
 	globalNames *ValueMap
 
@@ -202,6 +205,7 @@ func (ctx *Context) Init() {
 	ctx.globalNames = &ValueMap{}
 	ctx.detailCache = ""
 	ctx.DetailSpans = nil
+	ctx.CustomFlag = make(map[string]any)
 	if ctx.Seed != nil {
 		s := rand.PCGSource{}
 		_ = s.UnmarshalBinary(ctx.Seed)
@@ -1444,6 +1448,7 @@ func (v *VMValue) ComputedExecute(ctx *Context, detail *BufferSpan) *VMValue {
 	ctx.NumOpCount = vm.NumOpCount // 防止无限递归
 	vm.RandSrc = ctx.RandSrc
 	vm.forceSolveDetail = true
+	vm.CustomFlag = ctx.CustomFlag
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error
@@ -1527,6 +1532,7 @@ func (v *VMValue) FuncInvokeRaw(ctx *Context, params []*VMValue, useUpCtxLocal b
 	vm.NumOpCount = ctx.NumOpCount + 100 // 递归视为消耗 + 100
 	ctx.NumOpCount = vm.NumOpCount       // 防止无限递归
 	vm.RandSrc = ctx.RandSrc
+	vm.CustomFlag = ctx.CustomFlag
 	if ctx.Config.OpCountLimit > 0 && vm.NumOpCount > vm.Config.OpCountLimit {
 		vm.Error = errors.New("允许算力上限")
 		ctx.Error = vm.Error

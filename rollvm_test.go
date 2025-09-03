@@ -1544,7 +1544,8 @@ func TestNameDetailBug(t *testing.T) {
 	err := vm.Run(`a = 1;a   `)
 	if assert.NoError(t, err) {
 		// TODO: 后面的空格
-		assert.Equal(t, "a = 1;1   ", vm.GetDetailText())
+		// 目前是靠trimSpace实现了去后面空格，但最理想是直接就没有，这需要更精确的解析
+		assert.Equal(t, "a = 1;1", vm.GetDetailText())
 	}
 }
 
