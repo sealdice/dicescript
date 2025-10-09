@@ -71,8 +71,86 @@ func main() {
 		return name, nil
 	}
 
-	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *ds.Context, groups []string) *ds.VMValue {
-		return ds.NewIntVal(2)
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *ds.Context, groups []string) (*ds.VMValue, string, error) {
+		if len(groups) < 2 {
+			return nil, "", fmt.Errorf("自定义骰子算符未匹配")
+		}
+		v, err := strconv.ParseInt(groups[1], 10, 64)
+		if err != nil {
+			return nil, "", err
+		}
+		return ds.NewIntVal(ds.IntType(v)), "E" + groups[1], nil
+	})
+
+	// 阶乘计算函数
+	factorial := func(n int64) int64 {
+		if n < 0 {
+			return 0
+		}
+		if n == 0 || n == 1 {
+			return 1
+		}
+		result := int64(1)
+		for i := int64(2); i <= n; i++ {
+			result *= i
+		}
+		return result
+	}
+
+	// 组合数计算函数 C(a,b) = a! / (b! * (a-b)!)
+	combination := func(a, b int64) int64 {
+		if b < 0 || a < 0 || b > a {
+			return 0
+		}
+		if b == 0 || b == a {
+			return 1
+		}
+		// 优化：使用 C(a,b) = C(a, a-b) 选择较小的 b
+		if b > a-b {
+			b = a - b
+		}
+
+		result := int64(1)
+		for i := int64(0); i < b; i++ {
+			result = result * (a - i) / (i + 1)
+		}
+		return result
+	}
+
+	// 注册阶乘算符
+	_ = vm.RegCustomDice(`(\d+)!`, func(ctx *ds.Context, groups []string) (*ds.VMValue, string, error) {
+		if len(groups) < 2 {
+			return nil, "", fmt.Errorf("阶乘算符格式错误")
+		}
+		n, err := strconv.ParseInt(groups[1], 10, 64)
+		if err != nil {
+			return nil, "", fmt.Errorf("参数解析错误: %v", err)
+		}
+		result := factorial(n)
+		detail := fmt.Sprintf("%d!=%d", n, result)
+		return ds.NewIntVal(ds.IntType(result)), detail, nil
+	})
+
+	// 注册 Ca,b 算符
+	_ = vm.RegCustomDice(`C(\d+),(\d+)`, func(ctx *ds.Context, groups []string) (*ds.VMValue, string, error) {
+		if len(groups) < 3 {
+			return nil, "", fmt.Errorf("Ca,b 算符格式错误")
+		}
+
+		a, err := strconv.ParseInt(groups[1], 10, 64)
+		if err != nil {
+			return nil, "", fmt.Errorf("参数 a 解析错误: %v", err)
+		}
+
+		b, err := strconv.ParseInt(groups[2], 10, 64)
+		if err != nil {
+			return nil, "", fmt.Errorf("参数 b 解析错误: %v", err)
+		}
+
+		result := combination(a, b)
+		detail := ""
+
+		return ds.NewIntVal(ds.IntType(result)), detail, nil
 	})
 
 	// vm.ValueStoreNameFunc = func(name string, v *dice.VMValue) {

@@ -17,6 +17,8 @@ import (
 
 type ParserCustomData struct {
 	ParserData
+	ctx               *Context
+	pendingCustomDice *customDiceMatch
 }
 
 func toStr(x []byte) string {
@@ -1973,6 +1975,23 @@ var g = &grammar{
 								run: (*parser).call_onexprDice_3,
 								expr: &seqExpr{
 									exprs: []any{
+										&andCodeExpr{run: (*parser).call_onexprDice_5},
+										&ruleIRefExpr{index: 47 /* detailStart */},
+									},
+								},
+							},
+							&actionExpr{
+								run:  (*parser).call_onexprDice_7,
+								expr: &ruleIRefExpr{index: 48 /* detailEnd */},
+							},
+						},
+					},
+					&seqExpr{
+						exprs: []any{
+							&actionExpr{
+								run: (*parser).call_onexprDice_10,
+								expr: &seqExpr{
+									exprs: []any{
 										&andExpr{
 											expr: &ruleIRefExpr{index: 52 /* _diceType1 */},
 										},
@@ -1991,7 +2010,7 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onexprDice_14,
+								run: (*parser).call_onexprDice_21,
 								expr: &seqExpr{
 									exprs: []any{
 										&andExpr{
@@ -2011,10 +2030,10 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onexprDice_24,
+								run: (*parser).call_onexprDice_31,
 								expr: &seqExpr{
 									exprs: []any{
-										&andCodeExpr{run: (*parser).call_onexprDice_26},
+										&andCodeExpr{run: (*parser).call_onexprDice_33},
 										&andExpr{
 											expr: &ruleIRefExpr{index: 54 /* _diceType3 */},
 										},
@@ -2033,10 +2052,10 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onexprDice_36,
+								run: (*parser).call_onexprDice_43,
 								expr: &seqExpr{
 									exprs: []any{
-										&andCodeExpr{run: (*parser).call_onexprDice_38},
+										&andCodeExpr{run: (*parser).call_onexprDice_45},
 										&andExpr{
 											expr: &ruleIRefExpr{index: 55 /* _diceType4 */},
 										},
@@ -2045,7 +2064,7 @@ var g = &grammar{
 								},
 							},
 							&actionExpr{
-								run: (*parser).call_onexprDice_42,
+								run: (*parser).call_onexprDice_49,
 								expr: &seqExpr{
 									exprs: []any{
 										&ruleIRefExpr{index: 59 /* _diceExpr4 */},
@@ -2060,7 +2079,7 @@ var g = &grammar{
 					},
 					&seqExpr{
 						exprs: []any{
-							&andCodeExpr{run: (*parser).call_onexprDice_49},
+							&andCodeExpr{run: (*parser).call_onexprDice_56},
 							&andExpr{
 								expr: &ruleIRefExpr{index: 64 /* _cocDiceType */},
 							},
@@ -2076,10 +2095,10 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onexprDice_57,
+								run: (*parser).call_onexprDice_64,
 								expr: &seqExpr{
 									exprs: []any{
-										&andCodeExpr{run: (*parser).call_onexprDice_59},
+										&andCodeExpr{run: (*parser).call_onexprDice_66},
 										&andExpr{
 											expr: &ruleIRefExpr{index: 62 /* _wodDiceType */},
 										},
@@ -2088,7 +2107,7 @@ var g = &grammar{
 								},
 							},
 							&actionExpr{
-								run: (*parser).call_onexprDice_63,
+								run: (*parser).call_onexprDice_70,
 								expr: &seqExpr{
 									exprs: []any{
 										&choiceExpr{
@@ -2096,7 +2115,7 @@ var g = &grammar{
 												&seqExpr{
 													exprs: []any{
 														&actionExpr{
-															run:  (*parser).call_onexprDice_67,
+															run:  (*parser).call_onexprDice_74,
 															expr: &ruleIRefExpr{index: 46 /* nos */},
 														},
 														&ruleIRefExpr{index: 63 /* _wodMain */},
@@ -2121,10 +2140,10 @@ var g = &grammar{
 					&seqExpr{
 						exprs: []any{
 							&actionExpr{
-								run: (*parser).call_onexprDice_76,
+								run: (*parser).call_onexprDice_83,
 								expr: &seqExpr{
 									exprs: []any{
-										&andCodeExpr{run: (*parser).call_onexprDice_78},
+										&andCodeExpr{run: (*parser).call_onexprDice_85},
 										&andExpr{
 											expr: &ruleIRefExpr{index: 67 /* _dcDiceType */},
 										},
@@ -2133,11 +2152,11 @@ var g = &grammar{
 								},
 							},
 							&actionExpr{
-								run:  (*parser).call_onexprDice_82,
+								run:  (*parser).call_onexprDice_89,
 								expr: &ruleIRefExpr{index: 46 /* nos */},
 							},
 							&actionExpr{
-								run: (*parser).call_onexprDice_84,
+								run: (*parser).call_onexprDice_91,
 								expr: &seqExpr{
 									exprs: []any{
 										&charClassMatcher{
@@ -2147,7 +2166,7 @@ var g = &grammar{
 										&ruleIRefExpr{index: 46 /* nos */},
 										&zeroOrMoreExpr{
 											expr: &actionExpr{
-												run: (*parser).call_onexprDice_89,
+												run: (*parser).call_onexprDice_96,
 												expr: &seqExpr{
 													exprs: []any{
 														&charClassMatcher{
@@ -2166,10 +2185,10 @@ var g = &grammar{
 						},
 					},
 					&actionExpr{
-						run: (*parser).call_onexprDice_94,
+						run: (*parser).call_onexprDice_101,
 						expr: &seqExpr{
 							exprs: []any{
-								&andCodeExpr{run: (*parser).call_onexprDice_96},
+								&andCodeExpr{run: (*parser).call_onexprDice_103},
 								&andExpr{
 									expr: &ruleIRefExpr{index: 68 /* _fateDiceType */},
 								},
@@ -5013,27 +5032,47 @@ func (p *parser) call_on_diceCocPenalty_1() any {
 	})(&p.cur)
 }
 
+func (p *parser) call_onexprDice_5() bool {
+	return (func(c *current) bool {
+		return c.data.PrepareCustomDice(p)
+	})(&p.cur)
+}
+
 func (p *parser) call_onexprDice_3() any {
 	return (func(c *current) any {
-		c.data.AddOp(typeDice)
+		c.data.ConsumeCustomDice(p)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_14() any {
+func (p *parser) call_onexprDice_7() any {
+	return (func(c *current) any {
+		c.data.CommitCustomDice()
+		return nil
+	})(&p.cur)
+}
+
+func (p *parser) call_onexprDice_10() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDice)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_26() bool {
+func (p *parser) call_onexprDice_21() any {
+	return (func(c *current) any {
+		c.data.AddOp(typeDice)
+		return nil
+	})(&p.cur)
+}
+
+func (p *parser) call_onexprDice_33() bool {
 	return (func(c *current) bool {
 		return !c.data.Config.DisableNDice
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_24() any {
+func (p *parser) call_onexprDice_31() any {
 	return (func(c *current) any {
 		c.data.AddOp(typePushDefaultExpr)
 		c.data.AddOp(typeDice)
@@ -5041,20 +5080,20 @@ func (p *parser) call_onexprDice_24() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_38() bool {
+func (p *parser) call_onexprDice_45() bool {
 	return (func(c *current) bool {
 		return !c.data.Config.DisableNDice
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_36() any {
+func (p *parser) call_onexprDice_43() any {
 	return (func(c *current) any {
 		c.data.PushIntNumber("1")
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_42() any {
+func (p *parser) call_onexprDice_49() any {
 	return (func(c *current) any {
 		c.data.AddOp(typePushDefaultExpr)
 		c.data.AddOp(typeDice)
@@ -5062,80 +5101,80 @@ func (p *parser) call_onexprDice_42() any {
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_49() bool {
+func (p *parser) call_onexprDice_56() bool {
 	return (func(c *current) bool {
 		return c.data.Config.EnableDiceCoC
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_59() bool {
+func (p *parser) call_onexprDice_66() bool {
 	return (func(c *current) bool {
 		return c.data.Config.EnableDiceWoD
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_57() any {
+func (p *parser) call_onexprDice_64() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeWodSetInit)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_67() any {
+func (p *parser) call_onexprDice_74() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeWodSetPool)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_63() any {
+func (p *parser) call_onexprDice_70() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDiceWod)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_78() bool {
+func (p *parser) call_onexprDice_85() bool {
 	return (func(c *current) bool {
 		return c.data.Config.EnableDiceDoubleCross
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_76() any {
+func (p *parser) call_onexprDice_83() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDCSetInit)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_82() any {
+func (p *parser) call_onexprDice_89() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDCSetPool)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_89() any {
+func (p *parser) call_onexprDice_96() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDCSetPoints)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_84() any {
+func (p *parser) call_onexprDice_91() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDiceDC)
 		return nil
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_96() bool {
+func (p *parser) call_onexprDice_103() bool {
 	return (func(c *current) bool {
 		return c.data.Config.EnableDiceFate
 	})(&p.cur)
 }
 
-func (p *parser) call_onexprDice_94() any {
+func (p *parser) call_onexprDice_101() any {
 	return (func(c *current) any {
 		c.data.AddOp(typeDiceFate)
 		return nil

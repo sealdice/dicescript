@@ -20,6 +20,8 @@ package dicescript
 
 type ParserCustomData struct {
     ParserData
+    ctx *Context
+    pendingCustomDice *customDiceMatch
 }
 
 func toStr(x []byte) string {
@@ -281,7 +283,8 @@ _dcDiceType <- nos [cC] nos ([mM] nos)*
 // Fate规则
 _fateDiceType <- [fF] !xidContinue
 
-exprDice <- &_diceType1 detailStart nos _diceExpr1 detailEnd { c.data.AddOp(typeDice); } _diceExprX*
+exprDice <- &{return c.data.PrepareCustomDice(p)} detailStart { c.data.ConsumeCustomDice(p) } detailEnd { c.data.CommitCustomDice() }
+          / &_diceType1 detailStart nos _diceExpr1 detailEnd { c.data.AddOp(typeDice); } _diceExprX*
           / &_diceType2 detailStart _diceExpr2 detailEnd { c.data.AddOp(typeDice) } _diceExprX*
           / &{return !c.data.Config.DisableNDice} &_diceType3 detailStart nos _diceExpr3 detailEnd { c.data.AddOp(typePushDefaultExpr); c.data.AddOp(typeDice) } _diceExprX*
           / &{return !c.data.Config.DisableNDice} &_diceType4 detailStart { c.data.PushIntNumber("1") } _diceExpr4 detailEnd { c.data.AddOp(typePushDefaultExpr); c.data.AddOp(typeDice) } _diceExprX*

@@ -147,6 +147,48 @@ func TestDice(t *testing.T) {
 	simpleExecute(t, "4d1k5", ni(4))
 }
 
+func TestCustomDice(t *testing.T) {
+	vm := NewVM()
+	err := vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string) (*VMValue, string, error) {
+		if len(groups) < 2 {
+			return nil, "", fmt.Errorf("missing capture")
+		}
+		val, err := strconv.ParseInt(groups[1], 10, 64)
+		if err != nil {
+			return nil, "", err
+		}
+		return NewIntVal(IntType(val) * 2), "custom:" + groups[0], nil
+	})
+	if assert.NoError(t, err) {
+		err = vm.Run("E5")
+		if assert.NoError(t, err) {
+			assert.True(t, valueEqual(vm.Ret, NewIntVal(10)))
+			assert.Contains(t, vm.GetDetailText(), "E5")
+		}
+	}
+}
+
+func TestCustomDiceFallback(t *testing.T) {
+	vm := NewVM()
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string) (*VMValue, string, error) {
+		return NewIntVal(1), "", nil
+	})
+	err := vm.Run("Efoo")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
+	}
+}
+
+func TestCustomDiceHandlerError(t *testing.T) {
+	vm := NewVM()
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string) (*VMValue, string, error) {
+		return nil, "", fmt.Errorf("boom")
+	})
+	err := vm.Run("E1")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "boom")
+}
+
 func TestVMMultiply(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("2*3")

@@ -79,6 +79,8 @@ func (ctx *Context) Parse(value string) error {
 	d.code = make([]ByteCode, 512)
 	d.codeIndex = 0
 	d.Config = ctx.Config
+	d.ctx = ctx
+	d.pendingCustomDice = nil
 	ctx.Error = nil
 	ctx.NumOpCount = 0
 	ctx.detailCache = ""
@@ -103,7 +105,7 @@ func (ctx *Context) Parse(value string) error {
 func (ctx *Context) IsCalculateExists() bool {
 	for _, i := range ctx.code {
 		switch i.T {
-		case typeDice, typeDiceDC, typeDiceWod, typeDiceFate, typeDiceCocBonus, typeDiceCocPenalty:
+		case typeDice, typeDiceDC, typeDiceWod, typeDiceFate, typeDiceCocBonus, typeDiceCocPenalty, typeCustomDice:
 			return true
 		case typeAdd, typeSubtract, typeMultiply, typeDivide, typeModulus, typeExponentiation:
 			return true
@@ -894,6 +896,32 @@ func (ctx *Context) evaluate() {
 			details[len(details)-1].Ret = ret
 			details[len(details)-1].Text = detail
 			details[len(details)-1].Tag = "dice"
+			stackPush(ret)
+
+		case typeCustomDice:
+			compiled := code.Value.(*customDiceCompiled)
+			groups := cloneStrings(compiled.groups)
+			result, detailText, err := compiled.item.fn(ctx, groups)
+			if err != nil {
+				ctx.Error = err
+				return
+			}
+			if result == nil {
+				ctx.Error = errors.New("自定义骰子回调返回 nil")
+				return
+			}
+
+			ret := result.Clone()
+			if len(details) > 0 {
+				detail := &details[len(details)-1]
+				detail.Ret = ret
+				if detailText != "" {
+					detail.Text = detailText
+				} else {
+					detail.Text = compiled.text
+				}
+				detail.Tag = "dice-custom"
+			}
 			stackPush(ret)
 
 		case typeDiceFate:

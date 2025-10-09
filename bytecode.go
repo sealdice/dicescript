@@ -76,6 +76,7 @@ const (
 	typeDiceSetMin
 	typeDiceSetMax
 	typeDice
+	typeCustomDice
 
 	typeDiceCocPenalty
 	typeDiceCocBonus
@@ -209,6 +210,8 @@ func (code *ByteCode) CodeString() string {
 		return "dice.setMax"
 	case typeDice:
 		return "dice"
+	case typeCustomDice:
+		return "dice.custom"
 
 	case typeDiceCocPenalty:
 		return "coc.penalty"

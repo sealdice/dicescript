@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -103,10 +104,12 @@ type RollConfig struct {
 	DiceMaxMode bool // 以最大值结算 获取上界
 }
 
+type CustomDiceHandler func(ctx *Context, groups []string) (*VMValue, string, error)
+
 type customDiceItem struct {
-	// expr     string
-	// callback func(ctx *Context, groups []string) *VMValue
-	// parse func(ctx *Context, p *parser)
+	pattern string
+	re      *regexp.Regexp
+	fn      CustomDiceHandler
 
 	// 该怎样写呢？似乎将一些解析相关的struct暴露出去并不合适
 	// 这里我有三个选项，第一种是创建一种更简单的语法进行编译：例如
@@ -395,12 +398,16 @@ func (ctx *Context) StoreNameGlobal(name string, v *VMValue) {
 	}
 }
 
-func (ctx *Context) RegCustomDice(s string, callback func(ctx *Context, groups []string) *VMValue) error {
-	// re, err := regexp.Compile(s)
-	// if err != nil {
-	// 	return err
-	// }
-	// ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, &customDiceItem{re, callback})
+func (ctx *Context) RegCustomDice(pattern string, handler CustomDiceHandler) error {
+	if handler == nil {
+		return errors.New("自定义骰子回调不能为空")
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return err
+	}
+	item := &customDiceItem{pattern: pattern, re: re, fn: handler}
+	ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, item)
 	return nil
 }
 
