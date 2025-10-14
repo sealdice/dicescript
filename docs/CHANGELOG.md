@@ -1,5 +1,56 @@
 ## 更新记录
 
+#### 2025.10.14
+* 自定义算符新增 `CustomDiceStream` 流式解析能力，可在回调中逐字符消费输入、读取表达式并携带 payload，示例与测试同步更新。
+
+#### 2025.10.10
+* 新增自定义算符注册与 dice.custom 字节码，实现正则匹配驱动的回调并可自定义 detail 输出。
+* Shell 示例添加阶乘与组合算符演示，并扩充测试覆盖自定义算符路径。
+
+#### 2025.9.3
+* Context 增加 CustomFlag 状态并在子 VM 之间共享，同时 detail 文本自动去除首尾空白。
+
+#### 2025.8.31
+* 统一变量读取流程，LoadName/LoadNameWithDetail 支持 raw 模式并补齐 load detail 标记。
+* 钩子接口重命名为 HookValueLoadPre/HookValueLoadPost，并新增 CustomDetailRewriteFunc 方便重写计算过程片段。
+
+#### 2025.8.19
+* 修复未闭合函数调用触发的 a(a 解析问题，保证 RestInput 与 detail 输出符合核心项目 #1371 的预期。
+
+#### 2025.8.17
+* 调整 jsport 工作流以裁剪 gh-pages 产物并修复测试页加载。
+
+#### 2024.9.27
+* CustomMakeDetailFunc 回调新增 parsedOffset 参数，便于按源文本偏移自定义过程字符串。
+
+#### 2024.9.7
+* 修复大面骰概率偏移并让计算类型能获取完整的中间过程 detail。
+* 修正 GopherJS 编译失败的问题。
+* 重构随机数生成逻辑以统一取值。
+
+#### 2024.8.17
+* 新增内置函数 store，变量尾缀允许使用 【】（） 等字符以兼容旧写法。
+
+#### 2024.8.8
+* while/if 语句块执行后自动恢复栈状态，相关文档与 detail 逻辑同步更新。
+
+#### 2024.8.4
+* fstring 的 {} 现在可直接书写复杂语句，相当于 {% %} 的别名。
+
+#### 2024.7.19
+* 新增 load 回调类型与内置函数 typeId、Computed.compute 以及 loadRaw，扩展动态载入能力。
+* 重写 HookFuncValueLoadOverwrite 流程，提升自定义加载覆盖的一致性。
+
+#### 2024.7.11
+* 修复 HookFuncValueLoadOverwrite 误判 detail 为空导致的崩溃问题。
+
+#### 2024.7.3
+* 钩子接口补充 ctx 参数，回调可以访问当前上下文。
+
+#### 2024.7.2
+* 实现 d 优势语法并支持骰子上下界配置。
+* 改进计算过程输出与相关测试，文档同步更新。
+
 #### 2024.6.23
 * 重写计算过程机制
 * 改进st兼容问题

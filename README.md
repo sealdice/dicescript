@@ -27,9 +27,14 @@ https://sealdice.github.io/dicescript/
 
 ## 如何使用
 
-[DiceScript指南](./GUIDE.md)
+[DiceScript指南](./docs/GUIDE.md)
 
 你可以从这里了解如何使用DiceScript进行骰点，编写自己的TRPG规则，以及如何嵌入到任何你想要的地方。
+
+进阶·不修改代码的情况下进行语法扩展:
+
+[自定义骰点语法使用指南(流式解析)](./docs/CustomDiceParser.md)
+[自定义骰点算符用法指南(正则模式)](./docs/CustomDiceRegex.md)
 
 
 ## 设计原则
@@ -53,7 +58,7 @@ https://sealdice.github.io/dicescript/
 - [x] 骰点运算 - 流行语法: d20, 3d20, (4+5)d(20), 2d20k1, 2d20q1
 - [x] 骰点运算 - fvtt语法: 2d20kl, 2d20kh, 2d20dl, 2d20dh, d20min10, d20max10
 - [x] 骰点运算 - CoC / Fate / WoD / Double Cross
-- [ ] 骰点运算 - 自定义算符
+- [x] 骰点运算 - 自定义算符
 - [x] 高级类型 数组array
 - [x] 高级类型 字典dict
 - [x] 高级类型 计算数值computed
@@ -74,11 +79,10 @@ https://sealdice.github.io/dicescript/
 
 ## 更新记录
 
-[更新记录](./CHANGELOG.md)
+[更新记录](./docs/CHANGELOG.md)
 
 ## TODO
 
-* 骰点运算 - 自定义算符
 * computed 的repr格式无法读入
 
 ## 开发
