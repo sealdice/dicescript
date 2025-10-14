@@ -31,9 +31,10 @@ https://sealdice.github.io/dicescript/
 
 你可以从这里了解如何使用DiceScript进行骰点，编写自己的TRPG规则，以及如何嵌入到任何你想要的地方。
 
-进阶·不修改代码的情况下进行语法扩展:
+### 进阶·不修改代码的情况下进行语法扩展:
 
 [自定义骰点语法使用指南(流式解析)](./docs/CustomDiceParser.md)
+
 [自定义骰点算符用法指南(正则模式)](./docs/CustomDiceRegex.md)
 
 
