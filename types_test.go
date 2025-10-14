@@ -17,8 +17,10 @@
 package dicescript
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/rand"
 )
 
 type compareTestData []struct {
@@ -36,6 +38,49 @@ var nf = NewFloatVal
 var ns = NewStrVal
 var na = NewArrayVal
 var nd = NewDictValWithArrayMust
+
+func TestContextConfigurationAndGlobals(t *testing.T) {
+	vm := NewVM()
+
+	vm.subThreadDepth = 3
+	assert.Equal(t, 3, vm.Depth())
+
+	cfg := RollConfig{
+		IgnoreDiv0:            true,
+		DefaultDiceSideExpr:   "42",
+		EnableDiceDoubleCross: true,
+	}
+	vm.SetConfig(&cfg)
+	assert.True(t, vm.Config.IgnoreDiv0)
+	cfg.IgnoreDiv0 = false
+	assert.True(t, vm.Config.IgnoreDiv0)
+
+	var storedName string
+	var storedVal *VMValue
+	vm.GlobalValueStoreFunc = func(name string, v *VMValue) {
+		storedName = name
+		storedVal = v
+	}
+	vm.globalNames.Store("globalVar", NewNullVal())
+	vm.StoreName("globalVar", ni(99), false)
+	assert.Equal(t, "globalVar", storedName)
+	assert.True(t, valueEqual(storedVal, ni(99)))
+	assert.Nil(t, vm.Error)
+
+	vm.GlobalValueStoreFunc = nil
+	vm.Error = nil
+	vm.StoreNameGlobal("missing", ni(1))
+	if assert.NotNil(t, vm.Error) {
+		assert.Contains(t, vm.Error.Error(), "ValueStore")
+	}
+
+	src := rand.PCGSource{}
+	src.Seed(123)
+	vm.RandSrc = &src
+	seed, err := vm.GetCurSeed()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, seed)
+}
 
 func TestCompare(t *testing.T) {
 	ctx := NewVM()

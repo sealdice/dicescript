@@ -19,6 +19,7 @@ type ParserCustomData struct {
 	ParserData
 	ctx               *Context
 	pendingCustomDice *customDiceMatch
+	stream            CustomDiceStream
 }
 
 func toStr(x []byte) string {

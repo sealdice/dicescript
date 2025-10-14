@@ -104,12 +104,23 @@ type RollConfig struct {
 	DiceMaxMode bool // 以最大值结算 获取上界
 }
 
-type CustomDiceHandler func(ctx *Context, groups []string) (*VMValue, string, error)
+type CustomDiceHandler func(ctx *Context, groups []string, payload any) (*VMValue, string, error)
+
+// CustomDiceParseResult aggregates the outcome of a custom dice parser invocation.
+type CustomDiceParseResult struct {
+	Groups  []string
+	Display string
+	Payload any
+	Matched bool
+}
+
+type CustomDiceParserFunc func(ctx *Context, stream *CustomDiceStream) (*CustomDiceParseResult, error)
 
 type customDiceItem struct {
 	pattern string
 	re      *regexp.Regexp
 	fn      CustomDiceHandler
+	parser  CustomDiceParserFunc
 
 	// 该怎样写呢？似乎将一些解析相关的struct暴露出去并不合适
 	// 这里我有三个选项，第一种是创建一种更简单的语法进行编译：例如
@@ -407,6 +418,18 @@ func (ctx *Context) RegCustomDice(pattern string, handler CustomDiceHandler) err
 		return err
 	}
 	item := &customDiceItem{pattern: pattern, re: re, fn: handler}
+	ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, item)
+	return nil
+}
+
+func (ctx *Context) RegCustomDiceParser(parser CustomDiceParserFunc, handler CustomDiceHandler) error {
+	if parser == nil {
+		return errors.New("自定义骰子解析函数不能为空")
+	}
+	if handler == nil {
+		return errors.New("自定义骰子回调不能为空")
+	}
+	item := &customDiceItem{fn: handler, parser: parser}
 	ctx.CustomDiceInfo = append(ctx.CustomDiceInfo, item)
 	return nil
 }

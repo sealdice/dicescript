@@ -1,6 +1,7 @@
 package dicescript
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -45,6 +46,33 @@ func TestSimpleRun(t *testing.T) {
 	simpleExecute(t, "1+1", ni(2))
 	simpleExecute(t, "2.0+1", nf(3))
 	simpleExecute(t, ".5+1", nf(1.5))
+}
+
+func TestRunExprAndHelpers(t *testing.T) {
+	vm := NewVM()
+
+	result, err := vm.RunExpr("1+2", false)
+	assert.NoError(t, err)
+	if assert.NotNil(t, result) {
+		assert.True(t, valueEqual(result, ni(3)))
+	}
+	assert.Nil(t, vm.Error)
+	assert.Equal(t, "", vm.GetErrorText())
+
+	vm.Error = errors.New("custom err")
+	assert.Equal(t, "custom err", vm.GetErrorText())
+	vm.Error = nil
+
+	_, err = vm.RunExpr("1/0", false)
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "被除数为0")
+	}
+	assert.Nil(t, vm.Error)
+	assert.Equal(t, "", vm.GetErrorText())
+
+	assert.NoError(t, vm.Parse("1+2"))
+	offset := vm.GetParsedOffset()
+	assert.Greater(t, offset, 0)
 }
 
 func TestValueDefineStr(t *testing.T) {
@@ -149,7 +177,7 @@ func TestDice(t *testing.T) {
 
 func TestCustomDice(t *testing.T) {
 	vm := NewVM()
-	err := vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string) (*VMValue, string, error) {
+	err := vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string, _ any) (*VMValue, string, error) {
 		if len(groups) < 2 {
 			return nil, "", fmt.Errorf("missing capture")
 		}
@@ -170,7 +198,7 @@ func TestCustomDice(t *testing.T) {
 
 func TestCustomDiceFallback(t *testing.T) {
 	vm := NewVM()
-	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string) (*VMValue, string, error) {
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string, _ any) (*VMValue, string, error) {
 		return NewIntVal(1), "", nil
 	})
 	err := vm.Run("Efoo")
@@ -181,12 +209,152 @@ func TestCustomDiceFallback(t *testing.T) {
 
 func TestCustomDiceHandlerError(t *testing.T) {
 	vm := NewVM()
-	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string) (*VMValue, string, error) {
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *Context, groups []string, _ any) (*VMValue, string, error) {
 		return nil, "", fmt.Errorf("boom")
 	})
 	err := vm.Run("E1")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "boom")
+}
+
+func TestCustomDiceParserStream(t *testing.T) {
+	vm := NewVM()
+	type parserPayload struct {
+		base      int64
+		threshold int64
+	}
+
+	err := vm.RegCustomDiceParser(
+		func(ctx *Context, stream *CustomDiceStream) (*CustomDiceParseResult, error) {
+			r, ok := stream.Read()
+			if !ok || r != 'C' {
+				stream.ResetAttempt()
+				return &CustomDiceParseResult{Matched: false}, nil
+			}
+
+			baseStr, ok := stream.ReadDigits()
+			if !ok {
+				stream.ResetAttempt()
+				return &CustomDiceParseResult{Matched: false}, nil
+			}
+
+			r, ok = stream.Read()
+			if !ok || (r != 'T' && r != 't') {
+				stream.ResetAttempt()
+				return &CustomDiceParseResult{Matched: false}, nil
+			}
+
+			thresholdStr, ok := stream.ReadDigits()
+			if !ok {
+				stream.ResetAttempt()
+				return &CustomDiceParseResult{Matched: false}, nil
+			}
+
+			stream.Commit()
+			baseVal, err := strconv.ParseInt(baseStr, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			thresholdVal, err := strconv.ParseInt(thresholdStr, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			groups := []string{stream.Current(), baseStr, thresholdStr}
+			return &CustomDiceParseResult{
+				Groups:  groups,
+				Payload: &parserPayload{baseVal, thresholdVal},
+				Matched: true,
+			}, nil
+		},
+		func(ctx *Context, groups []string, raw any) (*VMValue, string, error) {
+			info := raw.(*parserPayload)
+			result := info.base + info.threshold
+			detail := fmt.Sprintf("C%sT%s=%d", groups[1], groups[2], result)
+			return NewIntVal(IntType(result)), detail, nil
+		},
+	)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	err = vm.Run("C3T2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewIntVal(5)))
+		assert.Contains(t, vm.GetDetailText(), "C3T2")
+	}
+
+	err = vm.Run("Cfoo")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
+	}
+}
+
+func TestCustomDiceParserReadExpr(t *testing.T) {
+	vm := NewVM()
+
+	err := vm.RegCustomDiceParser(
+		func(ctx *Context, stream *CustomDiceStream) (*CustomDiceParseResult, error) {
+			r, ok := stream.Read()
+			if !ok || r != 'R' {
+				stream.ResetAttempt()
+				return &CustomDiceParseResult{Matched: false}, nil
+			}
+
+			expr, matched, err := stream.ReadExpr("")
+			if err != nil {
+				return nil, err
+			}
+			if !matched {
+				stream.ResetAttempt()
+				return &CustomDiceParseResult{Matched: false}, nil
+			}
+
+			stream.Commit()
+			cd, _ := expr.ReadComputed()
+			return &CustomDiceParseResult{
+				Groups:  []string{stream.Current(), cd.Expr},
+				Payload: expr,
+				Matched: true,
+			}, nil
+		},
+		func(ctx *Context, groups []string, raw any) (*VMValue, string, error) {
+			exprVal := raw.(*VMValue)
+			result := exprVal.ComputedExecute(ctx, &BufferSpan{})
+			if ctx.Error != nil {
+				return nil, "", ctx.Error
+			}
+			detail := "expr:" + groups[1]
+			return result, detail, nil
+		},
+	)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	err = vm.Run("R1+2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(3)))
+		assert.Contains(t, vm.GetDetailText(), "expr:1+2")
+	}
+
+	err = vm.Run("R(2+3)*2")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(10)))
+	}
+
+	err = vm.Run("R(1+")
+	assert.Error(t, err)
+
+	var rawStream CustomDiceStream
+	rawStream.init([]byte("456foo"), 0)
+	numExpr, matched, err := rawStream.ReadExpr("number")
+	if assert.NoError(t, err) {
+		assert.True(t, matched)
+		cd, _ := numExpr.ReadComputed()
+		assert.Equal(t, "456", cd.Expr)
+	}
+	assert.Equal(t, 3, rawStream.Consumed())
 }
 
 func TestVMMultiply(t *testing.T) {
@@ -927,6 +1095,11 @@ func TestSliceGet(t *testing.T) {
 	// if assert.NoError(t, err) {
 	//	assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
 	// }
+
+	err = vm.Run("a[1:3:]")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, NewArrayVal(ni(2), ni(3))))
+	}
 
 	err = vm.Run("a[-3:-1]")
 	if assert.NoError(t, err) {

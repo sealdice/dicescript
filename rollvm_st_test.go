@@ -110,6 +110,23 @@ func TestStSetCompute(t *testing.T) {
 	assert.Equal(t, index, 2)
 }
 
+func TestStSetComputeNamespaced(t *testing.T) {
+	vm := NewVM()
+	items := []checkItem{
+		{Name: "力量:弓箭", Value: NewComputedVal("1d6"), Type: "set"},
+	}
+
+	index := 0
+	vm.Config.CallbackSt = func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string) {
+		items[index].check(t, _type, name, val, extra, op, detail)
+		index++
+	}
+
+	err := vm.Run(`^st&力量:弓箭=1d6`)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, index)
+}
+
 func TestStModBasic(t *testing.T) {
 	vm := NewVM()
 

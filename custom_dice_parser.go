@@ -7,12 +7,14 @@ type customDiceMatch struct {
 	text        string
 	byteLen     int
 	startOffset int
+	payload     any
 }
 
 type customDiceCompiled struct {
-	item   *customDiceItem
-	groups []string
-	text   string
+	item    *customDiceItem
+	groups  []string
+	text    string
+	payload any
 }
 
 func (d *ParserCustomData) PrepareCustomDice(p *parser) bool {
@@ -59,9 +61,13 @@ func (d *ParserCustomData) CommitCustomDice() any {
 	}
 
 	compiled := &customDiceCompiled{
-		item:   match.item,
-		groups: cloneStrings(match.groups),
-		text:   match.text,
+		item:    match.item,
+		groups:  cloneStrings(match.groups),
+		text:    match.text,
+		payload: match.payload,
+	}
+	if compiled.text == "" && len(compiled.groups) > 0 {
+		compiled.text = compiled.groups[0]
 	}
 
 	d.WriteCode(typeCustomDice, compiled)
@@ -100,6 +106,57 @@ func (d *ParserCustomData) tryMatchCustomDice(p *parser) (*customDiceMatch, bool
 	input := string(p.data[start:])
 
 	for _, item := range d.ctx.CustomDiceInfo {
+		if item == nil {
+			continue
+		}
+
+		if item.parser != nil {
+			stream := &d.stream
+			stream.init(p.data, start)
+			result, err := item.parser(d.ctx, stream)
+			if err != nil {
+				if d.ctx != nil {
+					d.ctx.Error = err
+				}
+				p.addErr(err)
+				return nil, false
+			}
+			if result == nil || !result.Matched {
+				stream.ResetAttempt()
+				continue
+			}
+			consumed := stream.Consumed()
+			if consumed <= 0 {
+				stream.ResetAttempt()
+				continue
+			}
+			matchedText := stream.Current()
+			groups := result.Groups
+			if len(groups) == 0 {
+				groups = []string{matchedText}
+			} else if groups[0] == "" {
+				groups[0] = matchedText
+			}
+			text := result.Display
+			if text == "" {
+				text = matchedText
+			}
+			match := &customDiceMatch{
+				item:        item,
+				groups:      groups,
+				text:        text,
+				byteLen:     consumed,
+				startOffset: start,
+				payload:     result.Payload,
+			}
+			stream.ResetAttempt()
+			return match, true
+		}
+
+		if item.re == nil {
+			continue
+		}
+
 		loc := item.re.FindStringSubmatchIndex(input)
 		if loc == nil || loc[0] != 0 {
 			continue

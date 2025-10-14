@@ -901,7 +901,7 @@ func (ctx *Context) evaluate() {
 		case typeCustomDice:
 			compiled := code.Value.(*customDiceCompiled)
 			groups := cloneStrings(compiled.groups)
-			result, detailText, err := compiled.item.fn(ctx, groups)
+			result, detailText, err := compiled.item.fn(ctx, groups, compiled.payload)
 			if err != nil {
 				ctx.Error = err
 				return

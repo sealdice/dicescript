@@ -71,7 +71,7 @@ func main() {
 		return name, nil
 	}
 
-	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *ds.Context, groups []string) (*ds.VMValue, string, error) {
+	_ = vm.RegCustomDice(`E(\d+)`, func(ctx *ds.Context, groups []string, _ any) (*ds.VMValue, string, error) {
 		if len(groups) < 2 {
 			return nil, "", fmt.Errorf("自定义骰子算符未匹配")
 		}
@@ -118,7 +118,7 @@ func main() {
 	}
 
 	// 注册阶乘算符
-	_ = vm.RegCustomDice(`(\d+)!`, func(ctx *ds.Context, groups []string) (*ds.VMValue, string, error) {
+	_ = vm.RegCustomDice(`(\d+)!`, func(ctx *ds.Context, groups []string, _ any) (*ds.VMValue, string, error) {
 		if len(groups) < 2 {
 			return nil, "", fmt.Errorf("阶乘算符格式错误")
 		}
@@ -132,7 +132,7 @@ func main() {
 	})
 
 	// 注册 Ca,b 算符
-	_ = vm.RegCustomDice(`C(\d+),(\d+)`, func(ctx *ds.Context, groups []string) (*ds.VMValue, string, error) {
+	_ = vm.RegCustomDice(`C(\d+),(\d+)`, func(ctx *ds.Context, groups []string, _ any) (*ds.VMValue, string, error) {
 		if len(groups) < 3 {
 			return nil, "", fmt.Errorf("Ca,b 算符格式错误")
 		}
