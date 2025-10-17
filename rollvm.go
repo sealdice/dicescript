@@ -248,9 +248,19 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 		if size > 1 {
 			// 次级结果，如 (10d3)d5 中，此处为10d3的结果
 			// 例如 (10d3)d5=63[(10d3)d5=...,10d3=19]
+			var subDetailParts []string
 			for j := 0; j < len(item.spans)-1; j++ {
 				span := item.spans[j]
-				subDetailsText += "," + string(detailResult[span.Begin:span.End]) + "=" + span.Ret.ToString()
+				subDetail := string(detailResult[span.Begin:span.End]) + "=" + span.Ret.ToString()
+				if ctx.Config.CustomDetailSpanRewriteFunc != nil {
+					subDetail = ctx.Config.CustomDetailSpanRewriteFunc(ctx, subDetail, span, false, ctx.parser.data, offset)
+				}
+				if subDetail != "" {
+					subDetailParts = append(subDetailParts, subDetail)
+				}
+			}
+			if len(subDetailParts) > 0 {
+				subDetailsText = "," + strings.Join(subDetailParts, ",")
 			}
 		}
 
@@ -307,6 +317,9 @@ func (ctx *Context) makeDetailStr(details []BufferSpan) string {
 			detail = "[略]"
 		}
 
+		if ctx.Config.CustomDetailSpanRewriteFunc != nil {
+			detail = ctx.Config.CustomDetailSpanRewriteFunc(ctx, detail, last, true, ctx.parser.data, offset)
+		}
 		if ctx.Config.CustomDetailRewriteFunc != nil {
 			detail = ctx.Config.CustomDetailRewriteFunc(ctx, detail, last, ctx.parser.data, offset)
 		}

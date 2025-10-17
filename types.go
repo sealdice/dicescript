@@ -88,9 +88,10 @@ type RollConfig struct {
 	HookValueLoadPost func(ctx *Context, name string, curVal *VMValue, doCompute func(curVal *VMValue) *VMValue, detail *BufferSpan) *VMValue
 
 	// st回调，注意val和extra都经过clone，可以放心储存
-	CallbackSt              func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string)                 // st回调
-	CustomMakeDetailFunc    func(ctx *Context, details []BufferSpan, dataBuffer []byte, parsedOffset int) string                    // 自定义计算过程
-	CustomDetailRewriteFunc func(ctx *Context, curDetail string, detailSpan BufferSpan, dataBuffer []byte, parsedOffset int) string // 自定义单项detail重写
+	CallbackSt                  func(_type string, name string, val *VMValue, extra *VMValue, op string, detail string)                                  // st回调
+	CustomMakeDetailFunc        func(ctx *Context, details []BufferSpan, dataBuffer []byte, parsedOffset int) string                                     // 自定义计算过程
+	CustomDetailSpanRewriteFunc func(ctx *Context, defaultDetail string, detailSpan BufferSpan, isRoot bool, dataBuffer []byte, parsedOffset int) string // 自定义任意一项detail改写
+	CustomDetailRewriteFunc     func(ctx *Context, curDetail string, detailSpan BufferSpan, dataBuffer []byte, parsedOffset int) string                  // 自定义单项detail重写
 
 	ParseExprLimit               uint64   // 解析算力限制，防止构造特殊语句进行DOS攻击，0为无限，建议值1000万
 	OpCountLimit                 IntType  // 算力限制，超过这个值会报错，0为无限，建议值30000
