@@ -1,9 +1,14 @@
 {
   "name": "dicescript",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Simple script language for TRPG dice engine.",
   "module": "./dist/main.mjs",
+  "types": "./index.d.ts",
   "type": "module",
+  "files": [
+    "index.d.ts",
+    "dist"
+  ],
   "scripts": {
     "build": "webpack ."
   },

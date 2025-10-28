@@ -174,3 +174,18 @@ export declare interface DiceScriptContext {
     upCtx: any;
   };
 }
+
+export declare const ds: {
+  newVM: typeof newVM;
+  newVMForPlaygournd: typeof newVMForPlaygournd;
+  help: typeof help;
+  vmNewDict: typeof vmNewDict;
+  vmNewFloat: typeof vmNewFloat;
+  vmNewInt: typeof vmNewInt;
+  vmNewStr: typeof vmNewStr;
+  newValueMap: typeof newValueMap;
+  newConfig: typeof newConfig;
+};
+
+declare const _default: typeof ds;
+export default _default;

@@ -1,3 +1,29 @@
-import { ds } from './dicescript.cjs';
+import diceModule from './dist/main.mjs';
 
-export default ds;
+const {
+  newVM,
+  newVMForPlaygournd,
+  help,
+  vmNewDict,
+  vmNewFloat,
+  vmNewInt,
+  vmNewStr,
+  newValueMap,
+  newConfig,
+} = diceModule;
+
+export {
+  newVM,
+  newVMForPlaygournd,
+  help,
+  vmNewDict,
+  vmNewFloat,
+  vmNewInt,
+  vmNewStr,
+  newValueMap,
+  newConfig,
+};
+
+export const ds = diceModule;
+
+export default diceModule;
