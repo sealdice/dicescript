@@ -97,3 +97,46 @@ func TestNativeFunctionStore(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ni(123)))
 	}
 }
+
+func TestNativeFunctionBool(t *testing.T) {
+	vm := NewVM()
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ni(1)}), ni(1)))
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ni(0)}), ni(0)))
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ns("hello")}), ni(1)))
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ns("")}), ni(0)))
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{NewNullVal()}), ni(0)))
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{na(ni(1))}), ni(1)))
+	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{na()}), ni(0)))
+}
+
+func TestNativeFunctionRepr(t *testing.T) {
+	vm := NewVM()
+	assert.True(t, valueEqual(funcRepr(vm, nil, []*VMValue{ns("hello")}), ns("'hello'")))
+	assert.True(t, valueEqual(funcRepr(vm, nil, []*VMValue{ni(123)}), ns("123")))
+	assert.True(t, valueEqual(funcRepr(vm, nil, []*VMValue{nf(1.5)}), ns("1.5")))
+	assert.True(t, valueEqual(funcRepr(vm, nil, []*VMValue{NewNullVal()}), ns("null")))
+}
+
+func TestNativeFunctionLoadRaw(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("val = '456'; loadRaw('val')")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ns("456")))
+	}
+
+	vm = NewVM()
+	err = vm.Run("loadRaw(123)")
+	assert.Error(t, err)
+}
+
+func TestNativeFunctionAbs(t *testing.T) {
+	vm := NewVM()
+	assert.True(t, valueEqual(funcAbs(vm, nil, []*VMValue{ni(-5)}), ni(5)))
+	assert.True(t, valueEqual(funcAbs(vm, nil, []*VMValue{ni(5)}), ni(5)))
+	assert.True(t, valueEqual(funcAbs(vm, nil, []*VMValue{nf(-3.5)}), nf(3.5)))
+	assert.True(t, valueEqual(funcAbs(vm, nil, []*VMValue{nf(3.5)}), nf(3.5)))
+
+	funcAbs(vm, nil, []*VMValue{ns("test")})
+	assert.Error(t, vm.Error)
+	vm.Error = nil
+}
