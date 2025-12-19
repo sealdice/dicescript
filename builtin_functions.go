@@ -66,7 +66,7 @@ func funcAbs(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return nil
 }
 
-func funcBool(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+func funcToBool(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	v := params[0]
 	if v.AsBool() {
 		return NewIntVal(1)
@@ -74,7 +74,7 @@ func funcBool(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return NewIntVal(0)
 }
 
-func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+func funcToInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
 		return params[0]
@@ -87,15 +87,15 @@ func funcInt(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		if err == nil {
 			return NewIntVal(IntType(val))
 		} else {
-			ctx.Error = errors.New("(int)值错误: 无法进行 int() 转换: " + s)
+			ctx.Error = errors.New("(toInt)值错误: 无法进行 toInt() 转换: " + s)
 		}
 	default:
-		ctx.Error = errors.New("(int)类型错误: 只能是数字类型")
+		ctx.Error = errors.New("(toInt)类型错误: 只能是数字类型")
 	}
 	return nil
 }
 
-func funcFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+func funcToFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	switch params[0].TypeId {
 	case VMTypeInt:
 		v, _ := params[0].ReadInt()
@@ -108,15 +108,15 @@ func funcFloat(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 		if err == nil {
 			return NewFloatVal(val)
 		} else {
-			ctx.Error = errors.New("(float)值错误: 无法进行 float() 转换: " + s)
+			ctx.Error = errors.New("(toFloat)值错误: 无法进行 toFloat() 转换: " + s)
 		}
 	default:
-		ctx.Error = errors.New("(float)类型错误: 只能是数字类型")
+		ctx.Error = errors.New("(toFloat)类型错误: 只能是数字类型")
 	}
 	return nil
 }
 
-func funcStr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+func funcToStr(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
 	return NewStrVal(params[0].ToString())
 }
 
@@ -199,10 +199,10 @@ var builtinValues = map[string]*VMValue{
 	"round": nnf(&ndf{"round", []string{"value"}, nil, nil, funcRound}),
 	"abs":   nnf(&ndf{"abs", []string{"value"}, nil, nil, funcAbs}),
 
-	"int":   nnf(&ndf{"int", []string{"value"}, nil, nil, funcInt}),
-	"float": nnf(&ndf{"float", []string{"value"}, nil, nil, funcFloat}),
-	"str":   nnf(&ndf{"str", []string{"value"}, nil, nil, funcStr}),
-	"bool":  nnf(&ndf{"bool", []string{"value"}, nil, nil, funcBool}),
+	"toInt":   nnf(&ndf{"toInt", []string{"value"}, nil, nil, funcToInt}),
+	"toFloat": nnf(&ndf{"toFloat", []string{"value"}, nil, nil, funcToFloat}),
+	"toStr":   nnf(&ndf{"toStr", []string{"value"}, nil, nil, funcToStr}),
+	"toBool":  nnf(&ndf{"toBool", []string{"value"}, nil, nil, funcToBool}),
 
 	"repr":    nnf(&ndf{"repr", []string{"value"}, nil, nil, funcRepr}),
 	"load":    nnf(&ndf{"load", []string{"value"}, nil, nil, nil}),

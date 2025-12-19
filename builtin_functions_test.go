@@ -37,35 +37,35 @@ func TestNativeFunctionFloat(t *testing.T) {
 
 func TestNativeFunctionConvert(t *testing.T) {
 	vm := NewVM()
-	assert.True(t, valueEqual(funcInt(vm, nil, []*VMValue{nf(1.1)}), ni(1)))
-	assert.True(t, valueEqual(funcInt(vm, nil, []*VMValue{ni(1)}), ni(1)))
-	assert.True(t, valueEqual(funcInt(vm, nil, []*VMValue{ns("1")}), ni(1)))
+	assert.True(t, valueEqual(funcToInt(vm, nil, []*VMValue{nf(1.1)}), ni(1)))
+	assert.True(t, valueEqual(funcToInt(vm, nil, []*VMValue{ni(1)}), ni(1)))
+	assert.True(t, valueEqual(funcToInt(vm, nil, []*VMValue{ns("1")}), ni(1)))
 
-	funcInt(vm, nil, []*VMValue{ns("xx")})
+	funcToInt(vm, nil, []*VMValue{ns("xx")})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
 
-	funcInt(vm, nil, []*VMValue{na()})
+	funcToInt(vm, nil, []*VMValue{na()})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
 
 	// float
-	assert.True(t, valueEqual(funcFloat(vm, nil, []*VMValue{nf(1.1)}), nf(1.1)))
-	assert.True(t, valueEqual(funcFloat(vm, nil, []*VMValue{ni(1)}), nf(1.0)))
-	assert.True(t, valueEqual(funcFloat(vm, nil, []*VMValue{ns("1")}), nf(1.0)))
+	assert.True(t, valueEqual(funcToFloat(vm, nil, []*VMValue{nf(1.1)}), nf(1.1)))
+	assert.True(t, valueEqual(funcToFloat(vm, nil, []*VMValue{ni(1)}), nf(1.0)))
+	assert.True(t, valueEqual(funcToFloat(vm, nil, []*VMValue{ns("1")}), nf(1.0)))
 
-	funcFloat(vm, nil, []*VMValue{ns("xx")})
+	funcToFloat(vm, nil, []*VMValue{ns("xx")})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
 
-	funcFloat(vm, nil, []*VMValue{na()})
+	funcToFloat(vm, nil, []*VMValue{na()})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
 
 	// str
-	assert.True(t, valueEqual(funcStr(vm, nil, []*VMValue{nf(1.1)}), ns("1.1")))
-	assert.True(t, valueEqual(funcStr(vm, nil, []*VMValue{na(ni(1), ni(2))}), ns("[1, 2]")))
-	assert.True(t, valueEqual(funcStr(vm, nil, []*VMValue{na(na(), ni(2))}), ns("[[], 2]")))
+	assert.True(t, valueEqual(funcToStr(vm, nil, []*VMValue{nf(1.1)}), ns("1.1")))
+	assert.True(t, valueEqual(funcToStr(vm, nil, []*VMValue{na(ni(1), ni(2))}), ns("[1, 2]")))
+	assert.True(t, valueEqual(funcToStr(vm, nil, []*VMValue{na(na(), ni(2))}), ns("[[], 2]")))
 }
 
 func TestNativeFunctionLoad(t *testing.T) {
@@ -100,13 +100,13 @@ func TestNativeFunctionStore(t *testing.T) {
 
 func TestNativeFunctionBool(t *testing.T) {
 	vm := NewVM()
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ni(1)}), ni(1)))
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ni(0)}), ni(0)))
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ns("hello")}), ni(1)))
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{ns("")}), ni(0)))
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{NewNullVal()}), ni(0)))
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{na(ni(1))}), ni(1)))
-	assert.True(t, valueEqual(funcBool(vm, nil, []*VMValue{na()}), ni(0)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{ni(1)}), ni(1)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{ni(0)}), ni(0)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{ns("hello")}), ni(1)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{ns("")}), ni(0)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{NewNullVal()}), ni(0)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{na(ni(1))}), ni(1)))
+	assert.True(t, valueEqual(funcToBool(vm, nil, []*VMValue{na()}), ni(0)))
 }
 
 func TestNativeFunctionRepr(t *testing.T) {
