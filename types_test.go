@@ -467,5 +467,5 @@ func TestAsBool(t *testing.T) {
 	_ = vm.Run("func a() {}")
 	assert.Equal(t, vm.Ret.AsBool(), true)
 
-	assert.Equal(t, builtinValues["str"].AsBool(), true)
+	assert.Equal(t, builtinValues["toStr"].AsBool(), true)
 }

@@ -1785,7 +1785,7 @@ func TestAttrSetBug(t *testing.T) {
 	// 2024/04/23 绑定时发现
 	// ItemSet 也有同样问题
 	vm := NewVM()
-	err := vm.Run(`a = {}; a.x = 10; str(a.x)`)
+	err := vm.Run(`a = {}; a.x = 10; toStr(a.x)`)
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("10")))
 	}
@@ -1793,7 +1793,7 @@ func TestAttrSetBug(t *testing.T) {
 
 func TestItemSetBug2(t *testing.T) {
 	vm := NewVM()
-	err := vm.Run(`a = {}; a[1] = 10; str(a[1])`)
+	err := vm.Run(`a = {}; a[1] = 10; toStr(a[1])`)
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, ns("10")))
 	}

@@ -1,4 +1,5 @@
-import diceModule from './dist/main.mjs';
+// Webpack entry point - imports gopherjs compiled output
+import diceModule from './dicescript.cjs';
 
 const {
   newVM,

@@ -24,8 +24,13 @@ jobs:
     - name: Build
       run: gopherjs build -m -o jsport/dicescript.cjs github.com/sealdice/dicescript/jsport
 
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
     - name: Bundle ESM
-      run: cd ./jsport && yarn && yarn build
+      run: cd ./jsport && pnpm install && pnpm build
 
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v4

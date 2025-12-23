@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "webpack ."
+    "build": "webpack"
   },
   "repository": {
     "type": "git",

@@ -20,7 +20,7 @@ func TestGlobalValueLoadOverwrite(t *testing.T) {
 		assert.True(t, valueEqual(vm.Ret, ni(123)))
 	}
 
-	err = vm.Run("str")
+	err = vm.Run("toStr")
 	if assert.NoError(t, err) {
 		assert.Equal(t, vm.Ret.TypeId, VMTypeNativeFunction)
 	}
