@@ -101,6 +101,8 @@ type RollConfig struct {
 	PrintBytecode bool // 执行时打印字节码
 	IgnoreDiv0    bool // 当div0时暂不报错
 
+	ParseErrorLanguage int // 解析错误消息语言: 0=双语, 1=中文, 2=英文
+
 	DiceMinMode bool // 骰子以最小值结算，用于获取下界
 	DiceMaxMode bool // 以最大值结算 获取上界
 }

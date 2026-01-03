@@ -1,5 +1,8 @@
 // Webpack entry point - imports gopherjs compiled output
-import diceModule from './dicescript.cjs';
+import _module from './dicescript.cjs';
+
+// gopherjs exports to module.exports.ds, not module.exports directly
+const diceModule = _module.ds || _module;
 
 const {
   newVM,

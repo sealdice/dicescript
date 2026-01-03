@@ -34,6 +34,11 @@ func stringsJoin(items any) string {
 	return buf.String()
 }
 
+// ErrorFormatter 是一个可选的错误格式化函数钩子
+// 当设置后，会用于格式化 "no match found" 类型的解析错误
+// Optional error formatter hook for formatting "no match found" parse errors
+var ErrorFormatter func(pos position, input []byte, expected []string) error
+
 var g = &grammar{
 	rules: []*rule{
 		{
@@ -6465,7 +6470,11 @@ func (p *parser) parse(grammar *grammar) (val any, err error) {
 			if eof {
 				expected = append(expected, "EOF")
 			}
-			p.addErrAt(errors.New("no match found, expected: "+listJoin(expected, ", ", "or")), p.maxFailPos, expected)
+			if ErrorFormatter != nil {
+				p.addErrAt(ErrorFormatter(p.maxFailPos, p.data, expected), p.maxFailPos, expected)
+			} else {
+				p.addErrAt(errors.New("no match found, expected: "+listJoin(expected, ", ", "or")), p.maxFailPos, expected)
+			}
 		}
 
 		return nil, p.errs.err()

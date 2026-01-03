@@ -1226,8 +1226,8 @@ func TestCrash1(t *testing.T) {
 	if assert.Error(t, err) {
 		err := vm.Run("/")
 		if assert.Error(t, err) {
-			// assert.True(t, strings.Contains(err.Error(), "parse error near"))
-			assert.True(t, strings.Contains(err.Error(), "no match found"))
+			// 错误消息现在是格式化后的友好消息
+			assert.True(t, strings.Contains(err.Error(), "语法错误") || strings.Contains(err.Error(), "Syntax Error"))
 		}
 	}
 }

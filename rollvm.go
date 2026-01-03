@@ -89,6 +89,8 @@ func (ctx *Context) Parse(value string) error {
 	if ctx.Config.ParseExprLimit != 0 {
 		p.maxExprCnt = ctx.Config.ParseExprLimit
 	}
+	// 设置错误消息语言
+	SetParseErrorLanguage(ctx.Config.ParseErrorLanguage)
 	_, err := p.parse(nil)
 	if err != nil {
 		ctx.Error = err
