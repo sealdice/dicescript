@@ -329,7 +329,7 @@ func (ctx *Context) LoadNameLocalWithDetail(name string, isRaw bool, detail *Buf
 	// if ctx.subThreadDepth >= 1 {
 	val, exists := ctx.Attrs.Load(name)
 	if !exists {
-		val = NewNullVal()
+		return nil
 	}
 
 	val = ctx.solveLoadPostAndComputed(name, val, isRaw, detail)
@@ -339,7 +339,11 @@ func (ctx *Context) LoadNameLocalWithDetail(name string, isRaw bool, detail *Buf
 }
 
 func (ctx *Context) LoadNameLocal(name string, isRaw bool) *VMValue {
-	return ctx.LoadNameLocalWithDetail(name, isRaw, nil)
+	ret := ctx.LoadNameLocalWithDetail(name, isRaw, nil)
+	if ret == nil {
+		return NewNullVal()
+	}
+	return ret
 }
 
 func (ctx *Context) LoadNameWithDetail(name string, isRaw bool, useHook bool, detail *BufferSpan) *VMValue {
@@ -363,7 +367,7 @@ func (ctx *Context) LoadNameWithDetail(name string, isRaw bool, useHook bool, de
 			ctx.Error = curCtx.Error
 			return nil
 		}
-		if ret.TypeId != VMTypeNull {
+		if ret != nil {
 			return ret
 		}
 		if curCtx.UpCtx == nil {
