@@ -1,71 +1,65 @@
+name: Test & Lint
+
 on:
   push:
     branches: [ "main" ]
-
-name: Test & Lint
+  pull_request:
+    branches: [ "main" ]
+  merge_group:
 
 jobs:
   test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=mod
+      GOPROXY: https://proxy.golang.org,direct
     steps:
-      - name: Code
-        uses: actions/checkout@v3
-      - name: Install Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: stable
-      - run: go mod tidy
-      - run: go get
-      - run: go generate ./...
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      # https://blog.jetbrains.com/go/2019/04/03/profiling-go-applications-and-tests/
-      - run: go test -v -bench=^BenchmarkInBoundsChannels$ -cpuprofile=cpu.out -memprofile mem.out .
-      # 第一遍是冷启动，再进行一次测试
-      - run: go test -v . -count=1
-      - run: go test -v . -count=1
-      - run: go test -v . -count=1
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.18.x'
 
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: cpu-profile
-          path: ./cpu.out
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: mem-profile
-          path: ./mem.out
+      - name: Download modules
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v ./...
 
   lint:
+    permissions:
+      contents: read
+      pull-requests: read
     runs-on: ubuntu-latest
+    env:
+      GOFLAGS: -mod=mod
+      GOPROXY: https://proxy.golang.org,direct
     steps:
-      - name: Code
-        uses: actions/checkout@v3
-      - name: Install Go
-        uses: actions/setup-go@v4
+      - name: Checkout
+        uses: actions/checkout@v5
         with:
-          go-version: '1.18'
+          fetch-depth: 0
 
-      - run: go mod tidy
-      - run: go get
-      - run: go generate ./...
-      - name: Go vet
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.18.x'
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Run go vet
         run: go vet -unreachable=false ./...
 
-      - name: GolangCI-Lint
-        uses: golangci/golangci-lint-action@v3
-        if: github.event.name == 'pull_request'
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
         with:
-          go-version: '1.18'
-          version: 'v1.57.2'
-          args: '--timeout 9999s'
+          version: v1.57.2
           only-new-issues: true
           skip-pkg-cache: true
           skip-build-cache: true
-
-      - name: GolangCI-Lint
-        uses: golangci/golangci-lint-action@v3
-        if: github.event.name != 'pull_request'
-        with:
-          version: 'v1.51.2'
-          args: '--timeout 9999s'
+          args: --timeout 9999s
