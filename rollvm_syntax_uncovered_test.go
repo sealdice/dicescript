@@ -28,6 +28,21 @@ func TestNullCoalescing(t *testing.T) {
 	}
 }
 
+func TestNullCoalescingWithGlobalFallback(t *testing.T) {
+	vm := NewVM()
+	vm.GlobalValueLoadOverwriteFunc = func(_ string, curVal *VMValue) *VMValue {
+		if curVal == nil {
+			return ni(0)
+		}
+		return curVal
+	}
+
+	err := vm.Run("a = null; a ?? 10")
+	if assert.NoError(t, err) {
+		assert.True(t, valueEqual(vm.Ret, ni(10)))
+	}
+}
+
 func TestExponentiation(t *testing.T) {
 	// ** 运算符
 	vm := NewVM()
