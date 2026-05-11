@@ -109,6 +109,24 @@ func TestIntegrationWithVM_MissingParen(t *testing.T) {
 	}
 }
 
+func TestIntegrationWithVM_IfError(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("if 1 ")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "if 语句不完整")
+		assert.Contains(t, err.Error(), "Incomplete if statement")
+	}
+}
+
+func TestIntegrationWithVM_TemplateIfError(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("`{ if }`")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "{} 内的 if 语句不完整")
+		assert.Contains(t, err.Error(), "Incomplete if statement inside {}")
+	}
+}
+
 func TestLanguageOptions_English(t *testing.T) {
 	vm := NewVM()
 	vm.Config.ParseErrorLanguage = ParseErrorLanguageEnglish

@@ -2006,8 +2006,7 @@ func TestFStringIf(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("`{ if }`")
 	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "语法错误")
-		assert.Contains(t, err.Error(), "Unexpected character '}'")
+		assert.Contains(t, err.Error(), "{} 内的 if 语句不完整")
 	}
 }
 
@@ -2036,8 +2035,7 @@ func TestIfError(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("if 1 ")
 	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "语法错误")
-		assert.Contains(t, err.Error(), "表达式不完整")
+		assert.Contains(t, err.Error(), "if 语句不完整")
 	}
 }
 
