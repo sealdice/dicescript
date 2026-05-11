@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,6 +17,29 @@ import (
 var (
 	historyFn = filepath.Join(os.TempDir(), ".dicescript_history")
 )
+
+func printRunResult(vm *ds.Context) {
+	rest := vm.RestInput
+	if rest != "" {
+		rest = fmt.Sprintf(" 剩余文本: %s", rest)
+	}
+	fmt.Printf("过程: %s\n", vm.GetDetailText())
+	fmt.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
+	fmt.Printf("栈顶: %d 层数:%d 算力: %d\n", vm.StackTop(), vm.Depth(), vm.NumOpCount)
+}
+
+func runScriptFile(vm *ds.Context, path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("读取脚本文件失败: %w", err)
+	}
+
+	data = bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
+	if err := vm.Run(string(data)); err != nil {
+		return fmt.Errorf("执行脚本文件失败: %w", err)
+	}
+	return nil
+}
 
 func main() {
 	line := liner.NewLiner()
@@ -168,6 +193,16 @@ func main() {
 		return nil
 	}
 
+	if len(os.Args) > 1 {
+		scriptPath := os.Args[1]
+		if err := runScriptFile(vm, scriptPath); err != nil {
+			fmt.Printf("脚本加载失败: %s (%s)\n", scriptPath, err.Error())
+		} else {
+			fmt.Printf("已加载脚本: %s\n", scriptPath)
+			printRunResult(vm)
+		}
+	}
+
 	for {
 		if text, err := line.Prompt(">>> "); err == nil {
 			if strings.TrimSpace(text) == "" {
@@ -180,13 +215,7 @@ func main() {
 			if err != nil {
 				fmt.Printf("错误: %s\n", err.Error())
 			} else {
-				rest := vm.RestInput
-				if rest != "" {
-					rest = fmt.Sprintf(" 剩余文本: %s", rest)
-				}
-				fmt.Printf("过程: %s\n", vm.GetDetailText())
-				fmt.Printf("结果: %s%s\n", vm.Ret.ToString(), rest)
-				fmt.Printf("栈顶: %d 层数:%d 算力: %d\n", vm.StackTop(), vm.Depth(), vm.NumOpCount)
+				printRunResult(vm)
 			}
 
 		} else if err == liner.ErrPromptAborted {
@@ -197,6 +226,8 @@ func main() {
 				ccTimes += 1
 				fmt.Println("Input Ctrl-c once more to exit")
 			}
+		} else if err == io.EOF {
+			break
 		} else {
 			fmt.Print("Error reading line: ", err)
 		}
