@@ -109,6 +109,24 @@ func TestIntegrationWithVM_MissingParen(t *testing.T) {
 	}
 }
 
+func TestIntegrationWithVM_IfError(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("if 1 ")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "if 语句不完整")
+		assert.Contains(t, err.Error(), "Incomplete if statement")
+	}
+}
+
+func TestIntegrationWithVM_TemplateIfError(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("`{ if }`")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "{} 内的 if 语句不完整")
+		assert.Contains(t, err.Error(), "Incomplete if statement inside {}")
+	}
+}
+
 func TestLanguageOptions_English(t *testing.T) {
 	vm := NewVM()
 	vm.Config.ParseErrorLanguage = ParseErrorLanguageEnglish
@@ -149,22 +167,20 @@ func TestLanguageOptions_Bilingual(t *testing.T) {
 }
 
 func TestParseErrorFormatterOptionIsParserScoped(t *testing.T) {
-	pChinese := newParser("", []byte("/"), parseErrorFormatterOption(ParseErrorLanguageChinese))
-	if assert.NotNil(t, pChinese.noMatchErrorFormatter) {
-		err := pChinese.noMatchErrorFormatter(position{line: 1, col: 1, offset: 0}, []byte("/"), []string{"expr"})
-		if assert.Error(t, err) {
-			assert.Contains(t, err.Error(), "语法错误")
-			assert.NotContains(t, err.Error(), "Syntax Error")
-		}
+	vmChinese := NewVM()
+	vmChinese.Config.ParseErrorLanguage = ParseErrorLanguageChinese
+	err := vmChinese.Run("/")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "语法错误")
+		assert.NotContains(t, err.Error(), "Syntax Error")
 	}
 
-	pEnglish := newParser("", []byte("/"), parseErrorFormatterOption(ParseErrorLanguageEnglish))
-	if assert.NotNil(t, pEnglish.noMatchErrorFormatter) {
-		err := pEnglish.noMatchErrorFormatter(position{line: 1, col: 1, offset: 0}, []byte("/"), []string{"expr"})
-		if assert.Error(t, err) {
-			assert.Contains(t, err.Error(), "Syntax Error")
-			assert.NotContains(t, err.Error(), "语法错误")
-		}
+	vmEnglish := NewVM()
+	vmEnglish.Config.ParseErrorLanguage = ParseErrorLanguageEnglish
+	err = vmEnglish.Run("/")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "Syntax Error")
+		assert.NotContains(t, err.Error(), "语法错误")
 	}
 }
 

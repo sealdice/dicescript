@@ -46,8 +46,13 @@ var errMsgs = map[string]bilingualMsg{
 	"unclosedString":  {"字符串未闭合", "Unclosed string literal"},
 	"missingExpr":     {"'%c' 后需要表达式", "Expression expected after '%c'"},
 	"incomplete":      {"表达式不完整", "Incomplete expression"},
-	"unexpectedChar":  {"无法识别的字符 '%c'", "Unexpected character '%c'"},
-	"syntax":          {"语法错误", "Syntax error"},
+	"incompleteIf":    {"if 语句不完整，应写成: if 条件 { ... } [else { ... }]", "Incomplete if statement. Use: if condition { ... } [else { ... }]"},
+	"incompleteIfInTemplate": {
+		"{} 内的 if 语句不完整，应写成: { if 条件 { ... } [else { ... }] }",
+		"Incomplete if statement inside {}. Use: { if condition { ... } [else { ... }] }",
+	},
+	"unexpectedChar": {"无法识别的字符 '%c'", "Unexpected character '%c'"},
+	"syntax":         {"语法错误", "Syntax error"},
 }
 
 // SetParseErrorLanguage 设置解析错误消息的语言
@@ -56,9 +61,9 @@ func SetParseErrorLanguage(lang int) {
 }
 
 func parseErrorFormatterOption(lang int) option {
-	return noMatchErrorFormatter(func(pos position, input []byte, expected []string) error {
-		return formatFriendlyErrorForLanguage(lang, pos, input, expected)
-	})
+	return func(p *parser) option {
+		return func(*parser) option { return nil }
+	}
 }
 
 // formatFriendlyError 生成友好的错误消息
@@ -86,6 +91,12 @@ func formatFriendlyErrorForLanguage(lang int, pos position, input []byte, expect
 	}
 
 	switch {
+	case detectTemplateIfSyntaxError(input, pos):
+		msg = errMsgs["incompleteIfInTemplate"]
+
+	case detectIfSyntaxError(input, pos):
+		msg = errMsgs["incompleteIf"]
+
 	case pos.offset == 0 && !isValidStartChar(char):
 		msg, fmtChar = errMsgs["invalidStart"], char
 
@@ -121,6 +132,70 @@ func formatFriendlyErrorForLanguage(lang int, pos position, input []byte, expect
 	}
 
 	return fmtErr(lang, pos, input, msg, fmtChar)
+}
+
+func detectIfSyntaxError(input []byte, pos position) bool {
+	trimmed := strings.TrimSpace(string(input))
+	if trimmed == "" {
+		return false
+	}
+
+	if !strings.HasPrefix(trimmed, "if") {
+		return false
+	}
+
+	fields := strings.Fields(trimmed)
+	if len(fields) == 0 || fields[0] != "if" {
+		return false
+	}
+
+	return !strings.Contains(trimmed, "{")
+}
+
+func detectTemplateIfSyntaxError(input []byte, pos position) bool {
+	text := string(input)
+	if !strings.Contains(text, "{") || !strings.Contains(text, "if") {
+		return false
+	}
+
+	if pos.offset >= len(text) || rune(text[pos.offset]) != '}' {
+		return false
+	}
+
+	lastOpen := strings.LastIndex(text[:pos.offset], "{")
+	if lastOpen == -1 {
+		return false
+	}
+
+	segment := strings.TrimSpace(text[lastOpen+1 : pos.offset])
+	if segment == "if" {
+		return true
+	}
+	if strings.HasPrefix(segment, "%") {
+		segment = strings.TrimSpace(strings.TrimPrefix(segment, "%"))
+		return segment == "if"
+	}
+	return false
+}
+
+func formatFriendlyParseError(lang int, p *parser, input []byte, fallback error) error {
+	if p == nil {
+		return fallback
+	}
+
+	expected := make([]string, 0, len(p.maxFailExpected))
+	seen := map[string]struct{}{}
+	for _, item := range p.maxFailExpected {
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		expected = append(expected, item)
+	}
+	if len(expected) == 0 && fallback != nil {
+		return fallback
+	}
+	return formatFriendlyErrorForLanguage(lang, p.maxFailPos, input, expected)
 }
 
 // fmtErr 格式化错误输出

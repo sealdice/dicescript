@@ -1361,6 +1361,42 @@ func TestDiceCocExpr(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.True(t, valueEqual(vm.Ret, NewNullVal()))
 	}
+
+	err = vm.Run("B = [[1,2],[3,4]]; B[0].len()")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+
+	err = vm.Run(`func matmul(A, B) {
+    result = [];
+    i = 0;
+    while i < A.len() {
+        row = [];
+        j = 0;
+        while j < B[0].len() {
+            sum = 0;
+            k = 0;
+            while k < A[0].len() {
+                sum = sum + A[i][k] * B[k][j];
+                k = k + 1;
+            }
+            row.push(sum);
+            j = j + 1;
+        }
+        result.push(row);
+        i = i + 1;
+    }
+    return result;
+}
+matmul([[1,2],[3,4]], [[5,6],[7,8]])`)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, valueEqual(vm.Ret, na(
+			na(ni(19), ni(22)),
+			na(ni(43), ni(50)),
+		)))
+	}
 }
 
 func TestDiceWodExpr(t *testing.T) {
@@ -1540,6 +1576,21 @@ func TestDiceAndSpaceBug(t *testing.T) {
 	if assert.NoError(t, err) {
 		assert.Equal(t, "", vm.RestInput)
 		assert.Equal(t, VMTypeNull, vm.Ret.TypeId)
+	}
+
+	err = vm.Run("F = [[1,2],[3,4]]; F[0].len()")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
+	}
+}
+
+func TestDiceVarBoundaryBug(t *testing.T) {
+	vm := NewVM()
+	err := vm.Run("D = [[1,2],[3,4]]; D[0].len()")
+	if assert.NoError(t, err) {
+		assert.Equal(t, "", vm.RestInput)
+		assert.True(t, valueEqual(vm.Ret, ni(2)))
 	}
 }
 
@@ -1954,8 +2005,9 @@ func TestFStringBlock(t *testing.T) {
 func TestFStringIf(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("`{ if }`")
-	// assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
-	assert.Contains(t, err.Error(), "stmtIf:")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "{} 内的 if 语句不完整")
+	}
 }
 
 func TestFStringStackOverflowBug(t *testing.T) {
@@ -1982,7 +2034,9 @@ func TestFStringStackOverflowBug2(t *testing.T) {
 func TestIfError(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("if 1 ")
-	assert.Contains(t, err.Error(), "不符合if语法")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "if 语句不完整")
+	}
 }
 
 func TestFStringV1IfCompatible(t *testing.T) {

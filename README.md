@@ -37,6 +37,14 @@ https://sealdice.github.io/dicescript/
 
 [自定义骰点算符用法指南(正则模式)](./docs/CustomDiceRegex.md)
 
+仓库内置的 shell 可以直接预加载脚本文件：
+
+```
+go run ./cmd ./script.ds
+```
+
+启动时会先执行脚本，再进入 REPL。
+
 
 ## 设计原则
 

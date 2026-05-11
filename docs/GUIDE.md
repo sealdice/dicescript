@@ -29,6 +29,16 @@ DiceScript 被设计为一门专用于TRPG场景的脚本语言。
 
 https://sealdice.github.io/dicescript/
 
+#### 在本地 shell 里试用
+
+仓库自带的 REPL 支持在启动时先执行一个脚本文件：
+
+```bash
+go run ./cmd ./script.ds
+```
+
+脚本执行完成后，会继续进入交互式 REPL，方便把函数或变量预加载进当前会话。
+
 ### 语法
 
 DiceScript的语法从JS、golang和Python上各吸取了一点东西，不过不用担心，语法非常的简单。
