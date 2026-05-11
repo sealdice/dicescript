@@ -2005,8 +2005,10 @@ func TestFStringBlock(t *testing.T) {
 func TestFStringIf(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("`{ if }`")
-	// assert.Contains(t, err.Error(), "{} 内必须是一个表达式")
-	assert.Contains(t, err.Error(), "stmtIf:")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "语法错误")
+		assert.Contains(t, err.Error(), "Unexpected character '}'")
+	}
 }
 
 func TestFStringStackOverflowBug(t *testing.T) {
@@ -2033,7 +2035,10 @@ func TestFStringStackOverflowBug2(t *testing.T) {
 func TestIfError(t *testing.T) {
 	vm := NewVM()
 	err := vm.Run("if 1 ")
-	assert.Contains(t, err.Error(), "不符合if语法")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "语法错误")
+		assert.Contains(t, err.Error(), "表达式不完整")
+	}
 }
 
 func TestFStringV1IfCompatible(t *testing.T) {
