@@ -3,34 +3,612 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>DiceScript 测试页</title>
-  <meta charset="utf-8" name="viewport"
-    content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+  <title>DiceScript Shell</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --page: #f8fafc;
+      --panel: #ffffff;
+      --panel-border: #d9dee7;
+      --text: #111827;
+      --muted: #4b5563;
+      --soft: #f4f7fb;
+      --blue: #2563eb;
+      --blue-light: #3b82f6;
+      --shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--page);
+      color: var(--text);
+      font-family: var(--sans);
+      letter-spacing: 0;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    #app {
+      width: min(100%, 1920px);
+      margin: 0 auto;
+      padding: 31px 42px 42px;
+    }
+
+    .app-title {
+      margin: 0 0 14px;
+      color: #111827;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .shell-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel {
+      width: 100%;
+      border: 1px solid var(--panel-border);
+      border-radius: 9px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 23px 22px 21px;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      margin-bottom: 10px;
+      color: #111827;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .panel-icon {
+      display: inline-flex;
+      width: 42px;
+      height: 42px;
+      align-items: center;
+      justify-content: center;
+      color: var(--blue-light);
+      flex: 0 0 auto;
+    }
+
+    .panel-icon svg {
+      width: 38px;
+      height: 38px;
+      stroke-width: 1.9;
+    }
+
+    .panel-icon.is-muted {
+      color: #4b5563;
+    }
+
+    .log-output {
+      width: 100%;
+      min-height: 244px;
+      max-height: 48vh;
+      margin: 0;
+      overflow: auto;
+      border: 0;
+      border-radius: 10px;
+      background: var(--soft);
+      color: #1f2937;
+      padding: 17px 22px;
+      font-family: var(--mono);
+      font-size: 18px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .log-empty {
+      color: #8b95a7;
+    }
+
+    .input-panel {
+      padding-bottom: 20px;
+    }
+
+    .code-editor {
+      display: grid;
+      grid-template-columns: 53px minmax(0, 1fr);
+      min-height: 118px;
+      max-height: 360px;
+      overflow: hidden;
+      border: 1px solid #3b82f6;
+      border-radius: 11px;
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25), inset 0 0 0 1px rgba(59, 130, 246, 0.1);
+    }
+
+    .line-numbers {
+      overflow: hidden;
+      padding: 17px 0;
+      color: #8793a7;
+      font-family: var(--mono);
+      font-size: 18px;
+      line-height: 1.55;
+      text-align: center;
+      user-select: none;
+    }
+
+    .code-pane {
+      position: relative;
+      min-width: 0;
+    }
+
+    .highlight-layer,
+    .code-input {
+      width: 100%;
+      min-height: 116px;
+      max-height: 358px;
+      margin: 0;
+      border: 0;
+      padding: 17px 18px 17px 0;
+      font-family: var(--mono);
+      font-size: 18px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow: auto;
+    }
+
+    .highlight-layer {
+      pointer-events: none;
+      color: #111827;
+    }
+
+    .highlight-layer code {
+      display: block;
+      min-height: 100%;
+    }
+
+    .code-input {
+      position: absolute;
+      inset: 0;
+      resize: none;
+      outline: none;
+      background: transparent;
+      color: transparent;
+      caret-color: #111827;
+    }
+
+    .code-input::selection {
+      background: rgba(37, 99, 235, 0.22);
+    }
+
+    .token-comment {
+      color: #17884b;
+      font-style: italic;
+    }
+
+    .token-keyword {
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    .token-number {
+      color: #b45309;
+    }
+
+    .token-string {
+      color: #b91c1c;
+    }
+
+    .token-literal {
+      color: #7c3aed;
+      font-weight: 600;
+    }
+
+    .token-dice {
+      color: #9333ea;
+      font-weight: 600;
+    }
+
+    .token-operator,
+    .token-punctuation {
+      color: #64748b;
+    }
+
+    .token-function {
+      color: #0f766e;
+      font-weight: 600;
+    }
+
+    .token-property {
+      color: #0369a1;
+    }
+
+    .token-variable {
+      color: #334155;
+    }
+
+    .token-directive {
+      color: #0f766e;
+      font-weight: 600;
+    }
+
+    .token-stmt {
+      color: #1d4ed8;
+      font-weight: 700;
+    }
+
+    .editor-placeholder {
+      color: #98a2b3;
+    }
+
+    .preset-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .preset-label {
+      flex: 0 0 auto;
+      font-weight: 700;
+    }
+
+    .preset-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .preset-button,
+    .clear-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      font-weight: 700;
+      transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .preset-button {
+      min-height: 34px;
+      padding: 6px 11px;
+      font-size: 15px;
+    }
+
+    .preset-button:hover,
+    .clear-button:hover {
+      border-color: #94a3b8;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+
+    .preset-button:focus-visible,
+    .send-button:focus-visible,
+    .clear-button:focus-visible {
+      outline: 2px solid rgba(59, 130, 246, 0.45);
+      outline-offset: 2px;
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .send-button {
+      display: inline-flex;
+      width: 148px;
+      height: 58px;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: 0 7px 16px rgba(37, 99, 235, 0.18);
+      transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .send-button:hover {
+      background: #1d4ed8;
+      box-shadow: 0 9px 20px rgba(37, 99, 235, 0.24);
+    }
+
+    .send-button:active {
+      transform: translateY(1px);
+    }
+
+    .send-button:disabled {
+      cursor: not-allowed;
+      background: #9db8ee;
+      box-shadow: none;
+    }
+
+    .send-button svg {
+      width: 24px;
+      height: 24px;
+      stroke-width: 2;
+    }
+
+    .clear-button {
+      height: 58px;
+      padding: 0 20px;
+      font-size: 18px;
+      box-shadow: 0 5px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    .clear-button svg {
+      width: 22px;
+      height: 22px;
+      margin-right: 9px;
+      stroke-width: 2;
+    }
+
+    .tips-body {
+      color: #1f2937;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .tips-body p {
+      margin: 0;
+    }
+
+    .tips-body a {
+      color: #2563eb;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    @media (max-width: 720px) {
+      #app {
+        padding: 22px 14px 30px;
+      }
+
+      .app-title {
+        margin-bottom: 18px;
+        font-size: 26px;
+      }
+
+      .shell-layout {
+        gap: 16px;
+      }
+
+      .panel {
+        padding: 18px 16px;
+      }
+
+      .panel-title {
+        gap: 13px;
+        margin-bottom: 12px;
+        font-size: 18px;
+      }
+
+      .panel-icon {
+        width: 32px;
+        height: 32px;
+      }
+
+      .panel-icon svg {
+        width: 30px;
+        height: 30px;
+      }
+
+      .log-output {
+        min-height: 220px;
+        padding: 14px 15px;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .code-editor {
+        grid-template-columns: 42px minmax(0, 1fr);
+        min-height: 116px;
+      }
+
+      .preset-bar {
+        align-items: flex-start;
+        gap: 9px;
+        margin-bottom: 12px;
+        font-size: 15px;
+      }
+
+      .preset-list {
+        gap: 7px;
+      }
+
+      .preset-button {
+        min-height: 32px;
+        padding: 5px 9px;
+        font-size: 14px;
+      }
+
+      .line-numbers,
+      .highlight-layer,
+      .code-input {
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .line-numbers {
+        padding: 14px 0;
+      }
+
+      .highlight-layer,
+      .code-input {
+        min-height: 114px;
+        padding: 14px 12px 14px 0;
+      }
+
+      .input-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        margin-top: 18px;
+      }
+
+      .send-button {
+        width: 100%;
+        height: 52px;
+        font-size: 19px;
+      }
+
+      .clear-button {
+        height: 48px;
+        font-size: 17px;
+      }
+
+      .tips-body {
+        font-size: 16px;
+        line-height: 1.65;
+      }
+    }
+  </style>
 </head>
 
 <body>
   <!--<script src="./dicescript.js"></script>-->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.18/dist/vue.global.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/eruda@3.4.3/eruda.min.js"></script>
-  <script>eruda.init();</script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.5.18/dist/vue.global.prod.js"></script>
+  <script>
+    if (window.matchMedia('(max-width: 720px)').matches) {
+      const erudaScript = document.createElement('script');
+      erudaScript.src = 'https://cdn.jsdelivr.net/npm/eruda@3.4.3/eruda.min.js';
+      erudaScript.onload = () => window.eruda && window.eruda.init();
+      document.head.appendChild(erudaScript);
+    }
+  </script>
 
   <div id="app">
-    <div>
-      <div v-for="i in items">{{i}}</div>
-    </div>
-    <div>
-      <div>
-        <textarea rows="5" id="prompt" v-model="message"></textarea>
-      </div>
-      <button @click="doSend">发送</button>
-    </div>
+    <h1 class="app-title">DiceScript Shell</h1>
 
-    <div style="margin-top: 2rem;">
-      <div>提示: 还在开发中，支持语法详情看<a target="_blank" href="https://github.com/sealdice/dicescript/blob/main/GUIDE.md">语法指南</a>
-      </div>
-      <div style="margin-left: 2rem">控制台里有上一条指令的字节码。建议多ctrl+f5以免遇到旧版</div>
-      <div style="margin-left: 2rem">有一个人物卡变量叫player，通过"_测试30"这种形式可以读取出数字30，可用于ra判定</div>
-    </div>
+    <main class="shell-layout">
+      <section class="panel" aria-labelledby="output-title">
+        <div class="panel-title" id="output-title">
+          <span class="panel-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m4 17 6-6-6-6"></path>
+              <path d="M12 19h8"></path>
+            </svg>
+          </span>
+          <span>输出 / 日志</span>
+        </div>
+        <pre v-if="items.length" ref="logBox" class="log-output" v-text="logText"></pre>
+        <div v-else ref="logBox" class="log-output log-empty">等待运行 DiceScript 代码...</div>
+      </section>
+
+      <section class="panel input-panel" aria-labelledby="input-title">
+        <div class="panel-title" id="input-title">
+          <span class="panel-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m16 18 6-6-6-6"></path>
+              <path d="m8 6-6 6 6 6"></path>
+              <path d="m14 4-4 16"></path>
+            </svg>
+          </span>
+          <span>代码输入</span>
+        </div>
+
+        <form @submit.prevent="doSend">
+          <div class="preset-bar" aria-label="预置示例">
+            <span class="preset-label">示例</span>
+            <div class="preset-list">
+              <button
+                v-for="preset in presets"
+                :key="preset.name"
+                class="preset-button"
+                type="button"
+                @click="loadPreset(preset)"
+              >{{ preset.name }}</button>
+            </div>
+          </div>
+          <div class="code-editor">
+            <div ref="lineNumbers" class="line-numbers" aria-hidden="true">
+              <div v-for="n in lineCount" :key="n">{{ n }}</div>
+            </div>
+            <div class="code-pane">
+              <pre ref="highlight" class="highlight-layer" aria-hidden="true"><code v-html="highlightedCode"></code></pre>
+              <textarea
+                ref="codeInput"
+                class="code-input"
+                id="prompt"
+                v-model="message"
+                spellcheck="false"
+                autocapitalize="off"
+                autocomplete="off"
+                autocorrect="off"
+                aria-label="代码输入"
+                @scroll="syncEditorScroll"
+                @keydown.tab.prevent="insertTab"
+                @keydown.ctrl.enter.prevent="doSend"
+                @keydown.meta.enter.prevent="doSend"
+              ></textarea>
+            </div>
+          </div>
+          <div class="input-actions">
+            <button class="send-button" type="submit" :disabled="message.trim() === ''">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 2-7 20-4-9-9-4Z"></path>
+                <path d="M22 2 11 13"></path>
+              </svg>
+              <span>发送</span>
+            </button>
+            <button class="clear-button" type="button" @click="clearShell">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="m19 6-1 14H6L5 6"></path>
+                <path d="M10 11v5"></path>
+                <path d="M14 11v5"></path>
+              </svg>
+              <span>清空</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="tips-title">
+        <div class="panel-title" id="tips-title">
+          <span class="panel-icon is-muted" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 14c.2-1 .7-1.7 1.5-2.5A4.9 4.9 0 0 0 18 8 6 6 0 0 0 6 8c0 1.3.4 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"></path>
+              <path d="M9 18h6"></path>
+              <path d="M10 22h4"></path>
+            </svg>
+          </span>
+          <span>提示</span>
+        </div>
+        <div class="tips-body">
+          <p>提示: 还在开发中，支持语法详情看 <a target="_blank" rel="noreferrer" href="https://github.com/sealdice/dicescript/blob/main/docs/GUIDE.md">语法指南</a></p>
+          <p>控制台里有上一条指令的字节码，建议多ctrl+f5以免遇到旧版</p>
+          <p>有一个人物卡变量叫player，通过"_测试30"这种形式可以读取出数字30，可用于ra判定</p>
+        </div>
+      </section>
+    </main>
   </div>
 
   <script type="module">
@@ -50,14 +628,319 @@
     c.EnableDiceDoubleCross = true;
     ctx.SetConfig(c);
 
+    const defaultMessage = '// multi line\nfunc main() {\n}';
+    const storageKeys = {
+      message: 'dicescript.shell.message',
+      items: 'dicescript.shell.items',
+    };
+    const presets = [
+      {
+        name: '基础骰',
+        code: 'd20\n2d20kh1\n4d6kl1\nb\np2',
+      },
+      {
+        name: '函数',
+        code: 'func check(x) {\n  if x >= 10 && true {\n    return x + 2d20kh1\n  }\n  return null\n}\ncheck(12)',
+      },
+      {
+        name: '字典数组',
+        code: "{'力量': 60, '敏捷': 70}['力量'] + [1, 2, 3][1]",
+      },
+      {
+        name: '规则骰',
+        code: '// #EnableDice coc true\n// #EnableDice wod true\n// #EnableDice fate true\nb\np2\n5a8m10\nf',
+      },
+      {
+        name: '集合函数',
+        code: "[1, 2, 3].sum() + {'bonus': 4}['bonus']",
+      },
+    ];
+
+    function loadStoredItems() {
+      try {
+        const raw = localStorage.getItem(storageKeys.items);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string') ? parsed : [];
+      } catch (e) {
+        console.warn('无法读取历史输出', e);
+        return [];
+      }
+    }
+
+    function loadStoredMessage() {
+      try {
+        const saved = localStorage.getItem(storageKeys.message);
+        return saved === null ? defaultMessage : saved;
+      } catch (e) {
+        console.warn('无法读取输入历史', e);
+        return defaultMessage;
+      }
+    }
+
+    function writeStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn('无法写入本地记录', e);
+      }
+    }
+
+    function removeStorage(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch (e) {
+        console.warn('无法清理本地记录', e);
+      }
+    }
+
     createApp({
       data() {
         return {
-          items: ['DiceScript Shell'],
-          message: 'd20'
+          items: loadStoredItems(),
+          message: loadStoredMessage(),
+          presets,
         }
       },
+      computed: {
+        logText() {
+          return this.items.join('\n')
+        },
+        lineCount() {
+          return Math.max(this.message.split('\n').length, 3)
+        },
+        highlightedCode() {
+          if (!this.message) {
+            return '<span class="editor-placeholder">输入 DiceScript 代码...</span>'
+          }
+          return this.message.split('\n').map((line) => this.highlightDiceScriptLine(line)).join('\n')
+        },
+      },
+      watch: {
+        message(value) {
+          writeStorage(storageKeys.message, value)
+        },
+        items: {
+          deep: true,
+          handler(value) {
+            writeStorage(storageKeys.items, JSON.stringify(value.slice(-200)))
+          },
+        },
+      },
+      mounted() {
+        this.scrollLogToEnd()
+      },
       methods: {
+        escapeHtml(value) {
+          return value.replace(/[&<>"']/g, (ch) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+          }[ch]))
+        },
+        token(value, className = '') {
+          const escaped = this.escapeHtml(value)
+          return className ? `<span class="${className}">${escaped}</span>` : escaped
+        },
+        isIdentifierStart(char) {
+          return !!char && /[$_\p{ID_Start}]/u.test(char)
+        },
+        isIdentifierContinue(char) {
+          return !!char && /[$\p{ID_Continue}（）【】]/u.test(char)
+        },
+        previousNonSpace(line, index) {
+          for (let i = index - 1; i >= 0; i -= 1) {
+            if (!/\s/.test(line[i])) return line[i]
+          }
+          return ''
+        },
+        nextNonSpace(line, index) {
+          for (let i = index; i < line.length; i += 1) {
+            if (!/\s/.test(line[i])) return line[i]
+          }
+          return ''
+        },
+        readString(line, start) {
+          const quote = line[start]
+          let i = start + 1
+          while (i < line.length) {
+            if (line[i] === '\\') {
+              i += 2
+              continue
+            }
+            if (line[i] === quote) return i + 1
+            i += 1
+          }
+          return line.length
+        },
+        readIdentifier(line, start) {
+          let i = start + 1
+          while (i < line.length && this.isIdentifierContinue(line[i])) i += 1
+          return i
+        },
+        readNumber(line, start) {
+          const match = line.slice(start).match(/^(?:\d+\.\d+|\.\d+|\d+)/)
+          return match ? start + match[0].length : start
+        },
+        matchDice(line, start) {
+          const slice = line.slice(start)
+          const patterns = [
+            /^(?:\d+)?[dD](?:\d+)?(?:优势|優勢|劣势|劣勢)?(?:(?:kl|kh|dh|dl|[qQkK])(?:\d+)?)?(?:(?:min|max)\d+)?(?:[dD]\d+(?:(?:kl|kh|dh|dl|[qQkK])(?:\d+)?)?)*(?![$\p{ID_Continue}])/u,
+            /^(?:\d+)?[aA]\d+(?:[mMkKqQ]\d+)*(?![$\p{ID_Continue}])/u,
+            /^\d+[cC]\d+(?:[mM]\d+)*(?![$\p{ID_Continue}])/u,
+            /^[bBpP](?:\d+)?(?![$\p{ID_Continue}.[(])/u,
+            /^[fF](?![$\p{ID_Continue}])/u,
+          ]
+
+          for (const pattern of patterns) {
+            const match = slice.match(pattern)
+            if (!match || !match[0]) continue
+            if (/^[dD]$/.test(match[0]) && this.isIdentifierContinue(line[start + 1])) continue
+            return match[0]
+          }
+          return ''
+        },
+        tokenClassForIdentifier(line, start, end, word) {
+          const keywords = new Set(['while', 'if', 'else', 'continue', 'break', 'return', 'func'])
+          const literals = new Set(['true', 'false', 'null', 'this'])
+          if (keywords.has(word)) return 'token-keyword'
+          if (literals.has(word)) return 'token-literal'
+
+          const previous = this.previousNonSpace(line, start)
+          const next = this.nextNonSpace(line, end)
+          const linePrefix = line.slice(0, start).trim()
+          if (word === 'st' && (linePrefix === '' || linePrefix === '^')) return 'token-stmt'
+          if (previous === '.') return 'token-property'
+          if (previous === '&') return 'token-variable'
+          if (next === '(') return 'token-function'
+          return ''
+        },
+        highlightDiceScriptLine(line) {
+          let i = 0
+          let out = ''
+          const operators = ['??', '==', '!=', '<=', '>=', '||', '&&', '**', '..', '+=', '-=']
+          const punctuation = new Set(['(', ')', '[', ']', '{', '}', ',', ';', ':', '.'])
+          const singleOperators = new Set(['+', '-', '*', '/', '%', '^', '<', '>', '=', '?', '!', '&', '|', '＋', '－', '＊', '／'])
+
+          while (i < line.length) {
+            const char = line[i]
+
+            if (line.startsWith('//', i)) {
+              const commentClass = line.slice(i).trimStart().startsWith('// #EnableDice') ? 'token-directive' : 'token-comment'
+              out += this.token(line.slice(i), commentClass)
+              break
+            }
+
+            if (/\s/.test(char)) {
+              out += this.token(char)
+              i += 1
+              continue
+            }
+
+            if (char === '\'' || char === '"' || char === '`') {
+              const end = this.readString(line, i)
+              out += this.token(line.slice(i, end), 'token-string')
+              i = end
+              continue
+            }
+
+            const dice = this.matchDice(line, i)
+            if (dice) {
+              out += this.token(dice, 'token-dice')
+              i += dice.length
+              continue
+            }
+
+            if (/\d/.test(char) || (char === '.' && /\d/.test(line[i + 1] || ''))) {
+              const end = this.readNumber(line, i)
+              out += this.token(line.slice(i, end), 'token-number')
+              i = end
+              continue
+            }
+
+            if (this.isIdentifierStart(char)) {
+              const end = this.readIdentifier(line, i)
+              const word = line.slice(i, end)
+              out += this.token(word, this.tokenClassForIdentifier(line, i, end, word))
+              i = end
+              continue
+            }
+
+            const op = operators.find((candidate) => line.startsWith(candidate, i))
+            if (op) {
+              out += this.token(op, 'token-operator')
+              i += op.length
+              continue
+            }
+
+            if (singleOperators.has(char)) {
+              out += this.token(char, 'token-operator')
+              i += 1
+              continue
+            }
+
+            if (punctuation.has(char)) {
+              out += this.token(char, 'token-punctuation')
+              i += 1
+              continue
+            }
+
+            out += this.token(char)
+            i += 1
+          }
+
+          return out
+        },
+        syncEditorScroll(event) {
+          const target = event.target
+          if (this.$refs.highlight) {
+            this.$refs.highlight.scrollTop = target.scrollTop
+            this.$refs.highlight.scrollLeft = target.scrollLeft
+          }
+          if (this.$refs.lineNumbers) {
+            this.$refs.lineNumbers.scrollTop = target.scrollTop
+          }
+        },
+        insertTab(event) {
+          const target = event.target
+          const start = target.selectionStart
+          const end = target.selectionEnd
+          const indent = '  '
+          this.message = `${this.message.slice(0, start)}${indent}${this.message.slice(end)}`
+          this.$nextTick(() => {
+            target.selectionStart = start + indent.length
+            target.selectionEnd = start + indent.length
+            this.syncEditorScroll({ target })
+          })
+        },
+        scrollLogToEnd() {
+          this.$nextTick(() => {
+            const logBox = this.$refs.logBox
+            if (logBox) logBox.scrollTop = logBox.scrollHeight
+          })
+        },
+        loadPreset(preset) {
+          this.message = preset.code
+          this.$nextTick(() => {
+            const input = this.$refs.codeInput
+            if (input) {
+              input.focus()
+              input.selectionStart = input.value.length
+              input.selectionEnd = input.value.length
+              this.syncEditorScroll({ target: input })
+            }
+          })
+        },
+        clearShell() {
+          this.items = []
+          this.message = ''
+          this.$nextTick(() => {
+            removeStorage(storageKeys.items)
+            writeStorage(storageKeys.message, '')
+            if (this.$refs.codeInput) this.$refs.codeInput.focus()
+          })
+        },
         doSend() {
           this.message = this.message.trim()
           if (this.message === '') return;
@@ -81,7 +964,7 @@
             this.items.push(`内部错误: ` + e.message)
           }
           console.log(ctx.GetAsmText())
-          this.message = '';
+          this.scrollLogToEnd()
         }
       }
     }).mount('#app')
