@@ -70,7 +70,8 @@ func (ctx *Context) Parse(value string) error {
 		return errors.New("正在执行中，无法执行新的语句")
 	}
 
-	p := newParser("", []byte(value), memoized(true), parseErrorFormatterOption(ctx.Config.ParseErrorLanguage))
+	dataBytes := []byte(value)
+	p := newParser("", dataBytes, memoized(true), parseErrorFormatterOption(ctx.Config.ParseErrorLanguage))
 	ctx.parser = p
 	d := p.cur.data
 	// p.debug = true
@@ -91,8 +92,8 @@ func (ctx *Context) Parse(value string) error {
 	}
 	_, err := p.parse(nil)
 	if err != nil {
-		ctx.Error = err
-		return err
+		ctx.Error = formatFriendlyParseError(ctx.Config.ParseErrorLanguage, p, dataBytes, err)
+		return ctx.Error
 	}
 
 	ctx.code = p.cur.data.code

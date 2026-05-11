@@ -149,22 +149,20 @@ func TestLanguageOptions_Bilingual(t *testing.T) {
 }
 
 func TestParseErrorFormatterOptionIsParserScoped(t *testing.T) {
-	pChinese := newParser("", []byte("/"), parseErrorFormatterOption(ParseErrorLanguageChinese))
-	if assert.NotNil(t, pChinese.noMatchErrorFormatter) {
-		err := pChinese.noMatchErrorFormatter(position{line: 1, col: 1, offset: 0}, []byte("/"), []string{"expr"})
-		if assert.Error(t, err) {
-			assert.Contains(t, err.Error(), "语法错误")
-			assert.NotContains(t, err.Error(), "Syntax Error")
-		}
+	vmChinese := NewVM()
+	vmChinese.Config.ParseErrorLanguage = ParseErrorLanguageChinese
+	err := vmChinese.Run("/")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "语法错误")
+		assert.NotContains(t, err.Error(), "Syntax Error")
 	}
 
-	pEnglish := newParser("", []byte("/"), parseErrorFormatterOption(ParseErrorLanguageEnglish))
-	if assert.NotNil(t, pEnglish.noMatchErrorFormatter) {
-		err := pEnglish.noMatchErrorFormatter(position{line: 1, col: 1, offset: 0}, []byte("/"), []string{"expr"})
-		if assert.Error(t, err) {
-			assert.Contains(t, err.Error(), "Syntax Error")
-			assert.NotContains(t, err.Error(), "语法错误")
-		}
+	vmEnglish := NewVM()
+	vmEnglish.Config.ParseErrorLanguage = ParseErrorLanguageEnglish
+	err = vmEnglish.Run("/")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "Syntax Error")
+		assert.NotContains(t, err.Error(), "语法错误")
 	}
 }
 

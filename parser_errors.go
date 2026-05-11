@@ -56,9 +56,9 @@ func SetParseErrorLanguage(lang int) {
 }
 
 func parseErrorFormatterOption(lang int) option {
-	return noMatchErrorFormatter(func(pos position, input []byte, expected []string) error {
-		return formatFriendlyErrorForLanguage(lang, pos, input, expected)
-	})
+	return func(p *parser) option {
+		return func(*parser) option { return nil }
+	}
 }
 
 // formatFriendlyError 生成友好的错误消息
@@ -121,6 +121,26 @@ func formatFriendlyErrorForLanguage(lang int, pos position, input []byte, expect
 	}
 
 	return fmtErr(lang, pos, input, msg, fmtChar)
+}
+
+func formatFriendlyParseError(lang int, p *parser, input []byte, fallback error) error {
+	if p == nil {
+		return fallback
+	}
+
+	expected := make([]string, 0, len(p.maxFailExpected))
+	seen := map[string]struct{}{}
+	for _, item := range p.maxFailExpected {
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		expected = append(expected, item)
+	}
+	if len(expected) == 0 && fallback != nil {
+		return fallback
+	}
+	return formatFriendlyErrorForLanguage(lang, p.maxFailPos, input, expected)
 }
 
 // fmtErr 格式化错误输出

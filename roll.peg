@@ -256,7 +256,8 @@ _diceType2 <- [dD] nos
 // 3d
 _diceType3 <- nos [dD]
 // d / d优势 / d劣势
-_diceType4 <- [dD] ("优势" / "優勢" / "劣势" / "劣勢" / !xidStart)
+_diceBoundary <- !xidContinue !('[' / '.' / '(')
+_diceType4 <- [dD] ("优势" / "優勢" / "劣势" / "劣勢" / _diceBoundary)
 
 // XdY/dY/Xd 中的 dy + 后缀部分，跟上面 _diceTypeX 一一对应
 _diceExpr1 <- [dD] { c.data.AddOp(typeDiceInit); c.data.AddOp(typeDiceSetTimes);  } nos _diceMod? _diceModType2?
@@ -274,15 +275,16 @@ _wodDiceType <- nos _wodTypeMain / _wodTypeMain !xidContinue
 _wodMain <- [aA] nos (([mM] nos { c.data.AddOp(typeWodSetPoints) }) / ([kK] nos { c.data.AddOp(typeWodSetThreshold) }) / ([qQ] nos { c.data.AddOp(typeWodSetThresholdQ) }))*
 
 // COC规则，b奖励骰，p惩罚骰
-_cocDiceType <- [pPbB] (nos !xidContinue / !xidContinue)
-_diceCocBonus <- [bB] (nos !xidContinue / !xidContinue {c.data.PushIntNumber("1")}) detailEnd { c.data.AddOp(typeDiceCocBonus) }
-_diceCocPenalty <- [pP] (nos !xidContinue / !xidContinue {c.data.PushIntNumber("1")}) detailEnd { c.data.AddOp(typeDiceCocPenalty) }
+_cocDiceBoundary <- !xidContinue !('[' / '.' / '(')
+_cocDiceType <- [pPbB] (nos _cocDiceBoundary / _cocDiceBoundary)
+_diceCocBonus <- [bB] (nos _cocDiceBoundary / _cocDiceBoundary {c.data.PushIntNumber("1")}) detailEnd { c.data.AddOp(typeDiceCocBonus) }
+_diceCocPenalty <- [pP] (nos _cocDiceBoundary / _cocDiceBoundary {c.data.PushIntNumber("1")}) detailEnd { c.data.AddOp(typeDiceCocPenalty) }
 
 // 双十字规则
 _dcDiceType <- nos [cC] nos ([mM] nos)*
 
 // Fate规则
-_fateDiceType <- [fF] !xidContinue
+_fateDiceType <- [fF] _diceBoundary
 
 exprDice <- &{return c.data.PrepareCustomDice(p)} detailStart { c.data.ConsumeCustomDice(p) } detailEnd { c.data.CommitCustomDice() }
           / &_diceType1 detailStart nos _diceExpr1 detailEnd { c.data.AddOp(typeDice); } _diceExprX*
