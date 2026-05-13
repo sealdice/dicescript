@@ -42,6 +42,79 @@ func TestHookFuncValueLoadOverwrite(t *testing.T) {
 	}
 }
 
+func TestHookValueStore(t *testing.T) {
+	t.Run("local overwrite", func(t *testing.T) {
+		vm := NewVM()
+		calls := 0
+		vm.Config.HookValueStore = func(ctx *Context, name string, v *VMValue) (*VMValue, bool) {
+			calls++
+			assert.Same(t, vm, ctx)
+			assert.Equal(t, "hp", name)
+			assert.True(t, valueEqual(v, ni(1)))
+			return ni(2), false
+		}
+
+		vm.StoreName("hp", ni(1), true)
+
+		actual, ok := vm.Attrs.Load("hp")
+		if assert.True(t, ok) {
+			assert.True(t, valueEqual(actual, ni(2)))
+		}
+		assert.Equal(t, 1, calls)
+	})
+
+	t.Run("global overwrite", func(t *testing.T) {
+		vm := NewVM()
+		vm.globalNames.Store("hp", ni(0))
+
+		var storedName string
+		var storedVal *VMValue
+		vm.GlobalValueStoreFunc = func(name string, v *VMValue) {
+			storedName = name
+			storedVal = v
+		}
+		vm.Config.HookValueStore = func(ctx *Context, name string, v *VMValue) (*VMValue, bool) {
+			assert.Same(t, vm, ctx)
+			assert.Equal(t, "hp", name)
+			assert.True(t, valueEqual(v, ni(1)))
+			return ni(3), false
+		}
+
+		vm.StoreName("hp", ni(1), true)
+
+		assert.Equal(t, "hp", storedName)
+		if assert.NotNil(t, storedVal) {
+			assert.True(t, valueEqual(storedVal, ni(3)))
+		}
+		_, ok := vm.Attrs.Load("hp")
+		assert.False(t, ok)
+		assert.NoError(t, vm.Error)
+	})
+
+	t.Run("solved skips remaining storage", func(t *testing.T) {
+		vm := NewVM()
+		vm.globalNames.Store("hp", ni(0))
+
+		stored := false
+		vm.GlobalValueStoreFunc = func(name string, v *VMValue) {
+			stored = true
+		}
+		vm.Config.HookValueStore = func(ctx *Context, name string, v *VMValue) (*VMValue, bool) {
+			assert.Same(t, vm, ctx)
+			assert.Equal(t, "hp", name)
+			assert.True(t, valueEqual(v, ni(1)))
+			return nil, true
+		}
+
+		vm.StoreName("hp", ni(1), true)
+
+		assert.False(t, stored)
+		_, ok := vm.Attrs.Load("hp")
+		assert.False(t, ok)
+		assert.NoError(t, vm.Error)
+	})
+}
+
 func TestCustomDetailSpanRewrite(t *testing.T) {
 	vm := NewVM()
 	vm.Attrs.Store("x", ni(5))

@@ -14,11 +14,11 @@ import (
 var scope = map[string]*ds.VMValue{}
 
 func newVM(name string) *js.Object {
-	player := ds.NewDictVal(nil)
-	player.Store("力量", ds.NewIntVal(50))
-	player.Store("敏捷", ds.NewIntVal(60))
-	player.Store("智力", ds.NewIntVal(70))
-	scope["player"] = player.V()
+	actor := ds.NewDictVal(nil)
+	actor.Store("力量", ds.NewIntVal(50))
+	actor.Store("敏捷", ds.NewIntVal(60))
+	actor.Store("智力", ds.NewIntVal(70))
+	scope["actor"] = actor.V()
 
 	vm := ds.NewVM()
 	//vm.GlobalValueStoreFunc = func(name string, v *ds.VMValue) {
@@ -33,7 +33,7 @@ func newVM(name string) *js.Object {
 	//		return ds.VMValueNewInt(ds.IntType(val))
 	//	}
 	//
-	//	if v, exists := player.Load(name); exists {
+	//	if v, exists := actor.Load(name); exists {
 	//		return v
 	//	}
 	//

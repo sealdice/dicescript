@@ -79,8 +79,6 @@ type RollConfig struct {
 	DisableStmts     bool // 禁用语句语法(如if while等)，仅允许表达式
 	DisableNDice     bool // 禁用Nd语法，即只能2d6这样写，不能写2d
 
-	ValueStoreSource string // ValueStoreSource 用于区分来源以便于 HookValueStore 的调用判断持久化方式
-
 	// 如果返回值为true，那么跳过剩下的储存流程。如果overwrite不为nil，对v进行覆盖。
 	// 另注: 钩子函数中含有ctx的原因是可能在函数中进行调用，此时ctx会发生变化
 	HookValueStore func(ctx *Context, name string, v *VMValue) (overwrite *VMValue, solved bool)

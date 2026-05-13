@@ -1,5 +1,9 @@
 ## 更新记录
 
+#### 2026.5.13
+* Breaking: 移除未使用的 `RollConfig.ValueStoreSource` 字段，相关调用方需停止读写该配置。
+* Breaking: playground 预置人物卡变量由 `player` 改为 `actor`，旧脚本不再兼容。
+
 #### 2025.10.14
 * 新增自定义算符 `CustomDiceStream` 流式解析能力，可在回调中逐字符消费输入、读取表达式并携带 payload，示例与测试同步更新。
 
