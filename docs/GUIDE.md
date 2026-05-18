@@ -558,10 +558,10 @@ fib(11) // 89
 另一种写法：
 ```
 func fib(n) {
-  if this.n == 0 { 0 }
-  else if this.n == 1 { 1 }
-  else if this.n == 2 { 1 } else {
-    fib(this.n-1) + fib(this.n-2)
+  if this.n == 0 { return 0 }
+  else if this.n == 1 { return 1 }
+  else if this.n == 2 { return 1 } else {
+    return fib(this.n-1) + fib(this.n-2)
   }
 }
 fib(10) // 55
