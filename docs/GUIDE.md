@@ -777,7 +777,7 @@ function roll(text) {
 ```
 go mod install
 go install github.com/fy0/pigeon@latest
-go install github.com/gopherjs/gopherjs@v1.18.0-beta1
+go install github.com/gopherjs/gopherjs@v1.19.0-beta2
 pigeon -nolint -optimize-parser -optimize-ref-expr-by-index -o .\roll.peg.go .\roll.peg
 ```
 
@@ -788,5 +788,8 @@ go build
 
 如果你使用JS:
 ```
-gopherjs build github.com/sealdice/dicescript/jsport -o jsport/dicescript.cjs
+gopherjs build -m -o jsport/dicescript.cjs github.com/sealdice/dicescript/jsport
+cd jsport
+npm install
+npm run build
 ```
