@@ -486,3 +486,263 @@ func TestAsBool(t *testing.T) {
 
 	assert.Equal(t, builtinValues["toStr"].AsBool(), true)
 }
+
+func TestVMValueRepresentationsAndTypeReads(t *testing.T) {
+	function := NewFunctionValRaw(&FunctionData{Name: "f"})
+	nativeFunction := NewNativeFunctionVal(&NativeFunctionData{Name: "nf"})
+	nativeObject := NewNativeObjectVal(&NativeObjectData{Name: "obj"})
+	invalid := &VMValue{TypeId: VMValueType(999)}
+
+	assert.Equal(t, "function f", function.ToString())
+	assert.Equal(t, "nfunction nf", nativeFunction.ToString())
+	assert.Equal(t, "nobject obj", nativeObject.ToString())
+	assert.Equal(t, "a value", invalid.ToString())
+	assert.Equal(t, "<a value>", invalid.ToRepr())
+	assert.Equal(t, "NIL", (*VMValue)(nil).ToString())
+	assert.Equal(t, "NIL", (*VMValue)(nil).ToRepr())
+
+	_, ok := ni(1).ReadString()
+	assert.False(t, ok)
+	_, ok = ni(1).ReadArray()
+	assert.False(t, ok)
+	_, ok = ni(1).ReadComputed()
+	assert.False(t, ok)
+	_, ok = ni(1).ReadFunctionData()
+	assert.False(t, ok)
+	_, ok = ni(1).ReadNativeFunctionData()
+	assert.False(t, ok)
+	_, ok = ni(1).ReadNativeObjectData()
+	assert.False(t, ok)
+
+	assert.Panics(t, func() { ni(1).MustReadDictData() })
+	assert.Panics(t, func() { ni(1).MustReadArray() })
+	assert.Panics(t, func() { ns("1").MustReadInt() })
+	assert.Panics(t, func() { ns("1").MustReadFloat() })
+
+	typeNames := map[*VMValue]string{
+		ni(1):               "int",
+		nf(1):               "float",
+		ns("x"):             "str",
+		NewNullVal():        "null",
+		NewComputedVal("1"): "computed",
+		na():                "array",
+		function:            "function",
+		nativeFunction:      "nfunction",
+		nativeObject:        "nobject",
+		invalid:             "unknown",
+	}
+	for value, want := range typeNames {
+		assert.Equal(t, want, value.GetTypeName())
+	}
+}
+
+func TestVMValueArithmeticErrorCases(t *testing.T) {
+	for name, test := range map[string]struct {
+		left  *VMValue
+		right *VMValue
+	}{
+		"int by float zero":   {left: ni(2), right: nf(0)},
+		"float by int zero":   {left: nf(2), right: ni(0)},
+		"float by float zero": {left: nf(2), right: nf(0)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx := NewVM()
+			assert.Nil(t, test.left.OpDivide(ctx, test.right))
+			assert.Error(t, ctx.Error)
+		})
+	}
+
+	ctx := NewVM()
+	ctx.Config.IgnoreDiv0 = true
+	left := ni(7)
+	assert.Same(t, left, left.OpDivide(ctx, ni(0)))
+	assert.NoError(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, ni(7).OpModulus(ctx, ni(0)))
+	assert.Error(t, ctx.Error)
+
+	unsupported := NewNullVal()
+	assert.Nil(t, unsupported.OpSub(ctx, ni(1)))
+	assert.Nil(t, unsupported.OpMultiply(ctx, ni(1)))
+	assert.Nil(t, unsupported.OpDivide(ctx, ni(1)))
+	assert.Nil(t, unsupported.OpBitwiseAnd(ctx, ni(1)))
+	assert.Nil(t, unsupported.OpBitwiseOr(ctx, ni(1)))
+	assert.Nil(t, unsupported.OpPositive())
+}
+
+func TestVMValueItemAndSliceErrorCases(t *testing.T) {
+	ctx := NewVM()
+	assert.Nil(t, na(ni(1)).ItemGet(ctx, ns("0")))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, nd().V().ItemGet(ctx, na()))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, ns("abc").ItemGet(ctx, ns("0")))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	native := NewNativeObjectVal(&NativeObjectData{
+		ItemGet: func(*Context, *VMValue) *VMValue { return nil },
+		ItemSet: func(*Context, *VMValue, *VMValue) {},
+	})
+	assert.True(t, valueEqual(native.ItemGet(ctx, ni(0)), NewNullVal()))
+	assert.True(t, native.ItemSet(ctx, ni(0), ni(1)))
+
+	ctx = NewVM()
+	assert.False(t, na().ItemSet(ctx, ns("0"), ni(1)))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.False(t, nd().V().ItemSet(ctx, na(), ni(1)))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.False(t, NewNullVal().ItemSet(ctx, ni(0), ni(1)))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Equal(t, IntType(0), getClampRealIndex(ctx, -10, 3))
+	assert.Equal(t, IntType(3), getClampRealIndex(ctx, 10, 3))
+	assert.True(t, valueEqual(na(ni(1), ni(2)).GetSlice(ctx, 2, 1, 1), na()))
+	assert.Equal(t, IntType(0), nd().V().Length(ctx))
+	assert.NoError(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Zero(t, ni(1).Length(ctx))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, na().GetSliceEx(ctx, ns("bad"), NewNullVal()))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, na().GetSliceEx(ctx, ni(0), ns("bad")))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.False(t, ni(1).SetSlice(ctx, 0, 1, 1, na()))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.False(t, na().SetSlice(ctx, 0, 1, 1, ni(1)))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	array := na(ni(1), ni(2))
+	assert.True(t, array.SetSlice(ctx, 2, 1, 1, na(ni(3))))
+	assert.True(t, valueEqual(array, na(ni(1), ni(3), ni(2))))
+
+	ctx = NewVM()
+	assert.False(t, ni(1).SetSliceEx(ctx, NewNullVal(), NewNullVal(), na()))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.False(t, na().SetSliceEx(ctx, ns("bad"), NewNullVal(), na()))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.False(t, na().SetSliceEx(ctx, ni(0), ns("bad"), na()))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, na(ni(1)).ArrayRepeatTimesEx(ctx, ni(513)))
+	assert.Error(t, ctx.Error)
+	assert.Nil(t, na(ni(1)).ArrayRepeatTimesEx(NewVM(), nf(2)))
+}
+
+func TestNativeFunctionDefaultsAndErrors(t *testing.T) {
+	definition := &NativeFunctionData{
+		Name:     "withDefault",
+		Params:   []string{"value"},
+		Defaults: []*VMValue{ni(9)},
+		NativeFunc: func(ctx *Context, this *VMValue, params []*VMValue) *VMValue {
+			assert.True(t, valueEqual(params[0], ni(9)))
+			return nil
+		},
+	}
+	fn := NewNativeFunctionVal(definition)
+	ctx := NewVM()
+	assert.True(t, valueEqual(fn.FuncInvokeNative(ctx, nil), NewNullVal()))
+	assert.NoError(t, ctx.Error)
+
+	ctx = NewVM()
+	fn = NewNativeFunctionVal(&NativeFunctionData{
+		Params: []string{"required"},
+		NativeFunc: func(*Context, *VMValue, []*VMValue) *VMValue {
+			t.Fatal("native function must not run with the wrong arity")
+			return nil
+		},
+	})
+	assert.Nil(t, fn.FuncInvokeNative(ctx, nil))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	fn = NewNativeFunctionVal(&NativeFunctionData{
+		NativeFunc: func(ctx *Context, _ *VMValue, _ []*VMValue) *VMValue {
+			ctx.Error = assert.AnError
+			return ni(1)
+		},
+	})
+	assert.Nil(t, fn.FuncInvokeNative(ctx, nil))
+	assert.ErrorIs(t, ctx.Error, assert.AnError)
+}
+
+func TestInvalidDictionaryKeys(t *testing.T) {
+	_, err := na().AsDictKey()
+	assert.Error(t, err)
+	_, err = NewDictValWithArray(na(), ni(1))
+	assert.Error(t, err)
+	assert.Panics(t, func() { NewDictValWithArrayMust(na(), ni(1)) })
+}
+
+func TestContextLifecycleAndLoadEdgeCases(t *testing.T) {
+	ctx := NewVM()
+	ctx.DetailSpans = []BufferSpan{}
+	ctx.detailCache = "cached detail"
+	assert.Equal(t, "cached detail", ctx.GetDetailText())
+
+	seed, err := (&Context{}).GetCurSeed()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, seed)
+	seeded := &Context{Seed: seed}
+	seeded.Init()
+	assert.NotNil(t, seeded.RandSrc)
+
+	ctx = NewVM()
+	detail := &BufferSpan{Ret: ni(1)}
+	ctx.Config.HookValueLoadPost = func(_ *Context, _ string, _ *VMValue, _ func(*VMValue) *VMValue, _ *BufferSpan) *VMValue {
+		return ni(2)
+	}
+	value := ctx.solveLoadPostAndComputed("value", ni(1), false, detail)
+	assert.True(t, valueEqual(value, ni(2)))
+	assert.True(t, valueEqual(detail.Ret, ni(2)))
+	value = ctx.solveLoadPostAndComputed("value", ni(1), false, nil)
+	assert.True(t, valueEqual(value, ni(2)))
+
+	ctx = NewVM()
+	ctx.Config.HookValueLoadPre = func(_ *Context, name string) (string, *VMValue) {
+		assert.Equal(t, "original", name)
+		return "renamed", ni(7)
+	}
+	assert.True(t, valueEqual(ctx.LoadName("original", false, true), ni(7)))
+	assert.True(t, valueEqual(ctx.LoadNameLocal("missing", false), NewNullVal()))
+	assert.True(t, valueEqual(ctx.LoadNameGlobal("missing", false), NewNullVal()))
+}
+
+func TestCustomDiceRegistrationValidation(t *testing.T) {
+	ctx := NewVM()
+	assert.Error(t, ctx.RegCustomDice("X", nil))
+	assert.Error(t, ctx.RegCustomDice("[", func(*Context, []string, any) (*VMValue, string, error) {
+		return nil, "", nil
+	}))
+	assert.Error(t, ctx.RegCustomDiceParser(nil, func(*Context, []string, any) (*VMValue, string, error) {
+		return nil, "", nil
+	}))
+	assert.Error(t, ctx.RegCustomDiceParser(func(*Context, *CustomDiceStream) (*CustomDiceParseResult, error) {
+		return nil, nil
+	}, nil))
+}
