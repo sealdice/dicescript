@@ -1,8 +1,9 @@
 package dicescript
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNativeFunctionCall(t *testing.T) {
@@ -176,4 +177,34 @@ func TestNativeFunctionAbs(t *testing.T) {
 	funcAbs(vm, nil, []*VMValue{ns("test")})
 	assert.Error(t, vm.Error)
 	vm.Error = nil
+}
+
+func TestNativeFunctionErrorPropagation(t *testing.T) {
+	ctx := NewVM()
+	assert.True(t, valueEqual(funcCeil(ctx, nil, []*VMValue{ni(1)}), ni(1)))
+
+	ctx = NewVM()
+	ctx.Attrs.Store("broken", NewComputedVal("("))
+	assert.Nil(t, funcLoad(ctx, nil, []*VMValue{ns("broken")}))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, funcLoadRawAttr(ctx, nil, []*VMValue{ni(1), ni(2)}))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	obj := NewNativeObjectVal(&NativeObjectData{AttrGet: func(ctx *Context, _ string) *VMValue {
+		ctx.Error = assert.AnError
+		return nil
+	}})
+	assert.Nil(t, funcLoadRawAttr(ctx, nil, []*VMValue{obj, ns("field")}))
+	assert.ErrorIs(t, ctx.Error, assert.AnError)
+
+	ctx = NewVM()
+	assert.Nil(t, funcLoadRawItem(ctx, nil, []*VMValue{ni(1), ni(0)}))
+	assert.Error(t, ctx.Error)
+
+	ctx = NewVM()
+	assert.Nil(t, funcStore(ctx, nil, []*VMValue{ni(1), ni(2)}))
+	assert.Error(t, ctx.Error)
 }

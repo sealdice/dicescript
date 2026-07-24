@@ -107,3 +107,47 @@ func TestTypesMethodDictGetRaw(t *testing.T) {
 	v = funcDictGetRaw(vm, d.V(), []*VMValue{ns("missing"), ni(9)})
 	assert.True(t, valueEqual(v, ni(9)))
 }
+
+func TestTypesMethodErrorAndEmptyCases(t *testing.T) {
+	ctx := NewVM()
+	assert.Nil(t, funcArrayRandSize(ctx, na(ni(1)), []*VMValue{ns("1")}))
+	assert.Error(t, ctx.Error)
+
+	assert.True(t, valueEqual(funcArrayPop(NewVM(), na(), nil), NewNullVal()))
+	assert.True(t, valueEqual(funcArrayShift(NewVM(), na(), nil), NewNullVal()))
+
+	d := NewDictVal(nil)
+	for name, call := range map[string]func(*Context) *VMValue{
+		"has": func(ctx *Context) *VMValue {
+			return funcDictHas(ctx, d.V(), []*VMValue{na()})
+		},
+		"get": func(ctx *Context) *VMValue {
+			return funcDictGet(ctx, d.V(), []*VMValue{na()})
+		},
+		"getRaw": func(ctx *Context) *VMValue {
+			return funcDictGetRaw(ctx, d.V(), []*VMValue{na()})
+		},
+	} {
+		t.Run(name+" rejects invalid key", func(t *testing.T) {
+			ctx := NewVM()
+			assert.Nil(t, call(ctx))
+			assert.Error(t, ctx.Error)
+		})
+	}
+
+	assert.True(t, valueEqual(funcDictGet(NewVM(), d.V(), []*VMValue{ns("missing")}), NewNullVal()))
+	assert.True(t, valueEqual(funcDictGetRaw(NewVM(), d.V(), []*VMValue{ns("missing")}), NewNullVal()))
+}
+
+func TestGetBindMethodCopiesFunction(t *testing.T) {
+	receiver := na(ni(1))
+	definition := &FunctionData{Name: "method", Params: []string{"x"}}
+	bound := getBindMethod(receiver, NewFunctionValRaw(definition))
+
+	data, ok := bound.ReadFunctionData()
+	assert.True(t, ok)
+	assert.NotSame(t, definition, data)
+	assert.Nil(t, definition.Self)
+	assert.True(t, valueEqual(receiver, data.Self))
+	assert.Nil(t, getBindMethod(receiver, ni(1)))
+}

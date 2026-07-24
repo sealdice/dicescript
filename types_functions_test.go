@@ -1,8 +1,9 @@
 package dicescript
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTypesFuncDict(t *testing.T) {
@@ -27,6 +28,22 @@ func TestTypesFuncDictToStr(t *testing.T) {
 	data.Store("a", ni(1))
 	d := NewDictVal(data)
 	assert.Equal(t, d.ToString(), "{'a': 1}")
+}
+
+func TestTypesFuncDictRange(t *testing.T) {
+	d := NewDictValWithArrayMust(ns("a"), ni(1), ns("b"), ni(2))
+	seen := map[string]IntType{}
+	d.Range(func(key string, value *VMValue) bool {
+		seen[key] = value.MustReadInt()
+		return true
+	})
+	assert.Equal(t, map[string]IntType{"a": 1, "b": 2}, seen)
+
+	invalid := (*VMDictValue)(ni(2))
+	invalid.Range(func(string, *VMValue) bool {
+		t.Fatal("callback must not run for a non-dict value")
+		return false
+	})
 }
 
 func TestTypesFuncArray(t *testing.T) {

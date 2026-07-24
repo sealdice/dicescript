@@ -248,3 +248,81 @@ func TestGetPrevNonSpaceChar(t *testing.T) {
 		}
 	}
 }
+
+func TestFriendlyErrorClassification(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		offset int
+		want   string
+	}{
+		{name: "empty", want: "Empty input"},
+		{name: "template if", input: "{ if }", offset: 5, want: "Incomplete if statement inside"},
+		{name: "if", input: "if true", offset: 7, want: "Incomplete if statement"},
+		{name: "right brace", input: "{1", offset: 2, want: "Missing closing brace"},
+		{name: "right bracket", input: "[1", offset: 2, want: "Missing closing bracket"},
+		{name: "missing expression", input: "1 +", offset: 3, want: "Expression expected after '+'"},
+		{name: "incomplete", input: "value", offset: 5, want: "Incomplete expression"},
+		{name: "unclosed string", input: "a\"", offset: 1, want: "Unclosed string literal"},
+		{name: "unexpected character", input: "a@", offset: 1, want: "Unexpected character '@'"},
+		{name: "generic syntax", input: "value", offset: 0, want: "Syntax error"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := formatFriendlyErrorForLanguage(
+				ParseErrorLanguageEnglish,
+				position{line: 1, col: tt.offset + 1, offset: tt.offset},
+				[]byte(tt.input),
+				nil,
+			)
+			assert.Contains(t, err.Error(), tt.want)
+		})
+	}
+}
+
+func TestFriendlyErrorGlobalLanguageAndParserFallback(t *testing.T) {
+	previousLanguage := parseErrorLanguage
+	t.Cleanup(func() { SetParseErrorLanguage(previousLanguage) })
+
+	SetParseErrorLanguage(ParseErrorLanguageEnglish)
+	err := formatFriendlyError(position{line: 1, col: 1}, []byte("/"), nil)
+	assert.Contains(t, err.Error(), "Syntax Error")
+	assert.NotContains(t, err.Error(), "语法错误")
+
+	fallback := assert.AnError
+	assert.Equal(t, fallback, formatFriendlyParseError(ParseErrorLanguageEnglish, nil, nil, fallback))
+
+	p := newParser("", []byte("/"))
+	assert.Equal(t, fallback, formatFriendlyParseError(ParseErrorLanguageEnglish, p, []byte("/"), fallback))
+	p.maxFailExpected = []string{"number", "number", "identifier"}
+	p.maxFailPos = position{line: 1, col: 1, offset: 0}
+	err = formatFriendlyParseError(ParseErrorLanguageEnglish, p, []byte("/"), fallback)
+	assert.Contains(t, err.Error(), "Expression cannot start with '/'")
+
+	first := parseErrorFormatterOption(ParseErrorLanguageChinese)
+	second := first(p)
+	third := second(p)
+	assert.Nil(t, third)
+}
+
+func TestParseErrorDetectionEdgeCases(t *testing.T) {
+	assert.False(t, detectIfSyntaxError(nil, position{}))
+	assert.False(t, detectIfSyntaxError([]byte("while true"), position{}))
+	assert.False(t, detectIfSyntaxError([]byte("iffy"), position{}))
+	assert.False(t, detectIfSyntaxError([]byte("if true {}"), position{}))
+	assert.True(t, detectIfSyntaxError([]byte("if true"), position{}))
+
+	assert.False(t, detectTemplateIfSyntaxError([]byte("if"), position{}))
+	assert.False(t, detectTemplateIfSyntaxError([]byte("{ value }"), position{}))
+	assert.False(t, detectTemplateIfSyntaxError([]byte("{ if }"), position{offset: 2}))
+	assert.False(t, detectTemplateIfSyntaxError([]byte("{ ifx}"), position{offset: 5}))
+	assert.True(t, detectTemplateIfSyntaxError([]byte("{% if}"), position{offset: 5}))
+
+	assert.Equal(t, "short", getLineAtBytes([]byte("short"), 0))
+	longInput := []byte(strings.Repeat("x", 80))
+	assert.Equal(t, strings.Repeat("x", 57)+"...", getLineAtBytes(longInput, 2))
+	assert.False(t, isValidIdentChar('@'))
+	assert.True(t, isOperatorChar('＋'))
+	assert.Zero(t, findUnclosedBracketBytes([]byte("]})")))
+}
