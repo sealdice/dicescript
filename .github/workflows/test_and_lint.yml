@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.18.x'
+          go-version: '1.21.13'
 
       - name: Download modules
         run: go mod download
@@ -47,7 +47,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.18.x'
+          go-version: '1.21.13'
 
       - name: Download modules
         run: go mod download
@@ -60,6 +60,5 @@ jobs:
         with:
           version: v1.57.2
           only-new-issues: true
-          skip-pkg-cache: true
-          skip-build-cache: true
+          skip-cache: true
           args: --timeout 9999s
