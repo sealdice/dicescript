@@ -24,8 +24,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"golang.org/x/exp/rand"
 )
 
 type VMValueType int
@@ -172,8 +170,8 @@ type Context struct {
 	detailCache      string // 计算过程
 	IsComputedLoaded bool
 
-	Seed    []byte          // 随机种子，16个字节，即双uint64
-	RandSrc *rand.PCGSource // 根据种子生成的source
+	Seed    []byte     // PCG随机状态，16个字节，即双uint64
+	RandSrc DiceSource // 随机源
 
 	IsRunning      bool // 是否正在运行，Run时会置为true，halt时会置为false
 	CustomDiceInfo []*customDiceItem
@@ -224,17 +222,18 @@ func (ctx *Context) Init() {
 	ctx.DetailSpans = nil
 	ctx.CustomFlag = make(map[string]any)
 	if ctx.Seed != nil {
-		s := rand.PCGSource{}
-		_ = s.UnmarshalBinary(ctx.Seed)
-		ctx.RandSrc = &s
+		src, _ := NewPCGDiceSourceFromState(ctx.Seed)
+		ctx.RandSrc = src
 	}
 }
 
 func (ctx *Context) GetCurSeed() ([]byte, error) {
-	if ctx.RandSrc != nil {
-		return ctx.RandSrc.MarshalBinary()
+	src := normalizeDiceSource(ctx.RandSrc)
+	statefulSrc, ok := src.(StatefulDiceSource)
+	if !ok {
+		return nil, ErrDiceSourceStateUnsupported
 	}
-	return randSource.MarshalBinary()
+	return statefulSrc.MarshalBinary()
 }
 
 func (ctx *Context) loadInnerVar(name string) *VMValue {
