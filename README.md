@@ -45,6 +45,26 @@ go run ./cmd ./script.ds
 
 启动时会先执行脚本，再进入 REPL。
 
+### 随机源
+
+DiceScript 默认使用 PCG 随机源。PCG 源支持保存和恢复当前随机状态，适合需要复现骰点序列、调试或续跑的场景：
+
+```go
+vm := dicescript.NewVM()
+seed, err := vm.GetCurSeed()
+
+vm2 := &dicescript.Context{Seed: seed}
+vm2.Init()
+```
+
+如果需要接入其他随机源，可以设置 `Context.RandSrc`。掷骰逻辑只要求随机源实现 `Uint64() uint64`：
+
+```go
+vm := dicescript.NewVM()
+vm.RandSrc = dicescript.NewCryptoDiceSource()
+```
+
+需要注意的是，真随机源不支持保存和恢复状态。此时调用 `GetCurSeed()` 会返回 `ErrDiceSourceStateUnsupported`。
 
 ## 设计原则
 

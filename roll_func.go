@@ -7,20 +7,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
-
-	"golang.org/x/exp/rand"
 )
 
-func getSource() *rand.PCGSource {
-	s := &rand.PCGSource{}
-	s.Seed(uint64(time.Now().UnixMilli()))
-	return s
-}
-
-var randSource = getSource()
-
-func _roll32(src *rand.PCGSource, dicePoints int) int {
+func _roll32(src DiceSource, dicePoints int) int {
 	// 注: int的长度至少为32位，也可以高于此数，此处只是当作32位处理
 	if dicePoints > math.MaxInt32-1 {
 		return 0
@@ -41,7 +30,7 @@ func _roll32(src *rand.PCGSource, dicePoints int) int {
 	return int(v%n + 1)
 }
 
-func _roll64(src *rand.PCGSource, dicePoints int64, mod int) int64 {
+func _roll64(src DiceSource, dicePoints int64, mod int) int64 {
 	if dicePoints > math.MaxInt64-1 {
 		return 0
 	}
@@ -61,7 +50,7 @@ func _roll64(src *rand.PCGSource, dicePoints int64, mod int) int64 {
 	return int64(v%n + 1)
 }
 
-func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
+func Roll(src DiceSource, dicePoints IntType, mod int) IntType {
 	if dicePoints == 0 {
 		return 0
 	}
@@ -71,9 +60,7 @@ func Roll(src *rand.PCGSource, dicePoints IntType, mod int) IntType {
 	if mod == 1 {
 		return dicePoints
 	}
-	if src == nil {
-		src = randSource
-	}
+	src = normalizeDiceSource(src)
 
 	// 大部分情况会走这个分支
 	if IntTypeSize == 8 {
@@ -112,7 +99,7 @@ func wodCheck(e *Context, addLine IntType, pool IntType, points IntType, thresho
 }
 
 // RollWoD 返回: 成功数，总骰数，轮数，细节
-func RollWoD(src *rand.PCGSource, addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool, mode int) (IntType, IntType, IntType, string) {
+func RollWoD(src DiceSource, addLine IntType, pool IntType, points IntType, threshold IntType, isGE bool, mode int) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
@@ -211,7 +198,7 @@ func doubleCrossCheck(ctx *Context, addLine, pool, points IntType) bool {
 	return true
 }
 
-func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points IntType, mode int) (IntType, IntType, IntType, string) {
+func RollDoubleCross(src DiceSource, addLine IntType, pool IntType, points IntType, mode int) (IntType, IntType, IntType, string) {
 	var details []string
 	addTimes := 1
 
@@ -288,7 +275,7 @@ func RollDoubleCross(src *rand.PCGSource, addLine IntType, pool IntType, points 
 }
 
 // RollCommon (times)d(dicePoints)kl(lowNum) 或 (times)d(dicePoints)kh(highNum)
-func RollCommon(src *rand.PCGSource, times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType, mode int) (IntType, string) {
+func RollCommon(src DiceSource, times, dicePoints IntType, diceMin, diceMax *IntType, isKeepLH, lowNum, highNum IntType, mode int) (IntType, string) {
 	var nums []IntType
 	for i := IntType(0); i < times; i += 1 {
 		die := Roll(src, dicePoints, mode)
@@ -373,7 +360,7 @@ func RollCommon(src *rand.PCGSource, times, dicePoints IntType, diceMin, diceMax
 	return num, text
 }
 
-func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType, mode int) (IntType, string) {
+func RollCoC(src DiceSource, isBonus bool, diceNum IntType, mode int) (IntType, string) {
 	diceResult := Roll(src, 100, mode)
 	diceTens := diceResult / 10
 	diceUnits := diceResult % 10
@@ -423,7 +410,7 @@ func RollCoC(src *rand.PCGSource, isBonus bool, diceNum IntType, mode int) (IntT
 	}
 }
 
-func RollFate(src *rand.PCGSource, mode int) (IntType, string) {
+func RollFate(src DiceSource, mode int) (IntType, string) {
 	detail := ""
 	sum := IntType(0)
 	for i := 0; i < 4; i++ {
