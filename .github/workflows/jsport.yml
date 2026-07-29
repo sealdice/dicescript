@@ -29,6 +29,8 @@ jobs:
 
     - name: Build
       shell: bash
+      env:
+        GOFLAGS: -mod=mod
       run: |
         set +e
         output=$(gopherjs build -m -o jsport/dicescript.cjs github.com/sealdice/dicescript/jsport 2>&1)
