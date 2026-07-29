@@ -28,7 +28,19 @@ jobs:
         go mod download
 
     - name: Build
-      run: gopherjs build -m -o jsport/dicescript.cjs github.com/sealdice/dicescript/jsport
+      shell: bash
+      run: |
+        set +e
+        output=$(gopherjs build -m -o jsport/dicescript.cjs github.com/sealdice/dicescript/jsport 2>&1)
+        status=$?
+        printf '%s\n' "$output"
+        if (( status != 0 )); then
+          message=${output//'%'/'%25'}
+          message=${message//$'\r'/'%0D'}
+          message=${message//$'\n'/'%0A'}
+          echo "::error title=GopherJS build failed::$message"
+        fi
+        exit "$status"
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
